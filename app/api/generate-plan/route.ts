@@ -14,11 +14,16 @@ function isUserProfile(value: unknown): value is UserProfile {
   }
 
   const profile = value as Partial<UserProfile>;
+  const hasGoal =
+    Boolean(profile.goal) ||
+    Boolean(Array.isArray(profile.goals) && profile.goals.length) ||
+    Boolean(profile.goalDescription?.trim());
+
   return Boolean(
     profile.id &&
       profile.character &&
       profile.climbingTime &&
-      profile.goal &&
+      hasGoal &&
       profile.planDuration &&
       profile.daysPerWeek
   );

@@ -128,7 +128,8 @@ const goalOptions: Option[] = [
   { label: 'Mejorar resistencia', value: 'endurance' },
   { label: 'Prepararme para competir', value: 'compete' },
   { label: 'Prevenir lesiones', value: 'injury_prevention' },
-  { label: 'Volver después de lesión/pausa', value: 'return' }
+  { label: 'Volver después de lesión/pausa', value: 'return' },
+  { label: 'Otro / más específico', value: 'other' }
 ];
 
 const durationOptions = [
@@ -178,6 +179,8 @@ export function ProfileEditor() {
 
     return (
       initialProfile.goal !== profile.goal ||
+      initialProfile.goals.join(',') !== profile.goals.join(',') ||
+      initialProfile.goalDescription !== profile.goalDescription ||
       initialProfile.project !== profile.project ||
       initialProfile.daysPerWeek !== profile.daysPerWeek ||
       initialProfile.planDuration !== profile.planDuration ||
@@ -189,6 +192,21 @@ export function ProfileEditor() {
 
   function updateProfileField<K extends keyof UserProfile>(key: K, value: UserProfile[K]) {
     setProfile((current) => (current ? { ...current, [key]: value } : current));
+    setSaved(false);
+  }
+
+  function updateProfileGoals(goals: string[]) {
+    setProfile((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        goals,
+        goal: goals[0] ?? (current.goalDescription.trim() ? 'other' : '')
+      };
+    });
     setSaved(false);
   }
 
@@ -498,13 +516,13 @@ export function ProfileEditor() {
       </ProfileSection>
 
       <ProfileSection title="Objetivo">
-        <FieldGroup title="Objetivo principal">
+        <FieldGroup title="Objetivos">
           <OptionGrid>
             {goalOptions.map((option) => (
               <OptionButton
                 key={option.value}
-                active={profile.goal === option.value}
-                onClick={() => updateProfileField('goal', option.value)}
+                active={profile.goals.includes(option.value)}
+                onClick={() => updateProfileGoals(toggleValue(profile.goals, option.value))}
               >
                 {option.label}
               </OptionButton>
@@ -512,8 +530,30 @@ export function ProfileEditor() {
           </OptionGrid>
         </FieldGroup>
         <TextareaField
+          label="Redacta lo que buscas"
+          value={profile.goalDescription}
+          placeholder="Quiero mejorar técnica en placa, tener más resistencia para rutas largas y no cargar tanto los dedos..."
+          onChange={(value) => {
+            const goals =
+              value.trim() && !profile.goals.length ? ['other'] : profile.goals;
+
+            setProfile((current) =>
+              current
+                ? {
+                    ...current,
+                    goalDescription: value,
+                    goals,
+                    goal: goals[0] ?? (value.trim() ? 'other' : '')
+                  }
+                : current
+            );
+            setSaved(false);
+          }}
+        />
+        <TextareaField
           label="Proyecto o ruta específica"
           value={profile.project}
+          placeholder="Ruta, boulder, fecha, zona o grado que traes en mente..."
           onChange={(value) => updateProfileField('project', value)}
         />
         <FieldGroup title="Duración del plan">
@@ -636,10 +676,12 @@ function InputField({
 function TextareaField({
   label,
   value,
+  placeholder,
   onChange
 }: {
   label: string;
   value: string;
+  placeholder?: string;
   onChange: (value: string) => void;
 }) {
   return (
@@ -647,6 +689,7 @@ function TextareaField({
       <span className="mb-2 block text-sm font-bold text-white/76">{label}</span>
       <textarea
         value={value}
+        placeholder={placeholder}
         rows={4}
         onChange={(event) => onChange(event.target.value)}
         className="w-full resize-none rounded-md border border-white/10 bg-white/[0.04] px-4 py-3 text-white outline-none transition placeholder:text-white/34 focus:border-brand-cyan"

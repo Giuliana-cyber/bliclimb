@@ -36,7 +36,8 @@ type OnboardingForm = {
   equipment: string[];
   equipmentNotes: string;
   previousTraining: string;
-  goal: string;
+  goals: string[];
+  goalDescription: string;
   project: string;
   durationChoice: DurationChoice;
 };
@@ -67,7 +68,8 @@ const initialForm: OnboardingForm = {
   equipment: [],
   equipmentNotes: '',
   previousTraining: '',
-  goal: '',
+  goals: [],
+  goalDescription: '',
   project: '',
   durationChoice: ''
 };
@@ -179,7 +181,8 @@ const goalOptions: Option[] = [
   { label: 'Mejorar resistencia', value: 'endurance' },
   { label: 'Prepararme para competir', value: 'compete' },
   { label: 'Prevenir lesiones', value: 'injury_prevention' },
-  { label: 'Volver después de lesión/pausa', value: 'return' }
+  { label: 'Volver después de lesión/pausa', value: 'return' },
+  { label: 'Otro / más específico', value: 'other' }
 ];
 
 const durationOptions: Array<{ label: string; value: DurationChoice }> = [
@@ -203,6 +206,21 @@ function getLabels(options: Option[], values: string[]) {
   }
 
   return values.map((value) => getLabel(options, value)).join(' + ');
+}
+
+function getGoalSummary(goals: string[], goalDescription: string) {
+  const selectedGoals = getLabels(goalOptions, goals);
+  const description = goalDescription.trim();
+
+  if (description && goals.length) {
+    return `${selectedGoals} · ${description}`;
+  }
+
+  if (description) {
+    return description;
+  }
+
+  return selectedGoals;
 }
 
 function toOptionalNumber(value: string) {
@@ -316,7 +334,7 @@ export default function OnboardingPage() {
       Boolean(form.age && form.sex),
       Boolean(form.injuries.length && form.warmup && form.sleep && form.energy),
       Boolean(form.daysPerWeek && form.equipment.length && form.previousTraining),
-      Boolean(form.goal && form.durationChoice),
+      Boolean((form.goals.length || form.goalDescription.trim()) && form.durationChoice),
       true
     ].filter(Boolean).length;
   }, [form]);
@@ -334,6 +352,7 @@ export default function OnboardingPage() {
     }
 
     const now = new Date().toISOString();
+    const goals = form.goals.length ? form.goals : ['other'];
     const profile: UserProfile = {
       id: createId(),
       character: form.character,
@@ -355,7 +374,9 @@ export default function OnboardingPage() {
       equipment: form.equipment,
       equipmentNotes: form.equipmentNotes.trim(),
       previousTraining: form.previousTraining,
-      goal: form.goal,
+      goal: goals[0],
+      goals,
+      goalDescription: form.goalDescription.trim(),
       project: form.project.trim(),
       planDuration: durationWeeks,
       createdAt: now,
@@ -685,19 +706,42 @@ export default function OnboardingPage() {
 
         <StepSection number={6} title="Tu objetivo" icon={Target}>
           <div className="space-y-7">
-            <FieldGroup title="¿Cuál es tu objetivo principal?">
+            <FieldGroup title="¿Qué objetivos quieres trabajar? (selecciona varios)">
               <OptionGrid>
                 {goalOptions.map((option) => (
                   <OptionButton
                     key={option.value}
-                    active={form.goal === option.value}
-                    onClick={() => setForm((current) => ({ ...current, goal: option.value }))}
+                    active={form.goals.includes(option.value)}
+                    onClick={() =>
+                      setForm((current) => ({
+                        ...current,
+                        goals: current.goals.includes(option.value)
+                          ? current.goals.filter((item) => item !== option.value)
+                          : [...current.goals, option.value]
+                      }))
+                    }
                   >
                     {option.label}
                   </OptionButton>
                 ))}
               </OptionGrid>
             </FieldGroup>
+
+            <TextareaField
+              label="Redacta lo que buscas"
+              value={form.goalDescription}
+              placeholder="Quiero sentirme más fuerte en desplomes, mejorar lectura de boulder y llegar sin dolor de dedos a mi viaje de roca..."
+              onChange={(value) =>
+                setForm((current) => ({
+                  ...current,
+                  goalDescription: value,
+                  goals:
+                    value.trim() && !current.goals.length
+                      ? ['other']
+                      : current.goals
+                }))
+              }
+            />
 
             <TextareaField
               label="¿Tienes un proyecto o ruta específica?"
@@ -741,7 +785,10 @@ export default function OnboardingPage() {
                   value={getLabel(climbingTimeOptions, form.climbingTime)}
                 />
                 <SummaryRow label="Nivel" value={getLabel(levelOptions, form.level)} />
-                <SummaryRow label="Objetivo" value={getLabel(goalOptions, form.goal)} />
+                <SummaryRow
+                  label="Objetivo"
+                  value={getGoalSummary(form.goals, form.goalDescription)}
+                />
                 <SummaryRow label="Días" value={daysLabel ? `${daysLabel}/semana` : 'Pendiente'} />
                 <SummaryRow label="Equipo" value={getLabels(equipmentOptions, form.equipment)} />
                 <SummaryRow label="Lesión" value={getLabels(injuryOptions, form.injuries)} />

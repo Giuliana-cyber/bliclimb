@@ -25,19 +25,38 @@ export interface UserProfile {
   equipmentNotes: string;
   previousTraining: string; // 'never' | 'informal' | 'structured' | 'coach'
   goal: string; // 'grade' | 'project' | 'technique' | 'fingers' | ...
+  goals: string[]; // ['grade', 'technique', 'other']
+  goalDescription: string;
   project: string; // "La Catrina 5.12a en El Salto"
   planDuration: number; // 4 | 8 | 12
   createdAt: string;
   updatedAt: string;
 }
 
+function normalizeProfile(profile: UserProfile | null) {
+  if (!profile) {
+    return null;
+  }
+
+  const legacyGoal = typeof profile.goal === 'string' ? profile.goal : '';
+  const goals = Array.isArray(profile.goals) && profile.goals.length ? profile.goals : legacyGoal ? [legacyGoal] : [];
+
+  return {
+    ...profile,
+    goal: legacyGoal || goals[0] || 'other',
+    goals,
+    goalDescription: typeof profile.goalDescription === 'string' ? profile.goalDescription : ''
+  };
+}
+
 export function loadProfile() {
-  return readStorage<UserProfile | null>(PROFILE_STORAGE_KEY, null);
+  return normalizeProfile(readStorage<UserProfile | null>(PROFILE_STORAGE_KEY, null));
 }
 
 export function saveProfile(profile: UserProfile) {
-  writeStorage(PROFILE_STORAGE_KEY, profile);
-  return profile;
+  const normalizedProfile = normalizeProfile(profile) ?? profile;
+  writeStorage(PROFILE_STORAGE_KEY, normalizedProfile);
+  return normalizedProfile;
 }
 
 export function updateProfile(updates: Partial<UserProfile>) {

@@ -11,8 +11,36 @@ const equipmentLabels: Record<string, string> = {
   pullup_bar: 'barra de dominadas'
 };
 
+const goalLabels: Record<string, string> = {
+  grade: 'subir de grado en general',
+  project: 'encadenar un proyecto específico',
+  technique: 'mejorar técnica',
+  fingers: 'ganar fuerza de dedos',
+  endurance: 'mejorar resistencia',
+  compete: 'prepararse para competir',
+  injury_prevention: 'prevenir lesiones',
+  return: 'volver después de lesión o pausa',
+  other: 'otro objetivo redactado por la persona'
+};
+
 function getAvailableEquipment(profile: UserProfile) {
   return profile.equipment.map((item) => equipmentLabels[item] ?? item).join(', ');
+}
+
+function getGoalSummary(profile: UserProfile) {
+  const goals = Array.isArray(profile.goals) && profile.goals.length ? profile.goals : [profile.goal];
+  const selectedGoals = goals.map((goal) => goalLabels[goal] ?? goal).join(', ');
+  const details =
+    typeof profile.goalDescription === 'string' ? profile.goalDescription.trim() : '';
+  const project = profile.project.trim();
+
+  return [
+    selectedGoals ? `Objetivos seleccionados: ${selectedGoals}` : null,
+    details ? `Objetivo redactado por la persona: ${details}` : null,
+    project ? `Proyecto o ruta específica: ${project}` : null
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
 function getEquipmentRestrictions(profile: UserProfile) {
@@ -77,9 +105,15 @@ REGLAS DE DISEÑO DEL PLAN:
 - Si el plan es de 8 semanas, incluir semana de descarga cada 3-4 semanas.
 - Si el objetivo es un proyecto específico, incluir simulación de proyecto en semanas
   finales.
+- Si el usuario seleccionó varios objetivos, combinarlos con prioridades claras por semana.
+- Si escribió un objetivo con sus propias palabras, tratar ese texto como contexto de mayor
+  prioridad que las etiquetas genéricas.
 
 EQUIPO DISPONIBLE DEL USUARIO:
 ${getAvailableEquipment(profile) || 'Sin equipo declarado'}
+
+OBJETIVOS DEL USUARIO:
+${getGoalSummary(profile) || 'Sin objetivo declarado'}
 
 RESTRICCIONES ESTRICTAS DE EQUIPO:
 ${getEquipmentRestrictions(profile)}
