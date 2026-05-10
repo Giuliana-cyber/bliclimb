@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, CheckCircle2 } from 'lucide-react';
 import { saveCheckIn, type CheckIn } from '@/lib/checkin';
+import { loadCheckIns } from '@/lib/checkin';
 import { loadTrainingPlan, saveSessionCheckIn } from '@/lib/plan';
+import { getCheckInAlerts, type CheckInAlert } from '@/lib/training/alerts';
 import { getTodaySession, type SessionWithContext } from '@/lib/training/current-session';
 
 type CompletionValue = 'full' | 'partial' | 'skipped';
@@ -88,6 +90,7 @@ export function CheckInForm() {
   const [sessionContext, setSessionContext] = useState<SessionWithContext | null>(null);
   const [draft, setDraft] = useState<CheckInDraft>(initialDraft);
   const [savedCheckIn, setSavedCheckIn] = useState<CheckIn | null>(null);
+  const [alerts, setAlerts] = useState<CheckInAlert[]>([]);
 
   useEffect(() => {
     const plan = loadTrainingPlan();
@@ -115,6 +118,7 @@ export function CheckInForm() {
       notes: draft.notes.trim()
     };
 
+    const previousCheckIns = loadCheckIns();
     saveCheckIn(checkIn);
     saveSessionCheckIn({
       weekNumber: sessionContext.week.weekNumber,
@@ -122,6 +126,7 @@ export function CheckInForm() {
       checkIn
     });
     setSavedCheckIn(checkIn);
+    setAlerts(getCheckInAlerts(checkIn, previousCheckIns));
   }
 
   if (!sessionContext) {
@@ -245,17 +250,23 @@ export function CheckInForm() {
       </label>
 
       {savedCheckIn ? (
-        <div className="rounded-lg border border-brand-cyan/30 bg-brand-cyan/10 p-4 text-sm leading-6 text-white/76">
-          <div className="flex items-start gap-3">
-            <CheckCircle2 aria-hidden="true" size={22} className="mt-0.5 shrink-0 text-brand-cyan" />
-            <div>
-              <p className="font-bold text-white">Check-in guardado</p>
-              <p className="mt-1 text-white/70">
-                RPE {savedCheckIn.rpe}/10 · Dedos {savedCheckIn.fingerPain}/10 · Energía{' '}
-                {savedCheckIn.energy}/5
-              </p>
+        <div className="space-y-3">
+          <div className="rounded-lg border border-brand-cyan/30 bg-brand-cyan/10 p-4 text-sm leading-6 text-white/76">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 aria-hidden="true" size={22} className="mt-0.5 shrink-0 text-brand-cyan" />
+              <div>
+                <p className="font-bold text-white">Check-in guardado</p>
+                <p className="mt-1 text-white/70">
+                  RPE {savedCheckIn.rpe}/10 · Dedos {savedCheckIn.fingerPain}/10 · Energía{' '}
+                  {savedCheckIn.energy}/5
+                </p>
+              </div>
             </div>
           </div>
+
+          {alerts.map((alert) => (
+            <PostCheckInAlert key={alert.id} alert={alert} />
+          ))}
         </div>
       ) : null}
 
@@ -274,6 +285,29 @@ export function CheckInForm() {
         </Link>
       </div>
     </form>
+  );
+}
+
+function PostCheckInAlert({ alert }: { alert: CheckInAlert }) {
+  const toneClassName =
+    alert.tone === 'danger'
+      ? 'border-red-400/30 bg-red-400/10'
+      : alert.tone === 'warning'
+        ? 'border-brand-mustard/30 bg-brand-mustard/10'
+        : 'border-brand-cyan/30 bg-brand-cyan/10';
+
+  const titleClassName =
+    alert.tone === 'danger'
+      ? 'text-red-200'
+      : alert.tone === 'warning'
+        ? 'text-brand-mustard'
+        : 'text-brand-cyan';
+
+  return (
+    <div className={`rounded-lg border p-4 text-sm leading-6 text-white/76 ${toneClassName}`}>
+      <p className={`font-bold ${titleClassName}`}>{alert.title}</p>
+      <p className="mt-1">{alert.message}</p>
+    </div>
   );
 }
 
