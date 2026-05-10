@@ -11,7 +11,7 @@ import {
   RefreshCw,
   Target
 } from 'lucide-react';
-import { loadTrainingPlan, type TrainingPlan } from '@/lib/plan';
+import { loadTrainingPlan, type Exercise, type TrainingPlan } from '@/lib/plan';
 
 function classNames(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ');
@@ -197,9 +197,26 @@ export function PlanTimeline() {
                           </span>
                         </div>
 
-                        <p className="mt-3 text-sm leading-6 text-white/62">
-                          {session.mainBlock.map((exercise) => exercise.name).join(' · ')}
-                        </p>
+                        <div className="mt-4 space-y-4">
+                          <ExerciseSection title="Calentamiento" exercises={session.warmup} />
+                          <ExerciseSection title="Bloque principal" exercises={session.mainBlock} />
+                          <ExerciseSection title="Vuelta a la calma" exercises={session.cooldown} />
+                        </div>
+
+                        <div className="mt-4 rounded-md border border-brand-mustard/20 bg-brand-mustard/10 p-3">
+                          <p className="text-xs font-bold uppercase text-brand-mustard">
+                            Nutrición post
+                          </p>
+                          <p className="mt-1 text-sm leading-6 text-white/72">
+                            {session.nutritionTip}
+                          </p>
+                        </div>
+
+                        {session.source ? (
+                          <p className="mt-3 text-xs font-semibold text-white/42">
+                            Fuente: {session.source}
+                          </p>
+                        ) : null}
                       </div>
                     ))}
                   </div>
@@ -226,6 +243,34 @@ export function PlanTimeline() {
         </Link>
       </div>
     </section>
+  );
+}
+
+function ExerciseSection({ title, exercises }: { title: string; exercises: Exercise[] }) {
+  return (
+    <div>
+      <h4 className="mb-2 text-xs font-bold uppercase text-brand-cyan">{title}</h4>
+      <div className="space-y-2">
+        {exercises.map((exercise) => (
+          <div key={`${title}-${exercise.name}`} className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+            <p className="text-sm font-bold text-white">{exercise.name}</p>
+            <p className="mt-2 text-sm leading-6 text-white/66">{exercise.description}</p>
+
+            <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-white/46">
+              {exercise.sets ? <span>{exercise.sets} series</span> : null}
+              {exercise.reps ? <span>{exercise.reps}</span> : null}
+              {exercise.rest ? <span>descanso {exercise.rest}</span> : null}
+              {exercise.intensity ? <span>{exercise.intensity}</span> : null}
+              {exercise.timerSeconds ? <span>timer {exercise.timerSeconds}s</span> : null}
+            </div>
+
+            {exercise.notes ? (
+              <p className="mt-2 text-xs leading-5 text-white/52">Nota: {exercise.notes}</p>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

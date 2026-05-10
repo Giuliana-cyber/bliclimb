@@ -113,6 +113,40 @@ function getUnavailableEquipmentViolations(plan: TrainingPlan, profile: UserProf
   return Array.from(new Set(violations));
 }
 
+function getDetailViolations(plan: TrainingPlan) {
+  const violations: string[] = [];
+
+  plan.weeks.forEach((week) => {
+    week.sessions.forEach((session) => {
+      const label = `Semana ${week.weekNumber}, día ${session.dayNumber}`;
+
+      if (session.warmup.length < 3) {
+        violations.push(`${label}: calentamiento con menos de 3 ejercicios`);
+      }
+
+      if (session.mainBlock.length < 2) {
+        violations.push(`${label}: bloque principal con menos de 2 ejercicios`);
+      }
+
+      if (session.cooldown.length < 2) {
+        violations.push(`${label}: vuelta a la calma con menos de 2 ejercicios`);
+      }
+
+      [...session.warmup, ...session.mainBlock, ...session.cooldown].forEach((exercise) => {
+        if (exercise.description.trim().length < 120) {
+          violations.push(`${label}: "${exercise.name}" no explica suficientemente qué hacer`);
+        }
+
+        if (!exercise.notes || exercise.notes.trim().length < 40) {
+          violations.push(`${label}: "${exercise.name}" necesita una nota técnica o ajuste`);
+        }
+      });
+    });
+  });
+
+  return violations;
+}
+
 export async function POST(request: Request) {
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
@@ -163,6 +197,17 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: `El plan generado incluyó equipo no disponible: ${equipmentViolations.join(', ')}. Intenta regenerarlo.`
+        },
+        { status: 502 }
+      );
+    }
+
+    const detailViolations = getDetailViolations(plan);
+
+    if (detailViolations.length > 0) {
+      return NextResponse.json(
+        {
+          error: `El plan generado no tiene suficiente detalle práctico: ${detailViolations.slice(0, 5).join('; ')}. Intenta regenerarlo.`
         },
         { status: 502 }
       );

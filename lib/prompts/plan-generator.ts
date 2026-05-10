@@ -89,6 +89,14 @@ NIVEL DE DETALLE OBLIGATORIO:
   principal y 2 a 4 ejercicios de vuelta a la calma.
 - Cada ejercicio debe incluir descripción accionable de 1 a 3 frases, sets/reps/rest/intensity
   cuando aplique, y notes con foco técnico o ajuste de seguridad.
+- La descripción de cada ejercicio debe explicar: objetivo del ejercicio, cómo hacerlo paso a
+  paso, qué sensación/intensidad buscar y cuándo bajar o detener la intensidad.
+- No escribas descripciones tipo "Escalada continua" o "Ejercicios de verticalidad" sin explicar
+  exactamente qué hacer. Eso es insuficiente.
+- En notes agrega un cue técnico concreto o una adaptación: por ejemplo respiración, pies,
+  descanso, dolor, fatiga o alternativa si el entorno no permite el ejercicio.
+- Cada ejercicio principal debe ser tan claro que una persona pueda ejecutarlo sin abrir Google
+  ni preguntarle a un coach.
 - Para location usa solo una de estas palabras en español según el equipo real: "casa", "roca",
   "gym" únicamente si equipment incluye "gym".
 - Si no puedes prescribir algo por falta de equipo, da una alternativa real con el equipo disponible.
