@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Target
 } from 'lucide-react';
+import { ExerciseHelpLink } from '@/components/ExerciseHelpLink';
 import { loadTrainingPlan, type Exercise, type TrainingPlan } from '@/lib/plan';
 import { withDerivedCurrentWeek } from '@/lib/training/current-session';
 
@@ -200,9 +201,21 @@ export function PlanTimeline() {
                         </div>
 
                         <div className="mt-4 space-y-4">
-                          <ExerciseSection title="Calentamiento" exercises={session.warmup} />
-                          <ExerciseSection title="Bloque principal" exercises={session.mainBlock} />
-                          <ExerciseSection title="Vuelta a la calma" exercises={session.cooldown} />
+                          <ExerciseSection
+                            title="Calentamiento"
+                            sessionTitle={session.title}
+                            exercises={session.warmup}
+                          />
+                          <ExerciseSection
+                            title="Bloque principal"
+                            sessionTitle={session.title}
+                            exercises={session.mainBlock}
+                          />
+                          <ExerciseSection
+                            title="Vuelta a la calma"
+                            sessionTitle={session.title}
+                            exercises={session.cooldown}
+                          />
                         </div>
 
                         <div className="mt-4 rounded-md border border-brand-mustard/20 bg-brand-mustard/10 p-3">
@@ -248,7 +261,15 @@ export function PlanTimeline() {
   );
 }
 
-function ExerciseSection({ title, exercises }: { title: string; exercises: Exercise[] }) {
+function ExerciseSection({
+  title,
+  sessionTitle,
+  exercises
+}: {
+  title: string;
+  sessionTitle: string;
+  exercises: Exercise[];
+}) {
   return (
     <div>
       <h4 className="mb-2 text-xs font-bold uppercase text-brand-cyan">{title}</h4>
@@ -269,6 +290,8 @@ function ExerciseSection({ title, exercises }: { title: string; exercises: Exerc
             {exercise.notes ? (
               <p className="mt-2 text-xs leading-5 text-white/52">Nota: {exercise.notes}</p>
             ) : null}
+
+            <ExerciseHelpLink exercise={exercise} contextLabel={`${title} - ${sessionTitle}`} />
           </div>
         ))}
       </div>

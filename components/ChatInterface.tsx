@@ -26,8 +26,28 @@ export function ChatInterface() {
 
   useEffect(() => {
     const storedProfile = loadProfile();
-    setProfile(storedProfile);
-    setCharacter(storedProfile?.character ?? 'bill');
+    const params = new URLSearchParams(window.location.search);
+    const requestedCharacter = params.get('character');
+    const nextCharacter =
+      requestedCharacter === 'bill' || requestedCharacter === 'senda'
+        ? requestedCharacter
+        : storedProfile?.character ?? 'bill';
+    const nextProfile =
+      storedProfile && storedProfile.character !== nextCharacter
+        ? saveProfile({
+            ...storedProfile,
+            character: nextCharacter,
+            updatedAt: new Date().toISOString()
+          })
+        : storedProfile;
+    const ask = params.get('ask');
+
+    setProfile(nextProfile);
+    setCharacter(nextCharacter);
+
+    if (ask) {
+      setDraft(ask);
+    }
   }, []);
 
   useEffect(() => {
@@ -194,11 +214,18 @@ export function ChatInterface() {
       ) : null}
 
       <form onSubmit={sendMessage} className="mt-4 flex gap-2">
-        <input
+        <textarea
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+              event.preventDefault();
+              event.currentTarget.form?.requestSubmit();
+            }
+          }}
+          rows={2}
           placeholder="Pregunta algo sobre tu sesión, dolor, técnica o plan..."
-          className="h-12 min-w-0 flex-1 rounded-md border border-white/10 bg-white/[0.04] px-4 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-brand-cyan"
+          className="min-h-12 min-w-0 flex-1 resize-none rounded-md border border-white/10 bg-white/[0.04] px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-white/34 focus:border-brand-cyan"
         />
         <button
           type="submit"

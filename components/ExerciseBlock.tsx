@@ -2,6 +2,7 @@
 
 import { Check } from 'lucide-react';
 import type { Exercise } from '@/lib/plan';
+import { ExerciseHelpLink } from '@/components/ExerciseHelpLink';
 import { Timer } from '@/components/Timer';
 
 type ExerciseBlockProps = {
@@ -57,6 +58,8 @@ export function ExerciseBlock({ exercise, complete, onToggle }: ExerciseBlockPro
           <Timer initialSeconds={exercise.timerSeconds} label={exercise.name} />
         </div>
       ) : null}
+
+      <ExerciseHelpLink exercise={exercise} contextLabel="Sesion de hoy" />
     </article>
   );
 }
