@@ -1,7 +1,5 @@
 import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
-import type { CheckIn } from '@/lib/checkin';
-import type { TrainingPlan } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
 import { buildCoachSystemPrompt } from '@/lib/prompts/coach-system';
 
@@ -15,8 +13,6 @@ type ChatMessage = {
 type ChatRequestBody = {
   messages?: ChatMessage[];
   profile?: UserProfile | null;
-  plan?: TrainingPlan | null;
-  checkIns?: CheckIn[];
 };
 
 function isChatMessage(value: unknown): value is ChatMessage {
@@ -47,30 +43,71 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'At least one chat message is required.' }, { status: 400 });
   }
 
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID;
 
-  try {
-    const response = await client.responses.create({
-      model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
-      input: [
-        {
-          role: 'system',
-          content: buildCoachSystemPrompt({
-            profile: body.profile ?? null,
-            plan: body.plan ?? null,
-            checkIns: body.checkIns ?? []
-          })
-        },
-        ...messages.map((message) => ({
-          role: message.role,
-          content: message.content
-        }))
-      ]
-    });
-
-    return NextResponse.json({ message: response.output_text });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unable to answer chat message.';
-    return NextResponse.json({ error: message }, { status: 500 });
+  if (!vectorStoreId) {
+    return NextResponse.json(
+      { error: 'OPENAI_VECTOR_STORE_ID is required to use file search.' },
+      { status: 500 }
+    );
   }
+
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const encoder = new TextEncoder();
+
+  function sse(event: string, data: unknown) {
+    return encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  }
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        const response = await client.responses.create({
+          model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
+          input: [
+            {
+              role: 'system',
+              content: buildCoachSystemPrompt({
+                profile: body.profile ?? null
+              })
+            },
+            ...messages.map((message) => ({
+              role: message.role,
+              content: message.content
+            }))
+          ],
+          tools: [
+            {
+              type: 'file_search',
+              vector_store_ids: [vectorStoreId]
+            }
+          ],
+          stream: true
+        });
+
+        for await (const event of response) {
+          if (event.type === 'response.output_text.delta') {
+            controller.enqueue(sse('delta', { text: event.delta }));
+          }
+
+          if (event.type === 'response.completed') {
+            controller.enqueue(sse('done', {}));
+          }
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unable to answer chat message.';
+        controller.enqueue(sse('error', { message }));
+      } finally {
+        controller.close();
+      }
+    }
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive'
+    }
+  });
 }

@@ -5,12 +5,12 @@ import { getTodayTrainingState } from '@/lib/training/current-session';
 
 export function buildCoachSystemPrompt({
   profile,
-  plan,
-  checkIns
+  plan = null,
+  checkIns = []
 }: {
   profile: UserProfile | null;
-  plan: TrainingPlan | null;
-  checkIns: CheckIn[];
+  plan?: TrainingPlan | null;
+  checkIns?: CheckIn[];
 }) {
   const characterName = profile?.character === 'senda' ? 'Senda' : 'Bill';
   const recentCheckIns = checkIns.slice(0, 3);
@@ -24,6 +24,7 @@ Responde SIEMPRE en español mexicano natural. Sé claro, concreto y cálido.
 Si hay dolor, lesiones o señales de riesgo, recomienda bajar carga y consultar a un profesional.
 Usa markdown simple: listas, negritas y tablas solo cuando ayuden.
 Máximo 1 pregunta de clarificación.
+Cuando uses conocimiento del vector store, sintetiza la respuesta en tus palabras. No muestres chunks raw ni IDs internos.
 
 PERFIL DEL USUARIO:
 ${profile ? JSON.stringify(profile, null, 2) : 'No hay perfil guardado.'}

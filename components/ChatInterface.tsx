@@ -2,10 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { SendHorizonal } from 'lucide-react';
-import { loadCheckIns } from '@/lib/checkin';
-import type { CheckIn } from '@/lib/checkin';
-import { loadTrainingPlan } from '@/lib/plan';
-import type { TrainingPlan } from '@/lib/plan';
 import { loadProfile } from '@/lib/profile';
 import type { UserProfile } from '@/lib/profile';
 
@@ -16,8 +12,6 @@ type ChatMessage = {
 
 export function ChatInterface() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [plan, setPlan] = useState<TrainingPlan | null>(null);
-  const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
@@ -31,8 +25,6 @@ export function ChatInterface() {
 
   useEffect(() => {
     setProfile(loadProfile());
-    setPlan(loadTrainingPlan());
-    setCheckIns(loadCheckIns());
   }, []);
 
   useEffect(() => {
@@ -62,21 +54,63 @@ export function ChatInterface() {
         },
         body: JSON.stringify({
           messages: nextMessages.slice(-8),
-          profile,
-          plan,
-          checkIns: checkIns.slice(0, 3)
+          profile
         })
       });
 
-      const data = (await response.json()) as { message?: string; error?: string };
-
-      const assistantMessage = data.message;
-
-      if (!response.ok || !assistantMessage) {
-        throw new Error(data.error ?? 'No pudimos responder el mensaje.');
+      if (!response.ok || !response.body) {
+        const data = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error ?? 'No pudimos responder el mensaje.');
       }
 
-      setMessages((current) => [...current, { role: 'assistant', content: assistantMessage }]);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let assistantMessage = '';
+
+      setMessages((current) => [...current, { role: 'assistant', content: '' }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          break;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split('\n\n');
+        buffer = events.pop() ?? '';
+
+        for (const rawEvent of events) {
+          const eventName = rawEvent
+            .split('\n')
+            .find((line) => line.startsWith('event: '))
+            ?.replace('event: ', '');
+          const dataLine = rawEvent
+            .split('\n')
+            .find((line) => line.startsWith('data: '))
+            ?.replace('data: ', '');
+
+          if (!dataLine) {
+            continue;
+          }
+
+          const data = JSON.parse(dataLine) as { text?: string; message?: string };
+
+          if (eventName === 'delta' && data.text) {
+            assistantMessage += data.text;
+            setMessages((current) =>
+              current.map((message, index) =>
+                index === current.length - 1 ? { ...message, content: assistantMessage } : message
+              )
+            );
+          }
+
+          if (eventName === 'error') {
+            throw new Error(data.message ?? 'No pudimos responder el mensaje.');
+          }
+        }
+      }
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : 'No pudimos responder.');
     } finally {
@@ -92,7 +126,7 @@ export function ChatInterface() {
           Habla con {profile?.character === 'senda' ? 'Senda' : 'Bill'}
         </h1>
         <p className="mt-2 text-sm leading-6 text-white/58">
-          Usa tu perfil, plan activo y últimos check-ins para responder con contexto real.
+          Usa tu perfil y la biblioteca de entrenamiento de BilClimb para responder con contexto.
         </p>
       </div>
 
