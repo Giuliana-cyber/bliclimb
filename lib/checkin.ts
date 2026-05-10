@@ -14,6 +14,15 @@ export interface CheckIn {
   energy: number; // 1-5
   sleep: number; // 1-5
   notes: string;
+  manualActivity: ManualActivity | null;
+}
+
+export interface ManualActivity {
+  title: string;
+  location: string;
+  durationMinutes: number | null;
+  details: string;
+  customizedPlan: boolean;
 }
 
 export function loadCheckIns() {

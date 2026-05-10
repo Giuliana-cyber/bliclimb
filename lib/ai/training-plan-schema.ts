@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+export const ManualActivitySchema = z.object({
+  title: z.string(),
+  location: z.string(),
+  durationMinutes: z.number().nullable(),
+  details: z.string(),
+  customizedPlan: z.boolean()
+});
+
 export const CheckInSchema = z.object({
   id: z.string(),
   sessionId: z.string(),
@@ -11,7 +19,8 @@ export const CheckInSchema = z.object({
   otherPain: z.array(z.string()),
   energy: z.number(),
   sleep: z.number(),
-  notes: z.string()
+  notes: z.string(),
+  manualActivity: ManualActivitySchema.nullable()
 });
 
 export const ExerciseSchema = z.object({

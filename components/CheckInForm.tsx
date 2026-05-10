@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, CheckCircle2, PencilLine } from 'lucide-react';
 import { saveCheckIn, type CheckIn } from '@/lib/checkin';
 import { loadCheckIns } from '@/lib/checkin';
 import { loadTrainingPlan, saveSessionCheckIn } from '@/lib/plan';
@@ -21,6 +21,15 @@ type CheckInDraft = {
   notes: string;
 };
 
+type ManualActivityDraft = {
+  enabled: boolean;
+  title: string;
+  location: string;
+  durationMinutes: string;
+  details: string;
+  customizedPlan: boolean;
+};
+
 const initialDraft: CheckInDraft = {
   completed: 'full',
   rpe: 7,
@@ -29,6 +38,15 @@ const initialDraft: CheckInDraft = {
   energy: 3,
   sleep: 3,
   notes: ''
+};
+
+const initialManualActivity: ManualActivityDraft = {
+  enabled: false,
+  title: '',
+  location: '',
+  durationMinutes: '',
+  details: '',
+  customizedPlan: false
 };
 
 const completionOptions: Array<{ label: string; value: CompletionValue }> = [
@@ -86,28 +104,51 @@ function createId() {
   return `checkin-${Date.now()}`;
 }
 
+function parseOptionalMinutes(value: string) {
+  const minutes = Number.parseInt(value, 10);
+  return Number.isFinite(minutes) && minutes > 0 ? minutes : null;
+}
+
 export function CheckInForm() {
   const [sessionContext, setSessionContext] = useState<SessionWithContext | null>(null);
+  const [fallbackPlanId, setFallbackPlanId] = useState('manual');
   const [draft, setDraft] = useState<CheckInDraft>(initialDraft);
+  const [manualActivity, setManualActivity] =
+    useState<ManualActivityDraft>(initialManualActivity);
   const [savedCheckIn, setSavedCheckIn] = useState<CheckIn | null>(null);
   const [alerts, setAlerts] = useState<CheckInAlert[]>([]);
 
   useEffect(() => {
     const plan = loadTrainingPlan();
-    setSessionContext(plan ? getTodaySession(plan) : null);
+    const todaySession = plan ? getTodaySession(plan) : null;
+    const params = new URLSearchParams(window.location.search);
+
+    setFallbackPlanId(plan?.id ?? 'manual');
+    setSessionContext(todaySession);
+
+    if (!todaySession || params.get('manual') === '1') {
+      setManualActivity((current) => ({ ...current, enabled: true }));
+    }
   }, []);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!sessionContext) {
-      return;
-    }
+    const shouldUseManualActivity = manualActivity.enabled || !sessionContext;
+    const manualActivityDetails = shouldUseManualActivity
+      ? {
+          title: manualActivity.title.trim() || 'Actividad libre',
+          location: manualActivity.location.trim() || sessionContext?.session.location || 'libre',
+          durationMinutes: parseOptionalMinutes(manualActivity.durationMinutes),
+          details: manualActivity.details.trim(),
+          customizedPlan: manualActivity.customizedPlan
+        }
+      : null;
 
     const checkIn: CheckIn = {
       id: createId(),
-      sessionId: sessionContext.sessionId,
-      planId: sessionContext.plan.id,
+      sessionId: sessionContext?.sessionId ?? `manual-${Date.now()}`,
+      planId: sessionContext?.plan.id ?? fallbackPlanId,
       date: new Date().toISOString(),
       completed: draft.completed,
       rpe: draft.rpe,
@@ -115,50 +156,49 @@ export function CheckInForm() {
       otherPain: draft.otherPain.filter((item) => item !== 'none'),
       energy: draft.energy,
       sleep: draft.sleep,
-      notes: draft.notes.trim()
+      notes: draft.notes.trim(),
+      manualActivity: manualActivityDetails
     };
 
     const previousCheckIns = loadCheckIns();
     saveCheckIn(checkIn);
-    saveSessionCheckIn({
-      weekNumber: sessionContext.week.weekNumber,
-      dayNumber: sessionContext.session.dayNumber,
-      checkIn
-    });
+
+    if (sessionContext) {
+      saveSessionCheckIn({
+        weekNumber: sessionContext.week.weekNumber,
+        dayNumber: sessionContext.session.dayNumber,
+        checkIn
+      });
+    }
+
     setSavedCheckIn(checkIn);
     setAlerts(getCheckInAlerts(checkIn, previousCheckIns));
   }
 
-  if (!sessionContext) {
-    return (
-      <section className="space-y-6">
-        <Link href="/session" className="inline-flex items-center gap-2 text-sm font-semibold text-white/62">
-          <ChevronLeft aria-hidden="true" size={17} />
-          Sesión
-        </Link>
-        <div className="rounded-lg border border-white/10 bg-white/[0.04] p-6">
-          <h1 className="text-2xl font-bold">No hay sesión activa</h1>
-          <p className="mt-3 text-sm leading-6 text-white/68">
-            Necesitas un plan y una sesión activa para registrar un check-in.
-          </p>
-        </div>
-      </section>
-    );
-  }
-
   return (
     <form onSubmit={handleSubmit} className="space-y-7">
-      <Link href="/session" className="inline-flex items-center gap-2 text-sm font-semibold text-white/62">
+      <Link
+        href={sessionContext ? '/session' : '/'}
+        className="inline-flex items-center gap-2 text-sm font-semibold text-white/62"
+      >
         <ChevronLeft aria-hidden="true" size={17} />
-        Sesión
+        {sessionContext ? 'Sesión' : 'Dashboard'}
       </Link>
 
       <div>
         <p className="text-sm font-semibold text-brand-mustard">
-          {sessionContext.session.title}
+          {sessionContext ? sessionContext.session.title : 'Actividad manual'}
         </p>
-        <h1 className="mt-2 text-3xl font-bold">¿Cómo te fue hoy?</h1>
+        <h1 className="mt-2 text-3xl font-bold">
+          {sessionContext ? '¿Cómo te fue hoy?' : 'Registra lo que hiciste'}
+        </h1>
       </div>
+
+      <ManualActivitySection
+        forced={!sessionContext}
+        value={manualActivity}
+        onChange={setManualActivity}
+      />
 
       <FieldGroup title="¿Completaste la sesión?">
         <OptionGrid>
@@ -308,6 +348,129 @@ function PostCheckInAlert({ alert }: { alert: CheckInAlert }) {
       <p className={`font-bold ${titleClassName}`}>{alert.title}</p>
       <p className="mt-1">{alert.message}</p>
     </div>
+  );
+}
+
+function ManualActivitySection({
+  forced,
+  value,
+  onChange
+}: {
+  forced: boolean;
+  value: ManualActivityDraft;
+  onChange: Dispatch<SetStateAction<ManualActivityDraft>>;
+}) {
+  const active = forced || value.enabled;
+
+  function update(updates: Partial<ManualActivityDraft>) {
+    onChange((current) => ({ ...current, ...updates }));
+  }
+
+  return (
+    <section className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+      <button
+        type="button"
+        disabled={forced}
+        onClick={() => update({ enabled: !value.enabled })}
+        className="flex w-full items-center justify-between gap-4 text-left disabled:cursor-default"
+      >
+        <span className="flex min-w-0 items-center gap-3">
+          <span
+            className={classNames(
+              'grid size-10 shrink-0 place-items-center rounded-md',
+              active ? 'bg-brand-cyan text-brand-dark' : 'bg-white/8 text-white/58'
+            )}
+          >
+            <PencilLine aria-hidden="true" size={19} strokeWidth={2.4} />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-base font-bold text-white">
+              {forced ? 'Actividad fuera del plan' : 'Hice algo diferente al plan'}
+            </span>
+            <span className="mt-1 block text-sm leading-5 text-white/58">
+              Guarda roca, gym, movilidad, fuerza o una adaptación hecha por ti.
+            </span>
+          </span>
+        </span>
+        {!forced ? (
+          <span
+            className={classNames(
+              'h-6 w-11 shrink-0 rounded-full border p-0.5 transition',
+              active ? 'border-brand-cyan bg-brand-cyan/24' : 'border-white/16 bg-white/6'
+            )}
+          >
+            <span
+              className={classNames(
+                'block size-4 rounded-full transition',
+                active ? 'translate-x-5 bg-brand-cyan' : 'translate-x-0 bg-white/50'
+              )}
+            />
+          </span>
+        ) : null}
+      </button>
+
+      {active ? (
+        <div className="mt-4 grid gap-3">
+          <label className="block">
+            <span className="mb-2 block text-sm font-semibold text-white/76">Qué hiciste</span>
+            <input
+              value={value.title}
+              onChange={(event) => update({ title: event.target.value })}
+              placeholder="Ej. Bloque suave en roca, movilidad, fuerza en casa"
+              className="h-12 w-full rounded-md border border-white/10 bg-brand-dark/40 px-4 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-brand-cyan"
+            />
+          </label>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-white/76">Lugar</span>
+              <input
+                value={value.location}
+                onChange={(event) => update({ location: event.target.value })}
+                placeholder="roca, casa, gym, parque"
+                className="h-12 w-full rounded-md border border-white/10 bg-brand-dark/40 px-4 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-brand-cyan"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-white/76">Minutos</span>
+              <input
+                inputMode="numeric"
+                value={value.durationMinutes}
+                onChange={(event) => update({ durationMinutes: event.target.value })}
+                placeholder="90"
+                className="h-12 w-full rounded-md border border-white/10 bg-brand-dark/40 px-4 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-brand-cyan"
+              />
+            </label>
+          </div>
+
+          <label className="block">
+            <span className="mb-2 block text-sm font-semibold text-white/76">Detalle</span>
+            <textarea
+              value={value.details}
+              rows={3}
+              onChange={(event) => update({ details: event.target.value })}
+              placeholder="Qué cambiaste, intensidad, volumen, rutas, molestias o por qué lo adaptaste..."
+              className="w-full resize-none rounded-md border border-white/10 bg-brand-dark/40 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-brand-cyan"
+            />
+          </label>
+
+          <button
+            type="button"
+            onClick={() => update({ customizedPlan: !value.customizedPlan })}
+            className={classNames(
+              'flex min-h-12 items-center justify-between gap-3 rounded-md border px-3 py-3 text-left text-sm font-bold transition',
+              value.customizedPlan
+                ? 'border-brand-cyan bg-brand-cyan/14 text-brand-cyan'
+                : 'border-white/10 bg-white/[0.04] text-white/70 hover:border-white/24'
+            )}
+          >
+            <span>Fue una adaptación del plan</span>
+            <span>{value.customizedPlan ? 'Sí' : 'No'}</span>
+          </button>
+        </div>
+      ) : null}
+    </section>
   );
 }
 

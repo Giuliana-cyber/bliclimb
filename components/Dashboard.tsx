@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { BarChart3, ClipboardList, MessageCircle, TimerReset } from 'lucide-react';
+import { BarChart3, ClipboardList, MessageCircle, PencilLine, TimerReset } from 'lucide-react';
 import { loadCheckIns, type CheckIn } from '@/lib/checkin';
 import { loadTrainingPlan, type TrainingPlan } from '@/lib/plan';
 import { loadProfile, loadProfileNeedsRegeneration, type UserProfile } from '@/lib/profile';
@@ -111,6 +111,19 @@ export function Dashboard() {
           </p>
         </Link>
       </div>
+
+      <Link
+        href="/checkin?manual=1"
+        className="flex items-center gap-4 rounded-lg border border-white/10 bg-white/[0.04] p-5"
+      >
+        <div className="grid size-11 shrink-0 place-items-center rounded-md bg-brand-mustard/14 text-brand-mustard">
+          <PencilLine aria-hidden="true" size={22} />
+        </div>
+        <div>
+          <p className="font-bold">Registrar algo fuera del plan</p>
+          <p className="mt-1 text-sm text-white/58">Guarda roca, movilidad o una adaptación manual.</p>
+        </div>
+      </Link>
 
       <Link
         href="/chat"
@@ -228,6 +241,9 @@ function LastCheckInCard({ checkIn }: { checkIn: CheckIn | null }) {
   return (
     <div className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
       <p className="text-sm font-semibold text-white">Último check-in: {formatRelativeDate(checkIn.date)}</p>
+      {checkIn.manualActivity ? (
+        <p className="mt-2 text-sm font-bold text-brand-cyan">{checkIn.manualActivity.title}</p>
+      ) : null}
       <p className="mt-2 text-sm text-white/68">
         RPE: {checkIn.rpe}/10 | Dedos: {checkIn.fingerPain}/10 | Energía: {checkIn.energy}/5
       </p>

@@ -113,9 +113,26 @@ export function ProgressDashboard() {
                     </p>
                   </div>
                   <span className="rounded-md border border-white/10 px-2 py-1 text-xs font-bold text-white/58">
-                    {checkIn.completed}
+                    {checkIn.manualActivity ? 'manual' : checkIn.completed}
                   </span>
                 </div>
+                {checkIn.manualActivity ? (
+                  <div className="mt-3 rounded-md border border-brand-cyan/20 bg-brand-cyan/10 p-3">
+                    <p className="text-sm font-bold text-white">{checkIn.manualActivity.title}</p>
+                    <p className="mt-1 text-xs font-semibold text-white/52">
+                      {checkIn.manualActivity.location}
+                      {checkIn.manualActivity.durationMinutes
+                        ? ` · ${checkIn.manualActivity.durationMinutes} min`
+                        : ''}
+                      {checkIn.manualActivity.customizedPlan ? ' · adaptación del plan' : ''}
+                    </p>
+                    {checkIn.manualActivity.details ? (
+                      <p className="mt-2 text-sm leading-6 text-white/68">
+                        {checkIn.manualActivity.details}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
                 {checkIn.notes ? (
                   <p className="mt-3 text-sm leading-6 text-white/68">{checkIn.notes}</p>
                 ) : null}
@@ -127,12 +144,20 @@ export function ProgressDashboard() {
             <p className="text-sm leading-6 text-white/68">
               Todavía no hay check-ins. Registra cómo te fue al terminar tu próxima sesión.
             </p>
-            <Link
-              href="/session"
-              className="mt-5 inline-flex w-full items-center justify-center rounded-md bg-brand-cyan px-4 py-3 text-sm font-bold text-brand-dark"
-            >
-              Ir a sesión
-            </Link>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <Link
+                href="/session"
+                className="inline-flex w-full items-center justify-center rounded-md bg-brand-cyan px-4 py-3 text-sm font-bold text-brand-dark"
+              >
+                Ir a sesión
+              </Link>
+              <Link
+                href="/checkin?manual=1"
+                className="inline-flex w-full items-center justify-center rounded-md border border-white/12 px-4 py-3 text-sm font-bold text-white/76"
+              >
+                Registrar manual
+              </Link>
+            </div>
           </div>
         )}
       </section>
