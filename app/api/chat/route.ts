@@ -13,6 +13,7 @@ type ChatMessage = {
 type ChatRequestBody = {
   messages?: ChatMessage[];
   profile?: UserProfile | null;
+  character?: UserProfile['character'];
 };
 
 function isChatMessage(value: unknown): value is ChatMessage {
@@ -38,6 +39,8 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as ChatRequestBody;
   const messages = Array.isArray(body.messages) ? body.messages.filter(isChatMessage) : [];
+  const character =
+    body.character === 'bill' || body.character === 'senda' ? body.character : undefined;
 
   if (!messages.length) {
     return NextResponse.json({ error: 'At least one chat message is required.' }, { status: 400 });
@@ -68,7 +71,8 @@ export async function POST(request: Request) {
             {
               role: 'system',
               content: buildCoachSystemPrompt({
-                profile: body.profile ?? null
+                profile: body.profile ?? null,
+                character
               })
             },
             ...messages.map((message) => ({

@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { SendHorizonal } from 'lucide-react';
-import { loadProfile } from '@/lib/profile';
+import { SendHorizonal, UserRound } from 'lucide-react';
+import { loadProfile, saveProfile } from '@/lib/profile';
 import type { UserProfile } from '@/lib/profile';
 
 type ChatMessage = {
@@ -12,6 +12,7 @@ type ChatMessage = {
 
 export function ChatInterface() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [character, setCharacter] = useState<UserProfile['character']>('bill');
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
@@ -24,7 +25,9 @@ export function ChatInterface() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    setProfile(loadProfile());
+    const storedProfile = loadProfile();
+    setProfile(storedProfile);
+    setCharacter(storedProfile?.character ?? 'bill');
   }, []);
 
   useEffect(() => {
@@ -54,7 +57,8 @@ export function ChatInterface() {
         },
         body: JSON.stringify({
           messages: nextMessages.slice(-8),
-          profile
+          profile: profile ? { ...profile, character } : null,
+          character
         })
       });
 
@@ -118,16 +122,47 @@ export function ChatInterface() {
     }
   }
 
+  function selectCharacter(nextCharacter: UserProfile['character']) {
+    setCharacter(nextCharacter);
+
+    if (!profile) {
+      return;
+    }
+
+    const nextProfile = saveProfile({
+      ...profile,
+      character: nextCharacter,
+      updatedAt: new Date().toISOString()
+    });
+
+    setProfile(nextProfile);
+  }
+
   return (
     <section className="flex min-h-[calc(100vh-9rem)] flex-col">
       <div className="mb-5">
         <p className="text-sm font-semibold text-brand-cyan">Chat Coach</p>
         <h1 className="mt-2 text-3xl font-bold">
-          Habla con {profile?.character === 'senda' ? 'Senda' : 'Bill'}
+          Habla con {character === 'senda' ? 'Senda' : 'Bill'}
         </h1>
         <p className="mt-2 text-sm leading-6 text-white/58">
           Usa tu perfil y la biblioteca de entrenamiento de BilClimb para responder con contexto.
         </p>
+      </div>
+
+      <div className="mb-4 grid grid-cols-2 gap-2">
+        <CharacterButton
+          active={character === 'bill'}
+          label="Bill"
+          description="Directo y práctico"
+          onClick={() => selectCharacter('bill')}
+        />
+        <CharacterButton
+          active={character === 'senda'}
+          label="Senda"
+          description="Técnica y reflexiva"
+          onClick={() => selectCharacter('senda')}
+        />
       </div>
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-lg border border-white/10 bg-white/[0.03] p-3">
@@ -176,5 +211,43 @@ export function ChatInterface() {
         </button>
       </form>
     </section>
+  );
+}
+
+function CharacterButton({
+  active,
+  label,
+  description,
+  onClick
+}: {
+  active: boolean;
+  label: string;
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        'flex items-center gap-3 rounded-md border p-3 text-left transition',
+        active
+          ? 'border-brand-cyan bg-brand-cyan/12 text-white'
+          : 'border-white/10 bg-white/[0.03] text-white/68 hover:border-white/24'
+      ].join(' ')}
+    >
+      <span
+        className={[
+          'grid size-9 shrink-0 place-items-center rounded-md',
+          active ? 'bg-brand-cyan text-brand-dark' : 'bg-white/8 text-white/58'
+        ].join(' ')}
+      >
+        <UserRound aria-hidden="true" size={18} strokeWidth={2.4} />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-bold">{label}</span>
+        <span className="block text-xs text-white/48">{description}</span>
+      </span>
+    </button>
   );
 }
