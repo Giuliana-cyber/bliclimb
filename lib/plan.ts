@@ -1,4 +1,7 @@
 import type { CheckIn } from '@/lib/checkin';
+import { readStorage, removeStorage, writeStorage } from '@/lib/storage';
+
+const PLAN_STORAGE_KEY = 'bilclimb:plan';
 
 export interface TrainingPlan {
   id: string;
@@ -42,4 +45,33 @@ export interface Exercise {
   intensity: string | null; // "BW" | "+5%" | "2 grados debajo"
   notes: string | null;
   timerSeconds: number | null; // Para activar timer
+}
+
+export function loadTrainingPlan() {
+  return readStorage<TrainingPlan | null>(PLAN_STORAGE_KEY, null);
+}
+
+export function saveTrainingPlan(plan: TrainingPlan) {
+  writeStorage(PLAN_STORAGE_KEY, plan);
+  return plan;
+}
+
+export function updateTrainingPlan(updates: Partial<TrainingPlan>) {
+  const currentPlan = loadTrainingPlan();
+
+  if (!currentPlan) {
+    return null;
+  }
+
+  const nextPlan: TrainingPlan = {
+    ...currentPlan,
+    ...updates
+  };
+
+  saveTrainingPlan(nextPlan);
+  return nextPlan;
+}
+
+export function clearTrainingPlan() {
+  removeStorage(PLAN_STORAGE_KEY);
 }
