@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --brand-dark: #0f1119;
+  --brand-cyan: #00d4aa;
+  --brand-mustard: #e8b931;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: var(--brand-dark);
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  background: var(--brand-dark);
+  color: #f7f7fb;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
