@@ -26,7 +26,7 @@ const navItems: NavItem[] = [
   { label: 'Perfil', href: '/profile', icon: UserRound }
 ];
 
-const routesWithoutShell = ['/onboarding'];
+const routesWithoutShell = ['/onboarding', '/generating-plan'];
 
 function isActive(pathname: string, href: string) {
   if (href === '/') {

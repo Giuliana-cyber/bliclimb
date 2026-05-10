@@ -363,7 +363,7 @@ export default function OnboardingPage() {
     };
 
     saveProfile(profile);
-    router.push('/');
+    router.push('/generating-plan');
   }
 
   return (
