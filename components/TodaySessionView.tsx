@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Check, ChevronLeft, Clock3, MapPin } from 'lucide-react';
+import { ChevronLeft, Clock3, MapPin } from 'lucide-react';
+import { ExerciseBlock } from '@/components/ExerciseBlock';
 import { loadTrainingPlan } from '@/lib/plan';
 import type { Exercise } from '@/lib/plan';
 import { getTodaySession, type SessionWithContext } from '@/lib/training/current-session';
@@ -216,35 +217,12 @@ function ExerciseChecklist({
           const complete = completedExercises.includes(key);
 
           return (
-            <button
+            <ExerciseBlock
               key={key}
-              type="button"
-              onClick={() => onToggle(key)}
-              className="flex w-full items-start gap-3 rounded-lg border border-white/10 bg-white/[0.04] p-4 text-left transition hover:border-white/24"
-            >
-              <span
-                className={[
-                  'mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border transition',
-                  complete
-                    ? 'border-brand-cyan bg-brand-cyan text-brand-dark'
-                    : 'border-white/24 text-transparent'
-                ].join(' ')}
-              >
-                <Check aria-hidden="true" size={15} strokeWidth={3} />
-              </span>
-              <span>
-                <span className="block font-bold text-white">{exercise.name}</span>
-                <span className="mt-1 block text-sm leading-6 text-white/64">
-                  {exercise.description}
-                </span>
-                <span className="mt-2 flex flex-wrap gap-2 text-xs font-semibold text-white/46">
-                  {exercise.sets ? <span>{exercise.sets} series</span> : null}
-                  {exercise.reps ? <span>{exercise.reps}</span> : null}
-                  {exercise.rest ? <span>descanso {exercise.rest}</span> : null}
-                  {exercise.intensity ? <span>{exercise.intensity}</span> : null}
-                </span>
-              </span>
-            </button>
+              exercise={exercise}
+              complete={complete}
+              onToggle={() => onToggle(key)}
+            />
           );
         })}
       </div>
