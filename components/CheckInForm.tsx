@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
-import { loadTrainingPlan } from '@/lib/plan';
+import { ChevronLeft, CheckCircle2 } from 'lucide-react';
+import { saveCheckIn, type CheckIn } from '@/lib/checkin';
+import { loadTrainingPlan, saveSessionCheckIn } from '@/lib/plan';
 import { getTodaySession, type SessionWithContext } from '@/lib/training/current-session';
 
 type CompletionValue = 'full' | 'partial' | 'skipped';
@@ -75,10 +76,18 @@ function togglePain(currentValues: string[], value: string) {
   return [...withoutNone, value];
 }
 
+function createId() {
+  if (typeof window !== 'undefined' && window.crypto?.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+
+  return `checkin-${Date.now()}`;
+}
+
 export function CheckInForm() {
   const [sessionContext, setSessionContext] = useState<SessionWithContext | null>(null);
   const [draft, setDraft] = useState<CheckInDraft>(initialDraft);
-  const [submitted, setSubmitted] = useState(false);
+  const [savedCheckIn, setSavedCheckIn] = useState<CheckIn | null>(null);
 
   useEffect(() => {
     const plan = loadTrainingPlan();
@@ -87,7 +96,32 @@ export function CheckInForm() {
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSubmitted(true);
+
+    if (!sessionContext) {
+      return;
+    }
+
+    const checkIn: CheckIn = {
+      id: createId(),
+      sessionId: sessionContext.sessionId,
+      planId: sessionContext.plan.id,
+      date: new Date().toISOString(),
+      completed: draft.completed,
+      rpe: draft.rpe,
+      fingerPain: draft.fingerPain,
+      otherPain: draft.otherPain.filter((item) => item !== 'none'),
+      energy: draft.energy,
+      sleep: draft.sleep,
+      notes: draft.notes.trim()
+    };
+
+    saveCheckIn(checkIn);
+    saveSessionCheckIn({
+      weekNumber: sessionContext.week.weekNumber,
+      dayNumber: sessionContext.session.dayNumber,
+      checkIn
+    });
+    setSavedCheckIn(checkIn);
   }
 
   if (!sessionContext) {
@@ -210,18 +244,35 @@ export function CheckInForm() {
         />
       </label>
 
-      {submitted ? (
+      {savedCheckIn ? (
         <div className="rounded-lg border border-brand-cyan/30 bg-brand-cyan/10 p-4 text-sm leading-6 text-white/76">
-          Check-in listo para guardar. La siguiente pieza lo persistirá en localStorage.
+          <div className="flex items-start gap-3">
+            <CheckCircle2 aria-hidden="true" size={22} className="mt-0.5 shrink-0 text-brand-cyan" />
+            <div>
+              <p className="font-bold text-white">Check-in guardado</p>
+              <p className="mt-1 text-white/70">
+                RPE {savedCheckIn.rpe}/10 · Dedos {savedCheckIn.fingerPain}/10 · Energía{' '}
+                {savedCheckIn.energy}/5
+              </p>
+            </div>
+          </div>
         </div>
       ) : null}
 
-      <button
-        type="submit"
-        className="flex w-full items-center justify-center rounded-md bg-brand-cyan px-4 py-4 text-base font-bold text-brand-dark transition hover:bg-brand-cyan/90"
-      >
-        Guardar check-in
-      </button>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <button
+          type="submit"
+          className="flex w-full items-center justify-center rounded-md bg-brand-cyan px-4 py-4 text-base font-bold text-brand-dark transition hover:bg-brand-cyan/90"
+        >
+          Guardar check-in
+        </button>
+        <Link
+          href="/"
+          className="flex w-full items-center justify-center rounded-md border border-white/12 px-4 py-4 text-base font-bold text-white/76 transition hover:bg-white/[0.05]"
+        >
+          Volver al dashboard
+        </Link>
+      </div>
     </form>
   );
 }

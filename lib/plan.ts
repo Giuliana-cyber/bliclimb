@@ -75,3 +75,46 @@ export function updateTrainingPlan(updates: Partial<TrainingPlan>) {
 export function clearTrainingPlan() {
   removeStorage(PLAN_STORAGE_KEY);
 }
+
+export function saveSessionCheckIn({
+  weekNumber,
+  dayNumber,
+  checkIn
+}: {
+  weekNumber: number;
+  dayNumber: number;
+  checkIn: CheckIn;
+}) {
+  const currentPlan = loadTrainingPlan();
+
+  if (!currentPlan || currentPlan.id !== checkIn.planId) {
+    return null;
+  }
+
+  const nextPlan: TrainingPlan = {
+    ...currentPlan,
+    weeks: currentPlan.weeks.map((week) => {
+      if (week.weekNumber !== weekNumber) {
+        return week;
+      }
+
+      return {
+        ...week,
+        sessions: week.sessions.map((session) => {
+          if (session.dayNumber !== dayNumber) {
+            return session;
+          }
+
+          return {
+            ...session,
+            completed: checkIn.completed !== 'skipped',
+            checkIn
+          };
+        })
+      };
+    })
+  };
+
+  saveTrainingPlan(nextPlan);
+  return nextPlan;
+}
