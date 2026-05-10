@@ -6,7 +6,7 @@ import { BarChart3, ClipboardList, MessageCircle, TimerReset } from 'lucide-reac
 import { loadCheckIns, type CheckIn } from '@/lib/checkin';
 import { loadTrainingPlan, type TrainingPlan } from '@/lib/plan';
 import { loadProfile, type UserProfile } from '@/lib/profile';
-import { getTodaySession, type SessionWithContext } from '@/lib/training/current-session';
+import { getTodayTrainingState, type TodayTrainingState } from '@/lib/training/current-session';
 
 function formatRelativeDate(value: string) {
   const date = new Date(value);
@@ -44,7 +44,7 @@ export function Dashboard() {
     setCheckIns(loadCheckIns());
   }, []);
 
-  const todaySession = useMemo(() => (plan ? getTodaySession(plan) : null), [plan]);
+  const todayState = useMemo(() => (plan ? getTodayTrainingState(plan) : null), [plan]);
   const totalSessions = useMemo(() => {
     if (!plan) {
       return 0;
@@ -71,7 +71,7 @@ export function Dashboard() {
         <h1 className="text-3xl font-bold leading-tight">Tu sesión de hoy</h1>
       </div>
 
-      <TodaySessionCard todaySession={todaySession} hasPlan={Boolean(plan)} />
+      <TodaySessionCard todayState={todayState} hasPlan={Boolean(plan)} />
 
       <div className="grid grid-cols-2 gap-3">
         <Link href="/plan" className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
@@ -109,10 +109,10 @@ export function Dashboard() {
 }
 
 function TodaySessionCard({
-  todaySession,
+  todayState,
   hasPlan
 }: {
-  todaySession: SessionWithContext | null;
+  todayState: TodayTrainingState | null;
   hasPlan: boolean;
 }) {
   if (!hasPlan) {
@@ -133,18 +133,35 @@ function TodaySessionCard({
     );
   }
 
-  if (!todaySession) {
+  if (!todayState || todayState.kind === 'rest') {
     return (
       <div className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
         <h2 className="text-2xl font-bold">Hoy descansas</h2>
         <p className="mt-3 text-sm leading-6 text-white/70">
-          Estiramiento suave, movilidad y recuperación cuentan como entrenamiento.
+          {todayState?.message ?? 'Estiramiento suave, movilidad y recuperación cuentan como entrenamiento.'}
         </p>
       </div>
     );
   }
 
-  const { week, session } = todaySession;
+  if (todayState.kind === 'plan-completed') {
+    return (
+      <div className="rounded-lg border border-brand-mustard/24 bg-brand-mustard/10 p-5">
+        <h2 className="text-2xl font-bold">Plan completado</h2>
+        <p className="mt-3 text-sm leading-6 text-white/70">{todayState.message}</p>
+        <Link
+          href="/progress"
+          className="mt-5 block w-full rounded-md bg-brand-cyan px-4 py-3 text-center text-sm font-bold text-brand-dark transition hover:bg-brand-cyan/90"
+        >
+          Ver progreso
+        </Link>
+      </div>
+    );
+  }
+
+  const { week, session } = todayState;
+  const callToAction = todayState.kind === 'needs-checkin' ? 'Registrar check-in pendiente' : 'Ver sesión completa';
+  const href = todayState.kind === 'needs-checkin' ? '/checkin' : '/session';
 
   return (
     <div className="rounded-lg border border-brand-cyan/25 bg-white/[0.05] p-5 shadow-glow">
@@ -161,13 +178,14 @@ function TodaySessionCard({
         </span>
       </div>
       <p className="mt-4 text-sm leading-6 text-white/70">
-        {session.location} · {session.mainBlock.map((exercise) => exercise.name).slice(0, 3).join(' + ')}
+        {todayState.message} {session.location} ·{' '}
+        {session.mainBlock.map((exercise) => exercise.name).slice(0, 3).join(' + ')}
       </p>
       <Link
-        href="/session"
+        href={href}
         className="mt-5 block w-full rounded-md bg-brand-cyan px-4 py-3 text-center text-sm font-bold text-brand-dark transition hover:bg-brand-cyan/90"
       >
-        Ver sesión completa
+        {callToAction}
       </Link>
     </div>
   );
