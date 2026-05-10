@@ -1,8 +1,60 @@
 import type { UserProfile } from '@/lib/profile';
 
+const equipmentLabels: Record<string, string> = {
+  gym: 'gym de escalada / muro indoor',
+  hangboard: 'hangboard / tabla multipresa',
+  campus: 'campus board',
+  weights: 'gym de pesas',
+  rock: 'roca / escalada outdoor',
+  home: 'casa sin equipo',
+  bands: 'bandas elásticas',
+  pullup_bar: 'barra de dominadas'
+};
+
+function getAvailableEquipment(profile: UserProfile) {
+  return profile.equipment.map((item) => equipmentLabels[item] ?? item).join(', ');
+}
+
+function getEquipmentRestrictions(profile: UserProfile) {
+  const restrictions = [
+    'Nunca asumas acceso a equipo no incluido en equipment.',
+    'Si no hay gym de escalada, NO incluyas sesiones indoor, muro, boulder de gimnasio, rutas de gimnasio ni ubicación "gym".',
+    'Si no hay hangboard, NO incluyas hangboard, fingerboard, Beastmaker, tabla multipresa ni colgadas en regletas.',
+    'Si no hay campus board, NO incluyas campus ni ejercicios de campus.',
+    'Si no hay gym de pesas, NO incluyas pesas, barra, mancuernas, kettlebells ni máquinas.',
+    'Si solo hay casa sin equipo, usa movilidad, técnica en piso, core, antagonistas sin equipo y visualización.',
+    'Si hay roca pero no gym, usa sesiones en roca y trabajo físico en casa.'
+  ];
+
+  if (!profile.equipment.includes('gym')) {
+    restrictions.push('Este perfil NO tiene gym de escalada: evita completamente cualquier bloque que requiera muro indoor.');
+  }
+
+  if (!profile.equipment.includes('hangboard')) {
+    restrictions.push('Este perfil NO tiene hangboard: no propongas colgadas ni protocolos tipo MaxHangs.');
+  }
+
+  if (!profile.equipment.includes('campus')) {
+    restrictions.push('Este perfil NO tiene campus board: no propongas campus.');
+  }
+
+  if (!profile.equipment.includes('weights')) {
+    restrictions.push('Este perfil NO tiene gym de pesas: no propongas ejercicios con pesas.');
+  }
+
+  return restrictions.map((restriction) => `- ${restriction}`).join('\n');
+}
+
 export function buildPlanGeneratorPrompt(profile: UserProfile) {
   return `Eres un entrenador de escalada experimentado. Vas a generar un plan de entrenamiento
 personalizado basado en el perfil del usuario.
+
+IDIOMA Y TONO:
+- Escribe ABSOLUTAMENTE TODOS los campos de texto en español mexicano natural.
+- No uses inglés en títulos, descripciones, notas, fuentes, ubicaciones ni tips.
+- Usa términos que una escaladora o escalador en México entienda: "sesión", "calentamiento",
+  "bloque principal", "vuelta a la calma", "roca", "casa", "muro", "regleta" solo si aplica.
+- Sé específico, no genérico: cada ejercicio debe poder ejecutarse sin pedir más contexto.
 
 REGLAS DE SEGURIDAD ABSOLUTAS:
 - Si el usuario tiene <16 años: NO incluir hangboard, campus, ni pesas. Solo escalada
@@ -25,6 +77,21 @@ REGLAS DE DISEÑO DEL PLAN:
 - Si el plan es de 8 semanas, incluir semana de descarga cada 3-4 semanas.
 - Si el objetivo es un proyecto específico, incluir simulación de proyecto en semanas
   finales.
+
+EQUIPO DISPONIBLE DEL USUARIO:
+${getAvailableEquipment(profile) || 'Sin equipo declarado'}
+
+RESTRICCIONES ESTRICTAS DE EQUIPO:
+${getEquipmentRestrictions(profile)}
+
+NIVEL DE DETALLE OBLIGATORIO:
+- Cada sesión debe tener 3 a 5 ejercicios de calentamiento, 2 a 5 ejercicios en bloque
+  principal y 2 a 4 ejercicios de vuelta a la calma.
+- Cada ejercicio debe incluir descripción accionable de 1 a 3 frases, sets/reps/rest/intensity
+  cuando aplique, y notes con foco técnico o ajuste de seguridad.
+- Para location usa solo una de estas palabras en español según el equipo real: "casa", "roca",
+  "gym" únicamente si equipment incluye "gym".
+- Si no puedes prescribir algo por falta de equipo, da una alternativa real con el equipo disponible.
 
 REQUISITOS DE JSON:
 - Responde solamente con JSON estructurado compatible con TrainingPlan.

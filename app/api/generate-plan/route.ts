@@ -47,6 +47,72 @@ function normalizePlan(plan: TrainingPlan, profile: UserProfile): TrainingPlan {
   };
 }
 
+function flattenPlanText(plan: TrainingPlan) {
+  return plan.weeks
+    .flatMap((week) => [
+      week.theme,
+      ...week.focusAreas,
+      ...week.sessions.flatMap((session) => [
+        session.title,
+        session.location,
+        session.nutritionTip,
+        session.source,
+        ...session.warmup.flatMap((exercise) => Object.values(exercise)),
+        ...session.mainBlock.flatMap((exercise) => Object.values(exercise)),
+        ...session.cooldown.flatMap((exercise) => Object.values(exercise))
+      ])
+    ])
+    .filter((value): value is string | number => typeof value === 'string' || typeof value === 'number')
+    .join(' ')
+    .toLowerCase();
+}
+
+function getUnavailableEquipmentViolations(plan: TrainingPlan, profile: UserProfile) {
+  const text = flattenPlanText(plan);
+  const violations: string[] = [];
+
+  const unavailablePatterns = [
+    {
+      available: profile.equipment.includes('gym'),
+      label: 'gym de escalada',
+      patterns: ['climbing gym', 'gimnasio de escalada', 'muro indoor', 'boulder indoor']
+    },
+    {
+      available: profile.equipment.includes('hangboard'),
+      label: 'hangboard',
+      patterns: ['hangboard', 'fingerboard', 'beastmaker', 'tabla multipresa', 'maxhang']
+    },
+    {
+      available: profile.equipment.includes('campus'),
+      label: 'campus board',
+      patterns: ['campus board', 'campus']
+    },
+    {
+      available: profile.equipment.includes('weights'),
+      label: 'gym de pesas',
+      patterns: ['barbell', 'dumbbell', 'kettlebell', 'mancuerna', 'mancuernas', 'barra con peso', 'máquina de pesas']
+    }
+  ];
+
+  unavailablePatterns.forEach((item) => {
+    if (!item.available && item.patterns.some((pattern) => text.includes(pattern))) {
+      violations.push(item.label);
+    }
+  });
+
+  if (!profile.equipment.includes('gym')) {
+    const hasGymLocation = plan.weeks.some((week) =>
+      week.sessions.some((session) => session.location.toLowerCase() === 'gym')
+    );
+
+    if (hasGymLocation) {
+      violations.push('ubicación gym');
+    }
+  }
+
+  return Array.from(new Set(violations));
+}
+
 export async function POST(request: Request) {
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
@@ -71,7 +137,7 @@ export async function POST(request: Request) {
         {
           role: 'system',
           content:
-            'Eres BilClimb.ai. Genera planes de entrenamiento seguros, personalizados y estructurados para escaladores.'
+            'Eres BilClimb.ai. Genera planes de entrenamiento seguros, personalizados y estructurados para escaladores. Responde todos los campos de texto en español mexicano y respeta estrictamente el equipo disponible del usuario.'
         },
         {
           role: 'user',
@@ -91,6 +157,16 @@ export async function POST(request: Request) {
     }
 
     const plan = normalizePlan(response.output_parsed, profile);
+    const equipmentViolations = getUnavailableEquipmentViolations(plan, profile);
+
+    if (equipmentViolations.length > 0) {
+      return NextResponse.json(
+        {
+          error: `El plan generado incluyó equipo no disponible: ${equipmentViolations.join(', ')}. Intenta regenerarlo.`
+        },
+        { status: 502 }
+      );
+    }
 
     return NextResponse.json({ plan });
   } catch (error) {
