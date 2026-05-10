@@ -1,6 +1,7 @@
 import { readStorage, removeStorage, writeStorage } from '@/lib/storage';
 
 const PROFILE_STORAGE_KEY = 'bilclimb:profile';
+const PROFILE_REGENERATION_KEY = 'bilclimb:profile-needs-plan-regeneration';
 
 export interface UserProfile {
   id: string;
@@ -58,4 +59,17 @@ export function updateProfile(updates: Partial<UserProfile>) {
 
 export function clearProfile() {
   removeStorage(PROFILE_STORAGE_KEY);
+  removeStorage(PROFILE_REGENERATION_KEY);
+}
+
+export function loadProfileNeedsRegeneration() {
+  return readStorage<boolean>(PROFILE_REGENERATION_KEY, false);
+}
+
+export function markProfileNeedsRegeneration() {
+  writeStorage(PROFILE_REGENERATION_KEY, true);
+}
+
+export function clearProfileNeedsRegeneration() {
+  removeStorage(PROFILE_REGENERATION_KEY);
 }

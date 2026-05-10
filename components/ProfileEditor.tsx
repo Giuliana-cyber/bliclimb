@@ -3,7 +3,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Check, Save } from 'lucide-react';
-import { loadProfile, saveProfile, type UserProfile } from '@/lib/profile';
+import {
+  loadProfile,
+  loadProfileNeedsRegeneration,
+  markProfileNeedsRegeneration,
+  saveProfile,
+  type UserProfile
+} from '@/lib/profile';
 
 type Option = {
   label: string;
@@ -155,12 +161,14 @@ function toNumberOrNull(value: string) {
 export function ProfileEditor() {
   const [initialProfile, setInitialProfile] = useState<UserProfile | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [needsRegeneration, setNeedsRegeneration] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     const storedProfile = loadProfile();
     setInitialProfile(storedProfile);
     setProfile(storedProfile);
+    setNeedsRegeneration(loadProfileNeedsRegeneration());
   }, []);
 
   const significantChange = useMemo(() => {
@@ -197,6 +205,12 @@ export function ProfileEditor() {
     };
 
     saveProfile(nextProfile);
+
+    if (significantChange) {
+      markProfileNeedsRegeneration();
+      setNeedsRegeneration(true);
+    }
+
     setProfile(nextProfile);
     setInitialProfile(nextProfile);
     setSaved(true);
@@ -236,10 +250,11 @@ export function ProfileEditor() {
         </p>
       </div>
 
-      {significantChange ? (
+      {significantChange || needsRegeneration ? (
         <div className="rounded-lg border border-brand-mustard/30 bg-brand-mustard/10 p-4 text-sm leading-6 text-white/76">
-          Cambiaste datos que afectan el entrenamiento. Guarda el perfil y regenera tu plan para
-          que BilClimb lo use.
+          {significantChange
+            ? 'Cambiaste datos que afectan el entrenamiento. Guarda el perfil y regenera tu plan para que BilClimb lo use.'
+            : 'Tu perfil guardado cambió datos importantes. Regenera tu plan para usar el contexto nuevo.'}
         </div>
       ) : null}
 
@@ -526,9 +541,20 @@ export function ProfileEditor() {
         </button>
         <Link
           href="/generating-plan"
-          className="inline-flex items-center justify-center rounded-md border border-white/12 px-4 py-4 text-base font-bold text-white/78 transition hover:bg-white/[0.05]"
+          className={classNames(
+            'inline-flex items-center justify-center rounded-md border px-4 py-4 text-base font-bold transition',
+            significantChange
+              ? 'border-white/12 text-white/42'
+              : 'border-brand-cyan/40 text-brand-cyan hover:bg-brand-cyan/10'
+          )}
+          aria-disabled={significantChange}
+          onClick={(event) => {
+            if (significantChange) {
+              event.preventDefault();
+            }
+          }}
         >
-          Regenerar plan
+          {significantChange ? 'Guarda antes de regenerar' : 'Regenerar plan'}
         </Link>
       </div>
     </form>

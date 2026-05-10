@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Activity, CheckCircle2, ClipboardList, ShieldCheck, Sparkles } from 'lucide-react';
-import { loadProfile } from '@/lib/profile';
+import { clearProfileNeedsRegeneration, loadProfile } from '@/lib/profile';
 import { saveTrainingPlan, type TrainingPlan } from '@/lib/plan';
 
 const generationSteps = [
@@ -73,6 +73,7 @@ export default function GeneratingPlanPage() {
         }
 
         saveTrainingPlan(data.plan);
+        clearProfileNeedsRegeneration();
         setStepIndex(generationSteps.length - 1);
         setStatus('success');
 

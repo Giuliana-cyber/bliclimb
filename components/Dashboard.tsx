@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { BarChart3, ClipboardList, MessageCircle, TimerReset } from 'lucide-react';
 import { loadCheckIns, type CheckIn } from '@/lib/checkin';
 import { loadTrainingPlan, type TrainingPlan } from '@/lib/plan';
-import { loadProfile, type UserProfile } from '@/lib/profile';
+import { loadProfile, loadProfileNeedsRegeneration, type UserProfile } from '@/lib/profile';
 import { getTodayTrainingState, type TodayTrainingState } from '@/lib/training/current-session';
 
 function formatRelativeDate(value: string) {
@@ -37,11 +37,13 @@ export function Dashboard() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [plan, setPlan] = useState<TrainingPlan | null>(null);
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
+  const [needsRegeneration, setNeedsRegeneration] = useState(false);
 
   useEffect(() => {
     setProfile(loadProfile());
     setPlan(loadTrainingPlan());
     setCheckIns(loadCheckIns());
+    setNeedsRegeneration(loadProfileNeedsRegeneration());
   }, []);
 
   const todayState = useMemo(() => (plan ? getTodayTrainingState(plan) : null), [plan]);
@@ -72,6 +74,21 @@ export function Dashboard() {
       </div>
 
       <TodaySessionCard todayState={todayState} hasPlan={Boolean(plan)} />
+
+      {needsRegeneration ? (
+        <div className="rounded-lg border border-brand-mustard/30 bg-brand-mustard/10 p-4">
+          <p className="text-sm font-bold text-brand-mustard">Tu perfil cambió</p>
+          <p className="mt-2 text-sm leading-6 text-white/72">
+            Regenera el plan para que use tu objetivo, equipo y molestias actualizadas.
+          </p>
+          <Link
+            href="/generating-plan"
+            className="mt-4 inline-flex w-full items-center justify-center rounded-md bg-brand-cyan px-4 py-3 text-sm font-bold text-brand-dark"
+          >
+            Regenerar plan
+          </Link>
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-2 gap-3">
         <Link href="/plan" className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
