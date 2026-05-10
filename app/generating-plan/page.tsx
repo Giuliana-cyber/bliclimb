@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Activity, CheckCircle2, ClipboardList, ShieldCheck, Sparkles } from 'lucide-react';
 import { loadProfile } from '@/lib/profile';
+import { saveTrainingPlan, type TrainingPlan } from '@/lib/plan';
 
 const generationSteps = [
   {
@@ -29,22 +31,76 @@ const generationSteps = [
 ];
 
 export default function GeneratingPlanPage() {
+  const router = useRouter();
+  const hasStartedRef = useRef(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [hasProfile, setHasProfile] = useState(true);
+  const [status, setStatus] = useState<'generating' | 'success' | 'error'>('generating');
+  const [error, setError] = useState('');
   const currentStep = generationSteps[stepIndex];
   const CurrentIcon = currentStep.icon;
 
   useEffect(() => {
-    setHasProfile(Boolean(loadProfile()));
-  }, []);
+    if (hasStartedRef.current) {
+      return;
+    }
+
+    hasStartedRef.current = true;
+
+    async function generatePlan() {
+      const profile = loadProfile();
+      setHasProfile(Boolean(profile));
+
+      if (!profile) {
+        setStatus('error');
+        setError('Primero necesitamos tu perfil completo.');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/generate-plan', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ profile })
+        });
+
+        const data = (await response.json()) as { plan?: TrainingPlan; error?: string };
+
+        if (!response.ok || !data.plan) {
+          throw new Error(data.error ?? 'No pudimos generar tu plan.');
+        }
+
+        saveTrainingPlan(data.plan);
+        setStepIndex(generationSteps.length - 1);
+        setStatus('success');
+
+        window.setTimeout(() => {
+          router.push('/plan');
+        }, 1200);
+      } catch (caughtError) {
+        setStatus('error');
+        setError(caughtError instanceof Error ? caughtError.message : 'No pudimos generar tu plan.');
+      }
+    }
+
+    void generatePlan();
+  }, [router]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
-      setStepIndex((current) => (current + 1) % generationSteps.length);
+      setStepIndex((current) => {
+        if (status !== 'generating') {
+          return current;
+        }
+
+        return current >= generationSteps.length - 2 ? current : current + 1;
+      });
     }, 1800);
 
     return () => window.clearInterval(interval);
-  }, []);
+  }, [status]);
 
   const progress = useMemo(() => {
     return ((stepIndex + 1) / generationSteps.length) * 100;
@@ -70,7 +126,9 @@ export default function GeneratingPlanPage() {
             </div>
           </div>
 
-          <p className="min-h-7 text-center text-lg font-bold text-white">{currentStep.label}</p>
+          <p className="min-h-7 text-center text-lg font-bold text-white">
+            {status === 'error' ? 'Necesitamos ajustar algo' : currentStep.label}
+          </p>
 
           <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/10">
             <div
@@ -103,14 +161,31 @@ export default function GeneratingPlanPage() {
           </div>
         </div>
 
-        {!hasProfile ? (
+        {status === 'error' ? (
           <div className="mt-5 rounded-lg border border-brand-mustard/30 bg-brand-mustard/10 p-4 text-sm leading-6 text-white/78">
-            Primero necesitamos tu perfil completo.{' '}
-            <Link href="/onboarding" className="font-bold text-brand-mustard">
-              Volver al onboarding
-            </Link>
+            <p>{error}</p>
+            {!hasProfile ? (
+              <Link href="/onboarding" className="mt-3 inline-block font-bold text-brand-mustard">
+                Volver al onboarding
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="mt-3 font-bold text-brand-mustard"
+              >
+                Reintentar
+              </button>
+            )}
           </div>
         ) : null}
+
+        {status === 'success' ? (
+          <div className="mt-5 rounded-lg border border-brand-cyan/30 bg-brand-cyan/10 p-4 text-sm leading-6 text-white/78">
+            Plan guardado. Te llevamos a la vista completa.
+          </div>
+        ) : null}
+
       </section>
     </main>
   );
