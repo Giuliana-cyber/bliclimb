@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function Home() {
   return (
     <section className="space-y-6">
@@ -19,12 +21,12 @@ export default function Home() {
         <p className="mt-4 text-sm leading-6 text-white/70">
           Gym de escalada, bloque principal enfocado en hangboard y tecnica de pies.
         </p>
-        <button
-          type="button"
-          className="mt-5 w-full rounded-md bg-brand-cyan px-4 py-3 text-sm font-bold text-brand-dark transition hover:bg-brand-cyan/90"
+        <Link
+          href="/onboarding"
+          className="mt-5 block w-full rounded-md bg-brand-cyan px-4 py-3 text-center text-sm font-bold text-brand-dark transition hover:bg-brand-cyan/90"
         >
-          Ver sesion completa
-        </button>
+          Crear mi primer plan
+        </Link>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
