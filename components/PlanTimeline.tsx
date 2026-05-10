@@ -12,6 +12,7 @@ import {
   Target
 } from 'lucide-react';
 import { loadTrainingPlan, type Exercise, type TrainingPlan } from '@/lib/plan';
+import { withDerivedCurrentWeek } from '@/lib/training/current-session';
 
 function classNames(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ');
@@ -37,10 +38,11 @@ export function PlanTimeline() {
 
   useEffect(() => {
     const storedPlan = loadTrainingPlan();
-    setPlan(storedPlan);
+    const activePlan = storedPlan ? withDerivedCurrentWeek(storedPlan) : null;
+    setPlan(activePlan);
 
-    if (storedPlan) {
-      setOpenWeeks([storedPlan.currentWeek]);
+    if (activePlan) {
+      setOpenWeeks([activePlan.currentWeek]);
     }
   }, []);
 

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Activity, AlertTriangle, BarChart3, CheckCircle2 } from 'lucide-react';
 import { loadCheckIns, type CheckIn } from '@/lib/checkin';
 import { loadTrainingPlan, type TrainingPlan } from '@/lib/plan';
+import { withDerivedCurrentWeek } from '@/lib/training/current-session';
 
 function formatDate(value: string) {
   const date = new Date(value);
@@ -32,7 +33,8 @@ export function ProgressDashboard() {
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
 
   useEffect(() => {
-    setPlan(loadTrainingPlan());
+    const storedPlan = loadTrainingPlan();
+    setPlan(storedPlan ? withDerivedCurrentWeek(storedPlan) : null);
     setCheckIns(loadCheckIns());
   }, []);
 

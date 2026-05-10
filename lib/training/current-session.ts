@@ -65,6 +65,22 @@ function getDaysSinceStart(startDate: string, today: Date) {
   return Math.max(0, Math.floor((current.getTime() - start.getTime()) / 86400000));
 }
 
+export function getPlanWeekNumber(plan: TrainingPlan, today = new Date()) {
+  const daysSinceStart = getDaysSinceStart(plan.startDate, today);
+  return Math.floor(daysSinceStart / 7) + 1;
+}
+
+export function getCurrentWeekNumber(plan: TrainingPlan, today = new Date()) {
+  return Math.min(plan.totalWeeks, Math.max(1, getPlanWeekNumber(plan, today)));
+}
+
+export function withDerivedCurrentWeek(plan: TrainingPlan, today = new Date()): TrainingPlan {
+  return {
+    ...plan,
+    currentWeek: getCurrentWeekNumber(plan, today)
+  };
+}
+
 function getSessionSlots(sessionCount: number) {
   if (sessionCount <= 0) {
     return [];
@@ -130,7 +146,7 @@ function getPreviousScheduledSession(plan: TrainingPlan, weekNumber: number, day
 
 export function getTodayTrainingState(plan: TrainingPlan, today = new Date()): TodayTrainingState {
   const daysSinceStart = getDaysSinceStart(plan.startDate, today);
-  const weekNumber = Math.floor(daysSinceStart / 7) + 1;
+  const weekNumber = getPlanWeekNumber(plan, today);
 
   if (weekNumber > plan.totalWeeks) {
     return {

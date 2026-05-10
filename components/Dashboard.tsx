@@ -6,7 +6,11 @@ import { BarChart3, ClipboardList, MessageCircle, TimerReset } from 'lucide-reac
 import { loadCheckIns, type CheckIn } from '@/lib/checkin';
 import { loadTrainingPlan, type TrainingPlan } from '@/lib/plan';
 import { loadProfile, loadProfileNeedsRegeneration, type UserProfile } from '@/lib/profile';
-import { getTodayTrainingState, type TodayTrainingState } from '@/lib/training/current-session';
+import {
+  getTodayTrainingState,
+  withDerivedCurrentWeek,
+  type TodayTrainingState
+} from '@/lib/training/current-session';
 
 function formatRelativeDate(value: string) {
   const date = new Date(value);
@@ -41,7 +45,8 @@ export function Dashboard() {
 
   useEffect(() => {
     setProfile(loadProfile());
-    setPlan(loadTrainingPlan());
+    const storedPlan = loadTrainingPlan();
+    setPlan(storedPlan ? withDerivedCurrentWeek(storedPlan) : null);
     setCheckIns(loadCheckIns());
     setNeedsRegeneration(loadProfileNeedsRegeneration());
   }, []);

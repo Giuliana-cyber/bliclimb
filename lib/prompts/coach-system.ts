@@ -1,7 +1,7 @@
 import type { CheckIn } from '@/lib/checkin';
 import type { TrainingPlan } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
-import { getTodayTrainingState } from '@/lib/training/current-session';
+import { getTodayTrainingState, withDerivedCurrentWeek } from '@/lib/training/current-session';
 
 export function buildCoachSystemPrompt({
   profile,
@@ -17,8 +17,10 @@ export function buildCoachSystemPrompt({
   const selectedCharacter = character ?? profile?.character ?? 'bill';
   const characterName = selectedCharacter === 'senda' ? 'Senda' : 'Bill';
   const recentCheckIns = checkIns.slice(0, 3);
-  const todayState = plan ? getTodayTrainingState(plan) : null;
-  const currentWeek = plan?.weeks.find((week) => week.weekNumber === plan.currentWeek) ?? null;
+  const activePlan = plan ? withDerivedCurrentWeek(plan) : null;
+  const todayState = activePlan ? getTodayTrainingState(activePlan) : null;
+  const currentWeek =
+    activePlan?.weeks.find((week) => week.weekNumber === activePlan.currentWeek) ?? null;
 
   return `Eres ${characterName}, el compañero de entrenamiento de BilClimb.ai.
 
@@ -39,12 +41,12 @@ ${profile ? JSON.stringify(profile, null, 2) : 'No hay perfil guardado.'}
 
 PLAN ACTIVO:
 ${
-  plan
+  activePlan
     ? JSON.stringify(
         {
-          objective: plan.objective,
-          totalWeeks: plan.totalWeeks,
-          currentWeek: plan.currentWeek,
+          objective: activePlan.objective,
+          totalWeeks: activePlan.totalWeeks,
+          currentWeek: activePlan.currentWeek,
           currentWeekTheme: currentWeek?.theme,
           currentWeekFocusAreas: currentWeek?.focusAreas,
           today:
@@ -57,7 +59,7 @@ ${
                 }
               : todayState
           ,
-          status: plan.status
+          status: activePlan.status
         },
         null,
         2
