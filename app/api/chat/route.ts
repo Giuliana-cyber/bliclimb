@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
 import type { UserProfile } from '@/lib/profile';
+import { requireSubscriptionAccess } from '@/lib/billing/subscription';
 import { buildCoachSystemPrompt } from '@/lib/prompts/coach-system';
 
 export const runtime = 'nodejs';
@@ -30,6 +31,12 @@ function isChatMessage(value: unknown): value is ChatMessage {
 }
 
 export async function POST(request: Request) {
+  const subscriptionError = requireSubscriptionAccess();
+
+  if (subscriptionError) {
+    return subscriptionError;
+  }
+
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
       { error: 'OPENAI_API_KEY is required to use the chat coach.' },

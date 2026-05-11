@@ -1,16 +1,19 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   BarChart3,
   ClipboardList,
+  CreditCard,
   Home,
   MessageCircle,
   Settings,
   UserRound
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { SubscribeCard } from '@/components/billing/SubscribeCard';
 
 type NavItem = {
   label: string;
@@ -26,7 +29,7 @@ const navItems: NavItem[] = [
   { label: 'Perfil', href: '/profile', icon: UserRound }
 ];
 
-const routesWithoutShell = ['/onboarding', '/generating-plan'];
+const routesWithoutShell = ['/onboarding', '/generating-plan', '/subscribe', '/billing/success'];
 
 function isActive(pathname: string, href: string) {
   if (href === '/') {
@@ -39,6 +42,26 @@ function isActive(pathname: string, href: string) {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const hideShell = routesWithoutShell.some((route) => pathname.startsWith(route));
+  const [subscriptionState, setSubscriptionState] = useState<'loading' | 'active' | 'inactive'>('loading');
+
+  useEffect(() => {
+    if (hideShell) {
+      setSubscriptionState('active');
+      return;
+    }
+
+    async function checkSubscription() {
+      try {
+        const response = await fetch('/api/billing/status');
+        const data = (await response.json()) as { active?: boolean };
+        setSubscriptionState(data.active ? 'active' : 'inactive');
+      } catch {
+        setSubscriptionState('inactive');
+      }
+    }
+
+    void checkSubscription();
+  }, [hideShell, pathname]);
 
   if (hideShell) {
     return <>{children}</>;
@@ -62,6 +85,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Settings aria-hidden="true" size={19} strokeWidth={2.2} />
             </button>
             <Link
+              href="/subscribe"
+              className="grid size-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/76 transition hover:border-brand-cyan/60 hover:text-brand-cyan"
+              aria-label="Abrir suscripción"
+              title="Suscripción"
+            >
+              <CreditCard aria-hidden="true" size={19} strokeWidth={2.2} />
+            </Link>
+            <Link
               href="/profile"
               className="grid size-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/76 transition hover:border-brand-mustard/70 hover:text-brand-mustard"
               aria-label="Abrir perfil"
@@ -74,7 +105,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <main className="mx-auto min-h-[calc(100vh-4rem)] w-full max-w-3xl px-4 pb-28 pt-6">
-        {children}
+        {subscriptionState === 'loading' ? (
+          <div className="grid min-h-[50vh] place-items-center text-sm font-semibold text-white/54">
+            Revisando suscripción...
+          </div>
+        ) : subscriptionState === 'inactive' ? (
+          <SubscribeCard compact />
+        ) : (
+          children
+        )}
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-brand-dark/96 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 backdrop-blur">

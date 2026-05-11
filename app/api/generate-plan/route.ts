@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { zodTextFormat } from 'openai/helpers/zod';
 import { NextResponse } from 'next/server';
+import { requireSubscriptionAccess } from '@/lib/billing/subscription';
 import { buildPlanGeneratorPrompt } from '@/lib/prompts/plan-generator';
 import type { TrainingPlan } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
@@ -153,6 +154,12 @@ function getDetailViolations(plan: TrainingPlan) {
 }
 
 export async function POST(request: Request) {
+  const subscriptionError = requireSubscriptionAccess();
+
+  if (subscriptionError) {
+    return subscriptionError;
+  }
+
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
       { error: 'OPENAI_API_KEY is required to generate a training plan.' },

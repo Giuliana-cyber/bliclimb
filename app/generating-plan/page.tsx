@@ -35,6 +35,7 @@ export default function GeneratingPlanPage() {
   const hasStartedRef = useRef(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [hasProfile, setHasProfile] = useState(true);
+  const [needsSubscription, setNeedsSubscription] = useState(false);
   const [status, setStatus] = useState<'generating' | 'success' | 'error'>('generating');
   const [error, setError] = useState('');
   const currentStep = generationSteps[stepIndex];
@@ -66,7 +67,11 @@ export default function GeneratingPlanPage() {
           body: JSON.stringify({ profile })
         });
 
-        const data = (await response.json()) as { plan?: TrainingPlan; error?: string };
+        const data = (await response.json()) as { plan?: TrainingPlan; error?: string; code?: string };
+
+        if (response.status === 402 || data.code === 'subscription_required') {
+          setNeedsSubscription(true);
+        }
 
         if (!response.ok || !data.plan) {
           throw new Error(data.error ?? 'No pudimos generar tu plan.');
@@ -168,6 +173,10 @@ export default function GeneratingPlanPage() {
             {!hasProfile ? (
               <Link href="/onboarding" className="mt-3 inline-block font-bold text-brand-mustard">
                 Volver al onboarding
+              </Link>
+            ) : needsSubscription ? (
+              <Link href="/subscribe" className="mt-3 inline-block font-bold text-brand-mustard">
+                Activar suscripción
               </Link>
             ) : (
               <button
