@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { ExerciseHelpLink } from '@/components/ExerciseHelpLink';
 import { loadTrainingPlan, type Exercise, type TrainingPlan } from '@/lib/plan';
+import { formatTimerSeconds, getExerciseTimerConfig } from '@/lib/training/exercise-timer';
 import { withDerivedCurrentWeek } from '@/lib/training/current-session';
 
 function classNames(...classes: Array<string | false | null | undefined>) {
@@ -274,26 +275,31 @@ function ExerciseSection({
     <div>
       <h4 className="mb-2 text-xs font-bold uppercase text-brand-cyan">{title}</h4>
       <div className="space-y-2">
-        {exercises.map((exercise) => (
-          <div key={`${title}-${exercise.name}`} className="rounded-md border border-white/10 bg-white/[0.03] p-3">
-            <p className="text-sm font-bold text-white">{exercise.name}</p>
-            <p className="mt-2 text-sm leading-6 text-white/66">{exercise.description}</p>
+        {exercises.map((exercise) => {
+          const timer = getExerciseTimerConfig(exercise);
 
-            <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-white/46">
-              {exercise.sets ? <span>{exercise.sets} series</span> : null}
-              {exercise.reps ? <span>{exercise.reps}</span> : null}
-              {exercise.rest ? <span>descanso {exercise.rest}</span> : null}
-              {exercise.intensity ? <span>{exercise.intensity}</span> : null}
-              {exercise.timerSeconds ? <span>timer {exercise.timerSeconds}s</span> : null}
+          return (
+            <div key={`${title}-${exercise.name}`} className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+              <div className="flex items-start justify-between gap-3">
+                <p className="min-w-0 flex-1 text-sm font-bold text-white">{exercise.name}</p>
+                <ExerciseHelpLink exercise={exercise} contextLabel={`${title} - ${sessionTitle}`} />
+              </div>
+              <p className="mt-2 text-sm leading-6 text-white/66">{exercise.description}</p>
+
+              <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-white/46">
+                {exercise.sets ? <span>{exercise.sets} series</span> : null}
+                {exercise.reps ? <span>{exercise.reps}</span> : null}
+                {exercise.rest ? <span>descanso {exercise.rest}</span> : null}
+                {exercise.intensity ? <span>{exercise.intensity}</span> : null}
+                {timer ? <span>timer {formatTimerSeconds(timer.seconds)}</span> : null}
+              </div>
+
+              {exercise.notes ? (
+                <p className="mt-2 text-xs leading-5 text-white/52">Nota: {exercise.notes}</p>
+              ) : null}
             </div>
-
-            {exercise.notes ? (
-              <p className="mt-2 text-xs leading-5 text-white/52">Nota: {exercise.notes}</p>
-            ) : null}
-
-            <ExerciseHelpLink exercise={exercise} contextLabel={`${title} - ${sessionTitle}`} />
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

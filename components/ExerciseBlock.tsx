@@ -4,6 +4,7 @@ import { Check } from 'lucide-react';
 import type { Exercise } from '@/lib/plan';
 import { ExerciseHelpLink } from '@/components/ExerciseHelpLink';
 import { Timer } from '@/components/Timer';
+import { getExerciseTimerConfig } from '@/lib/training/exercise-timer';
 
 type ExerciseBlockProps = {
   exercise: Exercise;
@@ -12,6 +13,8 @@ type ExerciseBlockProps = {
 };
 
 export function ExerciseBlock({ exercise, complete, onToggle }: ExerciseBlockProps) {
+  const timer = getExerciseTimerConfig(exercise);
+
   return (
     <article className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
       <button
@@ -53,13 +56,15 @@ export function ExerciseBlock({ exercise, complete, onToggle }: ExerciseBlockPro
         </div>
       ) : null}
 
-      {exercise.timerSeconds ? (
+      {timer ? (
         <div className="mt-4">
-          <Timer initialSeconds={exercise.timerSeconds} label={exercise.name} />
+          <Timer initialSeconds={timer.seconds} label={timer.label} />
         </div>
       ) : null}
 
-      <ExerciseHelpLink exercise={exercise} contextLabel="Sesion de hoy" />
+      <div className="mt-3 flex justify-end">
+        <ExerciseHelpLink exercise={exercise} contextLabel="Sesion de hoy" />
+      </div>
     </article>
   );
 }

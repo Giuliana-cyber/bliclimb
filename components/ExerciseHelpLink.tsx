@@ -42,10 +42,12 @@ export function ExerciseHelpLink({
   return (
     <Link
       href={`/chat?${params.toString()}`}
-      className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md border border-brand-cyan/32 px-3 py-3 text-sm font-bold text-brand-cyan transition hover:bg-brand-cyan/10"
+      className="inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-brand-cyan/24 px-2.5 py-2 text-xs font-bold text-brand-cyan transition hover:bg-brand-cyan/10"
+      aria-label={`Preguntar a Senda cómo hacer ${exercise.name}`}
+      title="Preguntar a Senda"
     >
-      <MessageCircleQuestion aria-hidden="true" size={17} />
-      Preguntar a Senda cómo hacerlo
+      <MessageCircleQuestion aria-hidden="true" size={15} />
+      Cómo hacerlo
     </Link>
   );
 }
