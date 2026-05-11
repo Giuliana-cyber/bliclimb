@@ -86,9 +86,9 @@ export function TodaySessionView() {
   if (!sessionContext) {
     return (
       <section className="space-y-6">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-white/62">
+        <Link href="/plan" className="inline-flex items-center gap-2 text-sm font-semibold text-white/62">
           <ChevronLeft aria-hidden="true" size={17} />
-          Dashboard
+          Plan
         </Link>
         <div className="rounded-lg border border-white/10 bg-white/[0.04] p-6">
           <h1 className="text-2xl font-bold">No hay sesión para mostrar</h1>
@@ -110,9 +110,9 @@ export function TodaySessionView() {
 
   return (
     <section className="space-y-6">
-      <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-white/62">
+      <Link href="/plan" className="inline-flex items-center gap-2 text-sm font-semibold text-white/62">
         <ChevronLeft aria-hidden="true" size={17} />
-        Dashboard
+        Plan
       </Link>
 
       <div>
@@ -179,12 +179,20 @@ export function TodaySessionView() {
         <p className="mt-2 text-sm leading-6 text-white/74">{session.nutritionTip}</p>
       </div>
 
-      <Link
-        href="/checkin"
-        className="flex w-full items-center justify-center rounded-md bg-brand-cyan px-4 py-4 text-base font-bold text-brand-dark transition hover:bg-brand-cyan/90"
-      >
-        Terminé mi sesión
-      </Link>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Link
+          href="/checkin"
+          className="flex w-full items-center justify-center rounded-md bg-brand-cyan px-4 py-4 text-base font-bold text-brand-dark transition hover:bg-brand-cyan/90"
+        >
+          Terminé mi sesión
+        </Link>
+        <Link
+          href="/plan"
+          className="flex w-full items-center justify-center rounded-md border border-white/12 px-4 py-4 text-base font-bold text-white/76 transition hover:bg-white/[0.05]"
+        >
+          Volver al plan
+        </Link>
+      </div>
     </section>
   );
 }

@@ -8,13 +8,14 @@ import {
   Circle,
   Clock3,
   MapPin,
+  PlayCircle,
   RefreshCw,
   Target
 } from 'lucide-react';
 import { ExerciseHelpLink } from '@/components/ExerciseHelpLink';
 import { loadTrainingPlan, type Exercise, type TrainingPlan } from '@/lib/plan';
 import { formatTimerSeconds, getExerciseTimerConfig } from '@/lib/training/exercise-timer';
-import { withDerivedCurrentWeek } from '@/lib/training/current-session';
+import { getTodayTrainingState, withDerivedCurrentWeek } from '@/lib/training/current-session';
 
 function classNames(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ');
@@ -63,6 +64,23 @@ export function PlanTimeline() {
     }
 
     return plan.weeks.flatMap((week) => week.sessions).length;
+  }, [plan]);
+
+  const interactiveSession = useMemo(() => {
+    if (!plan) {
+      return null;
+    }
+
+    const state = getTodayTrainingState(plan);
+
+    if (state.kind !== 'ready' && state.kind !== 'needs-checkin' && state.kind !== 'completed') {
+      return null;
+    }
+
+    return {
+      dayNumber: state.session.dayNumber,
+      weekNumber: state.week.weekNumber
+    };
   }, [plan]);
 
   function toggleWeek(weekNumber: number) {
@@ -200,6 +218,17 @@ export function PlanTimeline() {
                             {session.location}
                           </span>
                         </div>
+
+                        {interactiveSession?.weekNumber === week.weekNumber &&
+                        interactiveSession.dayNumber === session.dayNumber ? (
+                          <Link
+                            href="/session"
+                            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-brand-cyan px-3 py-3 text-sm font-bold text-brand-dark transition hover:bg-brand-cyan/90"
+                          >
+                            <PlayCircle aria-hidden="true" size={17} strokeWidth={2.5} />
+                            Abrir sesión interactiva
+                          </Link>
+                        ) : null}
 
                         <div className="mt-4 space-y-4">
                           <ExerciseSection

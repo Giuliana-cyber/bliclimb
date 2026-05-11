@@ -16,22 +16,29 @@ export function ExerciseBlock({ exercise, complete, onToggle }: ExerciseBlockPro
   const timer = getExerciseTimerConfig(exercise);
 
   return (
-    <article className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex w-full items-start gap-3 text-left"
-        aria-pressed={complete}
-      >
-        <span
-          className={[
-            'mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border transition',
-            complete
-              ? 'border-brand-cyan bg-brand-cyan text-brand-dark'
-              : 'border-white/24 text-transparent'
-          ].join(' ')}
-        >
-          <Check aria-hidden="true" size={15} strokeWidth={3} />
+    <article
+      className={[
+        'rounded-lg border p-4 transition',
+        complete ? 'border-brand-cyan/40 bg-brand-cyan/10' : 'border-white/10 bg-white/[0.04]'
+      ].join(' ')}
+    >
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 shrink-0">
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-pressed={complete}
+            aria-label={complete ? 'Desmarcar ejercicio' : 'Marcar ejercicio'}
+            title={complete ? 'Desmarcar' : 'Marcar'}
+            className={[
+              'mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border transition',
+              complete
+                ? 'border-brand-cyan bg-brand-cyan text-brand-dark'
+                : 'border-white/24 text-transparent'
+            ].join(' ')}
+          >
+            <Check aria-hidden="true" size={15} strokeWidth={3} />
+          </button>
         </span>
 
         <span className="min-w-0 flex-1">
@@ -40,7 +47,7 @@ export function ExerciseBlock({ exercise, complete, onToggle }: ExerciseBlockPro
             {exercise.description}
           </span>
         </span>
-      </button>
+      </div>
 
       <dl className="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
         <ExerciseMetric label="Series" value={exercise.sets ? String(exercise.sets) : null} />
@@ -62,7 +69,20 @@ export function ExerciseBlock({ exercise, complete, onToggle }: ExerciseBlockPro
         </div>
       ) : null}
 
-      <div className="mt-3 flex justify-end">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={onToggle}
+          className={[
+            'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-bold transition',
+            complete
+              ? 'bg-brand-cyan text-brand-dark'
+              : 'border border-white/12 text-white/68 hover:bg-white/[0.05] hover:text-white'
+          ].join(' ')}
+        >
+          <Check aria-hidden="true" size={15} strokeWidth={2.8} />
+          {complete ? 'Hecho' : 'Marcar hecho'}
+        </button>
         <ExerciseHelpLink exercise={exercise} contextLabel="Sesion de hoy" />
       </div>
     </article>

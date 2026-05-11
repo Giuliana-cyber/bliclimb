@@ -21,10 +21,14 @@ export function SubscribeCard({ compact = false }: { compact?: boolean }) {
         },
         body: JSON.stringify({ email })
       });
-      const data = (await response.json()) as { url?: string; error?: string };
+      const data = (await response.json()) as { preapprovalId?: string; url?: string; error?: string };
 
       if (!response.ok || !data.url) {
         throw new Error(data.error ?? 'No pudimos abrir el checkout.');
+      }
+
+      if (data.preapprovalId) {
+        window.localStorage.setItem('bilclimb:last-preapproval-id', data.preapprovalId);
       }
 
       window.location.href = data.url;

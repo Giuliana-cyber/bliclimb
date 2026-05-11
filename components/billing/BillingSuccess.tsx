@@ -14,7 +14,8 @@ export function BillingSuccess() {
       const preapprovalId =
         searchParams.get('preapproval_id') ??
         searchParams.get('preapprovalId') ??
-        searchParams.get('id');
+        searchParams.get('id') ??
+        window.localStorage.getItem('bilclimb:last-preapproval-id');
 
       if (!preapprovalId) {
         setStatus('error');
@@ -34,6 +35,7 @@ export function BillingSuccess() {
 
         setStatus('active');
         setMessage('Tu suscripción está activa. Ya puedes usar BilClimb.ai.');
+        window.localStorage.removeItem('bilclimb:last-preapproval-id');
       } catch (caughtError) {
         setStatus('error');
         setMessage(caughtError instanceof Error ? caughtError.message : 'No pudimos verificar tu pago.');
