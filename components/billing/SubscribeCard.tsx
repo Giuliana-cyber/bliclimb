@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { CreditCard, Loader2, ShieldCheck, Sparkles } from 'lucide-react';
 
 export function SubscribeCard({ compact = false }: { compact?: boolean }) {
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -14,7 +15,11 @@ export function SubscribeCard({ compact = false }: { compact?: boolean }) {
 
     try {
       const response = await fetch('/api/billing/create-checkout-session', {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email })
       });
       const data = (await response.json()) as { url?: string; error?: string };
 
@@ -24,7 +29,7 @@ export function SubscribeCard({ compact = false }: { compact?: boolean }) {
 
       window.location.href = data.url;
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'No pudimos abrir Stripe.');
+      setError(caughtError instanceof Error ? caughtError.message : 'No pudimos abrir Mercado Pago.');
       setLoading(false);
     }
   }
@@ -49,9 +54,20 @@ export function SubscribeCard({ compact = false }: { compact?: boolean }) {
           </div>
           <div className="flex gap-3">
             <CreditCard aria-hidden="true" size={19} className="mt-0.5 shrink-0 text-brand-cyan" />
-            <span>Pago mensual seguro con Stripe Checkout.</span>
+            <span>Pago mensual seguro con Mercado Pago.</span>
           </div>
         </div>
+
+        <label className="mt-5 block">
+          <span className="mb-2 block text-sm font-bold text-white/76">Email para Mercado Pago</span>
+          <input
+            value={email}
+            inputMode="email"
+            placeholder="tu@email.com"
+            onChange={(event) => setEmail(event.target.value)}
+            className="h-12 w-full rounded-md border border-white/10 bg-brand-dark/42 px-4 text-white outline-none transition placeholder:text-white/34 focus:border-brand-cyan"
+          />
+        </label>
 
         {error ? (
           <div className="mt-5 rounded-md border border-brand-mustard/30 bg-brand-mustard/10 p-3 text-sm leading-6 text-white/76">
@@ -62,7 +78,7 @@ export function SubscribeCard({ compact = false }: { compact?: boolean }) {
         <button
           type="button"
           onClick={startCheckout}
-          disabled={loading}
+          disabled={loading || !email.trim()}
           className="mt-6 flex w-full items-center justify-center gap-2 rounded-md bg-brand-cyan px-4 py-4 text-base font-bold text-brand-dark transition hover:bg-brand-cyan/90 disabled:cursor-not-allowed disabled:bg-white/12 disabled:text-white/42"
         >
           {loading ? <Loader2 aria-hidden="true" size={18} className="animate-spin" /> : null}

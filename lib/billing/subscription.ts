@@ -7,9 +7,8 @@ export const SUBSCRIPTION_COOKIE_NAME = 'bilclimb_subscription';
 const MONTH_IN_SECONDS = 60 * 60 * 24 * 32;
 
 export type SubscriptionCookiePayload = {
-  sessionId: string;
   subscriptionId: string;
-  customerId: string;
+  payerEmail: string;
   createdAt: string;
   expiresAt: string;
 };
@@ -19,11 +18,11 @@ export function isSubscriptionRequired() {
 }
 
 export function isBillingConfigured() {
-  return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_ID);
+  return Boolean(process.env.MERCADO_PAGO_ACCESS_TOKEN);
 }
 
 function getCookieSecret() {
-  return process.env.SUBSCRIPTION_COOKIE_SECRET ?? process.env.STRIPE_SECRET_KEY ?? '';
+  return process.env.SUBSCRIPTION_COOKIE_SECRET ?? process.env.MERCADO_PAGO_ACCESS_TOKEN ?? '';
 }
 
 function sign(value: string) {
@@ -38,19 +37,16 @@ function safeEqual(first: string, second: string) {
 }
 
 export function createSubscriptionCookieValue({
-  sessionId,
   subscriptionId,
-  customerId
+  payerEmail
 }: {
-  sessionId: string;
   subscriptionId: string;
-  customerId: string;
+  payerEmail: string;
 }) {
   const now = new Date();
   const payload: SubscriptionCookiePayload = {
-    sessionId,
     subscriptionId,
-    customerId,
+    payerEmail,
     createdAt: now.toISOString(),
     expiresAt: new Date(now.getTime() + MONTH_IN_SECONDS * 1000).toISOString()
   };

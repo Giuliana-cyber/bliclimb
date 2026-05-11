@@ -6,20 +6,26 @@ import { CheckCircle2, Loader2 } from 'lucide-react';
 
 export function BillingSuccess() {
   const [status, setStatus] = useState<'loading' | 'active' | 'error'>('loading');
-  const [message, setMessage] = useState('Verificando tu pago con Stripe...');
+  const [message, setMessage] = useState('Verificando tu suscripción con Mercado Pago...');
 
   useEffect(() => {
     async function verifySession() {
-      const sessionId = new URLSearchParams(window.location.search).get('session_id');
+      const searchParams = new URLSearchParams(window.location.search);
+      const preapprovalId =
+        searchParams.get('preapproval_id') ??
+        searchParams.get('preapprovalId') ??
+        searchParams.get('id');
 
-      if (!sessionId) {
+      if (!preapprovalId) {
         setStatus('error');
-        setMessage('No encontramos la sesión de Stripe.');
+        setMessage('No encontramos el ID de suscripción de Mercado Pago.');
         return;
       }
 
       try {
-        const response = await fetch(`/api/billing/verify-session?session_id=${encodeURIComponent(sessionId)}`);
+        const response = await fetch(
+          `/api/billing/verify-session?preapproval_id=${encodeURIComponent(preapprovalId)}`
+        );
         const data = (await response.json()) as { active?: boolean; error?: string };
 
         if (!response.ok || !data.active) {
