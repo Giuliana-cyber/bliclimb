@@ -6,6 +6,7 @@ import { ChevronLeft, Clock3, MapPin } from 'lucide-react';
 import { ExerciseBlock } from '@/components/ExerciseBlock';
 import { loadTrainingPlan } from '@/lib/plan';
 import type { Exercise } from '@/lib/plan';
+import { readStorage, writeStorage } from '@/lib/storage';
 import { getTodaySession, type SessionWithContext } from '@/lib/training/current-session';
 
 function progressStorageKey(sessionId: string) {
@@ -17,29 +18,12 @@ function exerciseKey(section: string, index: number) {
 }
 
 function readProgress(sessionId: string) {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-
-  const rawValue = window.localStorage.getItem(progressStorageKey(sessionId));
-
-  if (!rawValue) {
-    return [];
-  }
-
-  try {
-    return JSON.parse(rawValue) as string[];
-  } catch {
-    return [];
-  }
+  const parsedValue = readStorage<string[]>(progressStorageKey(sessionId), []);
+  return Array.isArray(parsedValue) ? parsedValue : [];
 }
 
 function writeProgress(sessionId: string, completedExercises: string[]) {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  window.localStorage.setItem(progressStorageKey(sessionId), JSON.stringify(completedExercises));
+  writeStorage(progressStorageKey(sessionId), completedExercises);
 }
 
 export function TodaySessionView() {

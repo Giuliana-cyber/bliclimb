@@ -13,6 +13,7 @@ import {
   UserRound
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { LocalAuthGate } from '@/components/LocalAuthGate';
 import { SubscribeCard } from '@/components/billing/SubscribeCard';
 
 type NavItem = {
@@ -105,15 +106,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <main className="mx-auto min-h-[calc(100vh-4rem)] w-full max-w-3xl px-4 pb-28 pt-6">
-        {subscriptionState === 'loading' ? (
-          <div className="grid min-h-[50vh] place-items-center text-sm font-semibold text-white/54">
-            Revisando suscripción...
-          </div>
-        ) : subscriptionState === 'inactive' ? (
-          <SubscribeCard compact />
-        ) : (
-          children
-        )}
+        <LocalAuthGate>
+          {subscriptionState === 'loading' ? (
+            <div className="grid min-h-[50vh] place-items-center text-sm font-semibold text-white/54">
+              Revisando suscripción...
+            </div>
+          ) : subscriptionState === 'inactive' ? (
+            <SubscribeCard compact />
+          ) : (
+            children
+          )}
+        </LocalAuthGate>
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-brand-dark/96 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 backdrop-blur">

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Check, Save } from 'lucide-react';
+import { Check, LogOut, Save } from 'lucide-react';
 import {
   loadProfile,
   loadProfileNeedsRegeneration,
@@ -10,6 +10,7 @@ import {
   saveProfile,
   type UserProfile
 } from '@/lib/profile';
+import { clearLocalSession, loadLocalSession, type LocalSession } from '@/lib/session';
 
 type Option = {
   label: string;
@@ -162,10 +163,12 @@ function toNumberOrNull(value: string) {
 export function ProfileEditor() {
   const [initialProfile, setInitialProfile] = useState<UserProfile | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<LocalSession | null>(null);
   const [needsRegeneration, setNeedsRegeneration] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
+    setSession(loadLocalSession());
     const storedProfile = loadProfile();
     setInitialProfile(storedProfile);
     setProfile(storedProfile);
@@ -253,6 +256,7 @@ export function ProfileEditor() {
             Ir al onboarding
           </Link>
         </div>
+        <SessionCard session={session} />
       </section>
     );
   }
@@ -267,6 +271,8 @@ export function ProfileEditor() {
           plan.
         </p>
       </div>
+
+      <SessionCard session={session} />
 
       {significantChange || needsRegeneration ? (
         <div className="rounded-lg border border-brand-mustard/30 bg-brand-mustard/10 p-4 text-sm leading-6 text-white/76">
@@ -598,6 +604,32 @@ export function ProfileEditor() {
         </Link>
       </div>
     </form>
+  );
+}
+
+function SessionCard({ session }: { session: LocalSession | null }) {
+  function handleLogout() {
+    clearLocalSession();
+    window.location.href = '/';
+  }
+
+  return (
+    <section className="space-y-4 rounded-lg border border-white/10 bg-white/[0.04] p-4">
+      <div>
+        <p className="text-sm font-semibold text-brand-cyan">Sesión</p>
+        <h2 className="mt-1 text-xl font-bold">{session?.name ?? 'Cuenta local'}</h2>
+        <p className="mt-1 text-sm text-white/58">{session?.email ?? 'Sin correo activo'}</p>
+      </div>
+
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-white/12 px-4 py-3 text-sm font-bold text-white/72 transition hover:border-brand-mustard/60 hover:text-brand-mustard"
+      >
+        <LogOut aria-hidden="true" size={17} />
+        Cerrar sesión
+      </button>
+    </section>
   );
 }
 
