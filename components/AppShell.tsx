@@ -7,6 +7,7 @@ import {
   BarChart3,
   ClipboardList,
   CreditCard,
+  Dumbbell,
   Home,
   MessageCircle,
   Settings,
@@ -25,6 +26,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { label: 'Inicio', href: '/', icon: Home },
   { label: 'Plan', href: '/plan', icon: ClipboardList },
+  { label: 'Sesión', href: '/session', icon: Dumbbell },
   { label: 'Chat', href: '/chat', icon: MessageCircle },
   { label: 'Progreso', href: '/progress', icon: BarChart3 },
   { label: 'Perfil', href: '/profile', icon: UserRound }
@@ -120,7 +122,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-brand-dark/96 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 backdrop-blur">
-        <div className="mx-auto grid h-16 w-full max-w-3xl grid-cols-5 gap-1">
+        <div className="mx-auto grid h-16 w-full max-w-3xl grid-cols-6 gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(pathname, item.href);
