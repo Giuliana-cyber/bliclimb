@@ -31,10 +31,10 @@ export function ExerciseBlock({ exercise, complete, onToggle }: ExerciseBlockPro
             aria-label={complete ? 'Desmarcar ejercicio' : 'Marcar ejercicio'}
             title={complete ? 'Desmarcar' : 'Marcar'}
             className={[
-              'mt-0.5 grid size-6 shrink-0 place-items-center rounded-md border transition',
+              'mt-0.5 grid size-7 shrink-0 place-items-center rounded-md border transition',
               complete
                 ? 'border-brand-cyan bg-brand-cyan text-brand-dark'
-                : 'border-white/24 text-transparent'
+                : 'border-white/44 bg-brand-dark/60 text-transparent hover:border-brand-cyan/60'
             ].join(' ')}
           >
             <Check aria-hidden="true" size={15} strokeWidth={3} />

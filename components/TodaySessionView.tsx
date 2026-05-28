@@ -11,19 +11,33 @@ import {
   loadSessionProgress,
   saveSessionProgress
 } from '@/lib/session-progress';
-import { getTodaySession, type SessionWithContext } from '@/lib/training/current-session';
+import {
+  getSessionWithContext,
+  getTodaySession,
+  withDerivedCurrentWeek,
+  type SessionWithContext
+} from '@/lib/training/current-session';
 
 export function TodaySessionView() {
   const [sessionContext, setSessionContext] = useState<SessionWithContext | null>(null);
   const [completedExercises, setCompletedExercises] = useState<string[]>([]);
 
   useEffect(() => {
-    const plan = loadTrainingPlan();
-    const todaySession = plan ? getTodaySession(plan) : null;
-    setSessionContext(todaySession);
+    const storedPlan = loadTrainingPlan();
+    const plan = storedPlan ? withDerivedCurrentWeek(storedPlan) : null;
+    const params = new URLSearchParams(window.location.search);
+    const weekNumber = Number(params.get('week'));
+    const dayNumber = Number(params.get('day'));
+    const selectedSession =
+      plan && Number.isInteger(weekNumber) && Number.isInteger(dayNumber)
+        ? getSessionWithContext(plan, weekNumber, dayNumber)
+        : null;
+    const activeSession = selectedSession ?? (plan ? getTodaySession(plan) : null);
 
-    if (todaySession) {
-      setCompletedExercises(loadSessionProgress(todaySession.sessionId));
+    setSessionContext(activeSession);
+
+    if (activeSession) {
+      setCompletedExercises(loadSessionProgress(activeSession.sessionId));
     }
   }, []);
 
@@ -36,8 +50,19 @@ export function TodaySessionView() {
     return session.warmup.length + session.mainBlock.length + session.cooldown.length;
   }, [sessionContext]);
 
-  const completedCount = completedExercises.length;
+  const completedCount = Math.min(completedExercises.length, totalExercises);
   const progress = totalExercises > 0 ? Math.round((completedCount / totalExercises) * 100) : 0;
+  const remainingMinutes =
+    sessionContext && totalExercises > 0
+      ? Math.max(
+          0,
+          Math.ceil(
+            sessionContext.session.estimatedMinutes *
+              ((totalExercises - completedCount) / totalExercises)
+          )
+        )
+      : 0;
+  const allExercisesComplete = totalExercises > 0 && completedCount >= totalExercises;
 
   function toggleExercise(key: string) {
     if (!sessionContext) {
@@ -59,7 +84,7 @@ export function TodaySessionView() {
       <section className="space-y-6">
         <Link href="/plan" className="inline-flex items-center gap-2 text-sm font-semibold text-white/62">
           <ChevronLeft aria-hidden="true" size={17} />
-          Plan
+          Volver al plan
         </Link>
         <div className="rounded-lg border border-white/10 bg-white/[0.04] p-6">
           <h1 className="text-2xl font-bold">No hay sesión para mostrar</h1>
@@ -83,7 +108,7 @@ export function TodaySessionView() {
     <section className="space-y-6">
       <Link href="/plan" className="inline-flex items-center gap-2 text-sm font-semibold text-white/62">
         <ChevronLeft aria-hidden="true" size={17} />
-        Plan
+        Volver al plan
       </Link>
 
       <div>
@@ -95,6 +120,9 @@ export function TodaySessionView() {
           <span className="inline-flex items-center gap-1">
             <Clock3 aria-hidden="true" size={16} />
             ~{session.estimatedMinutes} min
+          </span>
+          <span className="inline-flex items-center gap-1 text-brand-cyan">
+            Restante: ~{remainingMinutes} min
           </span>
           <span className="inline-flex items-center gap-1">
             <MapPin aria-hidden="true" size={16} />
@@ -151,12 +179,22 @@ export function TodaySessionView() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Link
-          href="/checkin"
-          className="flex w-full items-center justify-center rounded-md bg-brand-cyan px-4 py-4 text-base font-bold text-brand-dark transition hover:bg-brand-cyan/90"
-        >
-          Terminé mi sesión
-        </Link>
+        {allExercisesComplete ? (
+          <Link
+            href={`/checkin?sessionId=${encodeURIComponent(sessionContext.sessionId)}`}
+            className="flex w-full items-center justify-center rounded-md bg-brand-cyan px-4 py-4 text-base font-bold text-brand-dark transition hover:bg-brand-cyan/90"
+          >
+            Finalizar sesión y hacer check-in
+          </Link>
+        ) : (
+          <button
+            type="button"
+            disabled
+            className="flex w-full cursor-not-allowed items-center justify-center rounded-md bg-white/10 px-4 py-4 text-base font-bold text-white/38"
+          >
+            Completa ejercicios para finalizar
+          </button>
+        )}
         <Link
           href="/plan"
           className="flex w-full items-center justify-center rounded-md border border-white/12 px-4 py-4 text-base font-bold text-white/76 transition hover:bg-white/[0.05]"

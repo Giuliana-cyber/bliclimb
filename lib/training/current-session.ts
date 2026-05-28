@@ -240,3 +240,28 @@ export function getTodaySession(plan: TrainingPlan): SessionWithContext | null {
     sessionId: state.sessionId
   };
 }
+
+export function getSessionWithContext(
+  plan: TrainingPlan,
+  weekNumber: number,
+  dayNumber: number
+): SessionWithContext | null {
+  const week = plan.weeks.find((currentWeek) => currentWeek.weekNumber === weekNumber);
+
+  if (!week) {
+    return null;
+  }
+
+  const session = week.sessions.find((currentSession) => currentSession.dayNumber === dayNumber);
+
+  if (!session) {
+    return null;
+  }
+
+  return {
+    plan,
+    week,
+    session,
+    sessionId: getSessionId(plan.id, week.weekNumber, session.dayNumber)
+  };
+}
