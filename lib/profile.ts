@@ -28,6 +28,13 @@ export interface UserProfile {
   goals: string[]; // ['grade', 'technique', 'other']
   goalDescription: string;
   project: string; // "La Catrina 5.12a en El Salto"
+  projectDescription: string;
+  sessionDuration: number; // minutes available per training session
+  availableDays: string[]; // ['monday', 'wednesday', ...]
+  sleepQuality: string;
+  energyLevel: string;
+  injuryDescription: string;
+  trainingHistory: string;
   planDuration: number; // 4 | 8 | 12
   createdAt: string;
   updatedAt: string;
@@ -40,12 +47,31 @@ function normalizeProfile(profile: UserProfile | null) {
 
   const legacyGoal = typeof profile.goal === 'string' ? profile.goal : '';
   const goals = Array.isArray(profile.goals) && profile.goals.length ? profile.goals : legacyGoal ? [legacyGoal] : [];
+  const project = typeof profile.project === 'string' ? profile.project : '';
+  const injuryNotes = typeof profile.injuryNotes === 'string' ? profile.injuryNotes : '';
+  const sleep = typeof profile.sleep === 'string' ? profile.sleep : '';
+  const energy = typeof profile.energy === 'string' ? profile.energy : '';
+  const previousTraining =
+    typeof profile.previousTraining === 'string' ? profile.previousTraining : '';
 
   return {
     ...profile,
     goal: legacyGoal || goals[0] || 'other',
     goals,
-    goalDescription: typeof profile.goalDescription === 'string' ? profile.goalDescription : ''
+    goalDescription: typeof profile.goalDescription === 'string' ? profile.goalDescription : '',
+    project,
+    projectDescription: project,
+    sessionDuration:
+      typeof profile.sessionDuration === 'number' && profile.sessionDuration > 0
+        ? profile.sessionDuration
+        : 90,
+    availableDays: Array.isArray(profile.availableDays) ? profile.availableDays : [],
+    sleepQuality: sleep,
+    energyLevel: energy,
+    injuryNotes,
+    injuryDescription: injuryNotes,
+    previousTraining,
+    trainingHistory: previousTraining
   };
 }
 

@@ -33,6 +33,8 @@ type OnboardingForm = {
   sleep: string;
   energy: string;
   daysPerWeek: number;
+  availableDays: string[];
+  sessionDuration: number;
   equipment: string[];
   equipmentNotes: string;
   previousTraining: string;
@@ -65,6 +67,8 @@ const initialForm: OnboardingForm = {
   sleep: '',
   energy: '',
   daysPerWeek: 0,
+  availableDays: [],
+  sessionDuration: 90,
   equipment: [],
   equipmentNotes: '',
   previousTraining: '',
@@ -153,6 +157,24 @@ const daysOptions = [
   { label: '3', value: 3 },
   { label: '4-5', value: 5 },
   { label: '6+', value: 6 }
+];
+
+const availableDayOptions: Option[] = [
+  { label: 'Lun', value: 'monday' },
+  { label: 'Mar', value: 'tuesday' },
+  { label: 'Mié', value: 'wednesday' },
+  { label: 'Jue', value: 'thursday' },
+  { label: 'Vie', value: 'friday' },
+  { label: 'Sáb', value: 'saturday' },
+  { label: 'Dom', value: 'sunday' }
+];
+
+const sessionDurationOptions = [
+  { label: '45 min', value: 45 },
+  { label: '60 min', value: 60 },
+  { label: '75 min', value: 75 },
+  { label: '90 min', value: 90 },
+  { label: '120 min', value: 120 }
 ];
 
 const equipmentOptions: Option[] = [
@@ -333,7 +355,13 @@ export default function OnboardingPage() {
       Boolean(form.climbingTime && form.disciplines.length && form.level && form.setting),
       Boolean(form.age && form.sex),
       Boolean(form.injuries.length && form.warmup && form.sleep && form.energy),
-      Boolean(form.daysPerWeek && form.equipment.length && form.previousTraining),
+      Boolean(
+        form.daysPerWeek &&
+          form.availableDays.length &&
+          form.sessionDuration &&
+          form.equipment.length &&
+          form.previousTraining
+      ),
       Boolean((form.goals.length || form.goalDescription.trim()) && form.durationChoice),
       true
     ].filter(Boolean).length;
@@ -371,13 +399,20 @@ export default function OnboardingPage() {
       sleep: form.sleep,
       energy: form.energy,
       daysPerWeek: form.daysPerWeek,
+      availableDays: form.availableDays,
+      sessionDuration: form.sessionDuration,
       equipment: form.equipment,
       equipmentNotes: form.equipmentNotes.trim(),
       previousTraining: form.previousTraining,
+      trainingHistory: form.previousTraining,
       goal: goals[0],
       goals,
       goalDescription: form.goalDescription.trim(),
       project: form.project.trim(),
+      projectDescription: form.project.trim(),
+      sleepQuality: form.sleep,
+      energyLevel: form.energy,
+      injuryDescription: form.injuryNotes.trim(),
       planDuration: durationWeeks,
       createdAt: now,
       updatedAt: now
@@ -658,6 +693,43 @@ export default function OnboardingPage() {
               </OptionGrid>
             </FieldGroup>
 
+            <FieldGroup title="¿Qué días sueles tener disponibles?">
+              <OptionGrid>
+                {availableDayOptions.map((option) => (
+                  <OptionButton
+                    key={option.value}
+                    active={form.availableDays.includes(option.value)}
+                    onClick={() =>
+                      setForm((current) => ({
+                        ...current,
+                        availableDays: current.availableDays.includes(option.value)
+                          ? current.availableDays.filter((item) => item !== option.value)
+                          : [...current.availableDays, option.value]
+                      }))
+                    }
+                  >
+                    {option.label}
+                  </OptionButton>
+                ))}
+              </OptionGrid>
+            </FieldGroup>
+
+            <FieldGroup title="¿Cuánto dura normalmente tu sesión?">
+              <OptionGrid>
+                {sessionDurationOptions.map((option) => (
+                  <OptionButton
+                    key={option.value}
+                    active={form.sessionDuration === option.value}
+                    onClick={() =>
+                      setForm((current) => ({ ...current, sessionDuration: option.value }))
+                    }
+                  >
+                    {option.label}
+                  </OptionButton>
+                ))}
+              </OptionGrid>
+            </FieldGroup>
+
             <FieldGroup title="¿A qué tienes acceso? (selecciona todo)">
               <OptionGrid>
                 {equipmentOptions.map((option) => (
@@ -789,7 +861,15 @@ export default function OnboardingPage() {
                   label="Objetivo"
                   value={getGoalSummary(form.goals, form.goalDescription)}
                 />
-                <SummaryRow label="Días" value={daysLabel ? `${daysLabel}/semana` : 'Pendiente'} />
+                <SummaryRow
+                  label="Días"
+                  value={
+                    daysLabel
+                      ? `${daysLabel}/semana · ${getLabels(availableDayOptions, form.availableDays)}`
+                      : 'Pendiente'
+                  }
+                />
+                <SummaryRow label="Duración sesión" value={`${form.sessionDuration} min`} />
                 <SummaryRow label="Equipo" value={getLabels(equipmentOptions, form.equipment)} />
                 <SummaryRow label="Lesión" value={getLabels(injuryOptions, form.injuries)} />
                 <SummaryRow label="Duración" value={durationLabel} />

@@ -32,7 +32,7 @@ function getGoalSummary(profile: UserProfile) {
   const selectedGoals = goals.map((goal) => goalLabels[goal] ?? goal).join(', ');
   const details =
     typeof profile.goalDescription === 'string' ? profile.goalDescription.trim() : '';
-  const project = profile.project.trim();
+  const project = (profile.projectDescription || profile.project).trim();
 
   return [
     selectedGoals ? `Objetivos seleccionados: ${selectedGoals}` : null,
@@ -115,6 +115,14 @@ ${getAvailableEquipment(profile) || 'Sin equipo declarado'}
 OBJETIVOS DEL USUARIO:
 ${getGoalSummary(profile) || 'Sin objetivo declarado'}
 
+DISPONIBILIDAD Y RECUPERACIÓN:
+- Días disponibles: ${profile.availableDays.length ? profile.availableDays.join(', ') : 'no especificado'}
+- Duración por sesión: ${profile.sessionDuration} minutos
+- Calidad de sueño: ${profile.sleepQuality || profile.sleep || 'no especificado'}
+- Energía: ${profile.energyLevel || profile.energy || 'no especificado'}
+- Historial de entrenamiento: ${profile.trainingHistory || profile.previousTraining || 'no especificado'}
+- Lesión o molestia descrita: ${profile.injuryDescription || profile.injuryNotes || 'ninguna descrita'}
+
 RESTRICCIONES ESTRICTAS DE EQUIPO:
 ${getEquipmentRestrictions(profile)}
 
@@ -144,6 +152,9 @@ REQUISITOS DE JSON:
 - Todas las sesiones deben iniciar con completed: false y checkIn: null.
 - startDate y createdAt deben estar en formato ISO.
 - Incluye sesiones por semana de acuerdo con daysPerWeek: ${profile.daysPerWeek}.
+- Ajusta estimatedMinutes y volumen para que cada sesión quepa en sessionDuration:
+  ${profile.sessionDuration} minutos.
+- Distribuye sesiones dando prioridad a availableDays cuando estén definidos.
 
 PERFIL DEL USUARIO:
 ${JSON.stringify(profile, null, 2)}`;

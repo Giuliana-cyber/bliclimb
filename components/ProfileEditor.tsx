@@ -103,6 +103,24 @@ const daysOptions = [
   { label: '6+', value: 6 }
 ];
 
+const availableDayOptions: Option[] = [
+  { label: 'Lun', value: 'monday' },
+  { label: 'Mar', value: 'tuesday' },
+  { label: 'Mié', value: 'wednesday' },
+  { label: 'Jue', value: 'thursday' },
+  { label: 'Vie', value: 'friday' },
+  { label: 'Sáb', value: 'saturday' },
+  { label: 'Dom', value: 'sunday' }
+];
+
+const sessionDurationOptions = [
+  { label: '45 min', value: 45 },
+  { label: '60 min', value: 60 },
+  { label: '75 min', value: 75 },
+  { label: '90 min', value: 90 },
+  { label: '120 min', value: 120 }
+];
+
 const equipmentOptions: Option[] = [
   { label: 'Gym de escalada', value: 'gym' },
   { label: 'Hangboard', value: 'hangboard' },
@@ -186,6 +204,8 @@ export function ProfileEditor() {
       initialProfile.goalDescription !== profile.goalDescription ||
       initialProfile.project !== profile.project ||
       initialProfile.daysPerWeek !== profile.daysPerWeek ||
+      initialProfile.availableDays.join(',') !== profile.availableDays.join(',') ||
+      initialProfile.sessionDuration !== profile.sessionDuration ||
       initialProfile.planDuration !== profile.planDuration ||
       initialProfile.injuryNotes !== profile.injuryNotes ||
       initialProfile.injuries.join(',') !== profile.injuries.join(',') ||
@@ -222,6 +242,11 @@ export function ProfileEditor() {
 
     const nextProfile = {
       ...profile,
+      projectDescription: profile.project.trim(),
+      sleepQuality: profile.sleep,
+      energyLevel: profile.energy,
+      injuryDescription: profile.injuryNotes.trim(),
+      trainingHistory: profile.previousTraining,
       updatedAt: new Date().toISOString()
     };
 
@@ -482,6 +507,37 @@ export function ProfileEditor() {
                 key={option.value}
                 active={profile.daysPerWeek === option.value}
                 onClick={() => updateProfileField('daysPerWeek', option.value)}
+              >
+                {option.label}
+              </OptionButton>
+            ))}
+          </OptionGrid>
+        </FieldGroup>
+        <FieldGroup title="Días disponibles">
+          <OptionGrid>
+            {availableDayOptions.map((option) => (
+              <OptionButton
+                key={option.value}
+                active={profile.availableDays.includes(option.value)}
+                onClick={() =>
+                  updateProfileField(
+                    'availableDays',
+                    toggleValue(profile.availableDays, option.value)
+                  )
+                }
+              >
+                {option.label}
+              </OptionButton>
+            ))}
+          </OptionGrid>
+        </FieldGroup>
+        <FieldGroup title="Duración por sesión">
+          <OptionGrid>
+            {sessionDurationOptions.map((option) => (
+              <OptionButton
+                key={option.value}
+                active={profile.sessionDuration === option.value}
+                onClick={() => updateProfileField('sessionDuration', option.value)}
               >
                 {option.label}
               </OptionButton>
