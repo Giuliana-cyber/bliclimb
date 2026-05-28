@@ -6,16 +6,13 @@ import {
   CheckCircle2,
   ChevronDown,
   Circle,
-  Clock3,
-  MapPin,
   PlayCircle,
   RefreshCw,
   Target
 } from 'lucide-react';
 import { ExerciseGuide } from '@/components/ExerciseGuide';
-import { loadTrainingPlan, type Exercise, type TrainingPlan } from '@/lib/plan';
-import { formatTimerSeconds, getExerciseTimerConfig } from '@/lib/training/exercise-timer';
-import { getTodayTrainingState, withDerivedCurrentWeek } from '@/lib/training/current-session';
+import { loadTrainingPlan, type Exercise, type Session, type TrainingPlan, type Week } from '@/lib/plan';
+import { withDerivedCurrentWeek } from '@/lib/training/current-session';
 
 function classNames(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ');
@@ -35,9 +32,70 @@ function formatDate(value: string) {
   }).format(date);
 }
 
+function getSessionKey(weekNumber: number, dayNumber: number) {
+  return `${weekNumber}-${dayNumber}`;
+}
+
+function getSessionObjective(session: Session) {
+  const mainExercises = session.mainBlock
+    .map((exercise) => exercise.name)
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(' + ');
+
+  return mainExercises || session.title;
+}
+
+function getSessionReason(week: Week, session: Session) {
+  const focus = week.focusAreas.filter(Boolean).slice(0, 2).join(' + ') || week.theme;
+
+  if (session.source) {
+    return `Construye ${focus} con referencia en ${session.source}.`;
+  }
+
+  return `Empuja ${focus} dentro del bloque ${week.theme}.`;
+}
+
+function getSessionIntensity(session: Session) {
+  const intensity = [...session.mainBlock, ...session.warmup, ...session.cooldown]
+    .map((exercise) => exercise.intensity)
+    .find((value): value is string => Boolean(value));
+
+  return intensity ?? 'Moderada y técnica';
+}
+
+function getSessionEquipment(session: Session) {
+  const content = [session.location, ...session.warmup, ...session.mainBlock, ...session.cooldown]
+    .map((item) => (typeof item === 'string' ? item : `${item.name} ${item.description} ${item.notes ?? ''}`))
+    .join(' ')
+    .toLowerCase();
+  const equipment = [
+    ['hangboard', 'hangboard'],
+    ['fingerboard', 'fingerboard'],
+    ['banda', 'banda elástica'],
+    ['mancuerna', 'mancuernas'],
+    ['pesas', 'pesas'],
+    ['barra', 'barra'],
+    ['colchoneta', 'colchoneta'],
+    ['roca', 'roca'],
+    ['gym', 'muro/gym'],
+    ['casa', 'peso corporal']
+  ]
+    .filter(([term]) => content.includes(term))
+    .map(([, label]) => label);
+  const uniqueEquipment = Array.from(new Set(equipment));
+
+  if (uniqueEquipment.length > 0) {
+    return uniqueEquipment.join(', ');
+  }
+
+  return session.location === 'roca' ? 'roca y material personal' : 'sin equipo especial';
+}
+
 export function PlanTimeline() {
   const [plan, setPlan] = useState<TrainingPlan | null>(null);
   const [openWeeks, setOpenWeeks] = useState<number[]>([]);
+  const [openSessions, setOpenSessions] = useState<string[]>([]);
 
   useEffect(() => {
     const storedPlan = loadTrainingPlan();
@@ -66,28 +124,20 @@ export function PlanTimeline() {
     return plan.weeks.flatMap((week) => week.sessions).length;
   }, [plan]);
 
-  const interactiveSession = useMemo(() => {
-    if (!plan) {
-      return null;
-    }
-
-    const state = getTodayTrainingState(plan);
-
-    if (state.kind !== 'ready' && state.kind !== 'needs-checkin' && state.kind !== 'completed') {
-      return null;
-    }
-
-    return {
-      dayNumber: state.session.dayNumber,
-      weekNumber: state.week.weekNumber
-    };
-  }, [plan]);
-
   function toggleWeek(weekNumber: number) {
     setOpenWeeks((current) =>
       current.includes(weekNumber)
         ? current.filter((item) => item !== weekNumber)
         : [...current, weekNumber]
+    );
+  }
+
+  function toggleSession(weekNumber: number, dayNumber: number) {
+    const sessionKey = getSessionKey(weekNumber, dayNumber);
+    setOpenSessions((current) =>
+      current.includes(sessionKey)
+        ? current.filter((item) => item !== sessionKey)
+        : [...current, sessionKey]
     );
   }
 
@@ -181,89 +231,101 @@ export function PlanTimeline() {
               {isOpen ? (
                 <div className="border-t border-white/10 px-4 py-4">
                   <div className="space-y-3">
-                    {week.sessions.map((session) => (
-                      <div
-                        key={`${week.weekNumber}-${session.dayNumber}`}
-                        className="rounded-md border border-white/10 bg-brand-dark/38 p-4"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-white/52">
-                              Día {session.dayNumber}
-                            </p>
-                            <h3 className="mt-1 text-base font-bold">{session.title}</h3>
+                    {week.sessions.map((session) => {
+                      const sessionKey = getSessionKey(week.weekNumber, session.dayNumber);
+                      const isSessionOpen = openSessions.includes(sessionKey);
+
+                      return (
+                        <div
+                          key={sessionKey}
+                          className="rounded-md border border-white/10 bg-brand-dark/38 p-4"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold text-white/52">
+                                Día {session.dayNumber}
+                              </p>
+                              <h3 className="mt-1 text-base font-bold">{session.title}</h3>
+                            </div>
+                            {session.completed ? (
+                              <CheckCircle2
+                                aria-label="Sesión completada"
+                                size={22}
+                                className="shrink-0 text-brand-cyan"
+                              />
+                            ) : (
+                              <Circle
+                                aria-label="Sesión pendiente"
+                                size={21}
+                                className="shrink-0 text-white/34"
+                              />
+                            )}
                           </div>
-                          {session.completed ? (
-                            <CheckCircle2
-                              aria-label="Sesión completada"
-                              size={22}
-                              className="shrink-0 text-brand-cyan"
-                            />
-                          ) : (
-                            <Circle
-                              aria-label="Sesión pendiente"
-                              size={21}
-                              className="shrink-0 text-white/34"
-                            />
-                          )}
+
+                          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                            <SessionStrategy label="Objetivo" value={getSessionObjective(session)} />
+                            <SessionStrategy label="Por qué existe" value={getSessionReason(week, session)} />
+                            <SessionStrategy label="Duración" value={`${session.estimatedMinutes} min`} />
+                            <SessionStrategy label="Intensidad" value={getSessionIntensity(session)} />
+                            <SessionStrategy label="Equipo" value={getSessionEquipment(session)} />
+                            <SessionStrategy label="Lugar" value={session.location} />
+                          </div>
+
+                          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                            <Link
+                              href={`/session?week=${week.weekNumber}&day=${session.dayNumber}`}
+                              className="inline-flex items-center justify-center gap-2 rounded-md bg-brand-cyan px-3 py-3 text-sm font-bold text-brand-dark transition hover:bg-brand-cyan/90"
+                            >
+                              <PlayCircle aria-hidden="true" size={17} strokeWidth={2.5} />
+                              Empezar sesión
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => toggleSession(week.weekNumber, session.dayNumber)}
+                              className="inline-flex items-center justify-center rounded-md border border-white/12 px-3 py-3 text-sm font-bold text-white/80 transition hover:bg-white/[0.05]"
+                              aria-expanded={isSessionOpen}
+                            >
+                              {isSessionOpen ? 'Ocultar detalles' : 'Ver detalles'}
+                            </button>
+                          </div>
+
+                          {isSessionOpen ? (
+                            <div className="mt-4 space-y-4 border-t border-white/10 pt-4">
+                              <ExerciseSection
+                                title="Calentamiento"
+                                sessionTitle={session.title}
+                                exercises={session.warmup}
+                              />
+                              <ExerciseSection
+                                title="Bloque principal"
+                                sessionTitle={session.title}
+                                exercises={session.mainBlock}
+                              />
+                              <ExerciseSection
+                                title="Vuelta a la calma"
+                                sessionTitle={session.title}
+                                exercises={session.cooldown}
+                              />
+
+                              <div className="rounded-md border border-brand-mustard/20 bg-brand-mustard/10 p-3">
+                                <p className="text-xs font-bold uppercase text-brand-mustard">
+                                  Nutrición post
+                                </p>
+                                <p className="mt-1 text-sm leading-6 text-white/72">
+                                  {session.nutritionTip}
+                                </p>
+                              </div>
+
+                              {session.source ? (
+                                <p className="text-xs font-semibold text-white/42">
+                                  Fuente: {session.source}
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : null}
                         </div>
-
-                        <div className="mt-3 flex flex-wrap gap-3 text-sm text-white/56">
-                          <span className="inline-flex items-center gap-1">
-                            <Clock3 aria-hidden="true" size={15} />
-                            {session.estimatedMinutes} min
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <MapPin aria-hidden="true" size={15} />
-                            {session.location}
-                          </span>
-                        </div>
-
-                        {interactiveSession?.weekNumber === week.weekNumber &&
-                        interactiveSession.dayNumber === session.dayNumber ? (
-                          <Link
-                            href="/session"
-                            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-brand-cyan px-3 py-3 text-sm font-bold text-brand-dark transition hover:bg-brand-cyan/90"
-                          >
-                            <PlayCircle aria-hidden="true" size={17} strokeWidth={2.5} />
-                            Abrir sesión interactiva
-                          </Link>
-                        ) : null}
-
-                        <div className="mt-4 space-y-4">
-                          <ExerciseSection
-                            title="Calentamiento"
-                            sessionTitle={session.title}
-                            exercises={session.warmup}
-                          />
-                          <ExerciseSection
-                            title="Bloque principal"
-                            sessionTitle={session.title}
-                            exercises={session.mainBlock}
-                          />
-                          <ExerciseSection
-                            title="Vuelta a la calma"
-                            sessionTitle={session.title}
-                            exercises={session.cooldown}
-                          />
-                        </div>
-
-                        <div className="mt-4 rounded-md border border-brand-mustard/20 bg-brand-mustard/10 p-3">
-                          <p className="text-xs font-bold uppercase text-brand-mustard">
-                            Nutrición post
-                          </p>
-                          <p className="mt-1 text-sm leading-6 text-white/72">
-                            {session.nutritionTip}
-                          </p>
-                        </div>
-
-                        {session.source ? (
-                          <p className="mt-3 text-xs font-semibold text-white/42">
-                            Fuente: {session.source}
-                          </p>
-                        ) : null}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ) : null}
@@ -305,8 +367,6 @@ function ExerciseSection({
       <h4 className="mb-2 text-xs font-bold uppercase text-brand-cyan">{title}</h4>
       <div className="space-y-2">
         {exercises.map((exercise) => {
-          const timer = getExerciseTimerConfig(exercise);
-
           return (
             <div key={`${title}-${exercise.name}`} className="rounded-md border border-white/10 bg-white/[0.03] p-3">
               <div className="flex items-start justify-between gap-3">
@@ -320,7 +380,6 @@ function ExerciseSection({
                 {exercise.reps ? <span>{exercise.reps}</span> : null}
                 {exercise.rest ? <span>descanso {exercise.rest}</span> : null}
                 {exercise.intensity ? <span>{exercise.intensity}</span> : null}
-                {timer ? <span>timer {formatTimerSeconds(timer.seconds)}</span> : null}
               </div>
 
               {exercise.notes ? (
@@ -330,6 +389,15 @@ function ExerciseSection({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function SessionStrategy({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-white/42">{label}</p>
+      <p className="mt-2 text-sm font-bold leading-5 text-white/82">{value}</p>
     </div>
   );
 }
