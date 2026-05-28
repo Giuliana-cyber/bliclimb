@@ -203,13 +203,15 @@ export function ProfileEditor() {
       initialProfile.goals.join(',') !== profile.goals.join(',') ||
       initialProfile.goalDescription !== profile.goalDescription ||
       initialProfile.project !== profile.project ||
+      initialProfile.level !== profile.level ||
       initialProfile.daysPerWeek !== profile.daysPerWeek ||
       initialProfile.availableDays.join(',') !== profile.availableDays.join(',') ||
       initialProfile.sessionDuration !== profile.sessionDuration ||
       initialProfile.planDuration !== profile.planDuration ||
       initialProfile.injuryNotes !== profile.injuryNotes ||
       initialProfile.injuries.join(',') !== profile.injuries.join(',') ||
-      initialProfile.equipment.join(',') !== profile.equipment.join(',')
+      initialProfile.equipment.join(',') !== profile.equipment.join(',') ||
+      initialProfile.equipmentNotes !== profile.equipmentNotes
     );
   }, [initialProfile, profile]);
 
@@ -301,9 +303,12 @@ export function ProfileEditor() {
 
       {significantChange || needsRegeneration ? (
         <div className="rounded-lg border border-brand-mustard/30 bg-brand-mustard/10 p-4 text-sm leading-6 text-white/76">
-          {significantChange
-            ? 'Cambiaste datos que afectan el entrenamiento. Guarda el perfil y regenera tu plan para que BilClimb lo use.'
-            : 'Tu perfil guardado cambió datos importantes. Regenera tu plan para usar el contexto nuevo.'}
+          <p className="font-bold text-brand-mustard">Plan necesita regeneración</p>
+          <p className="mt-1">
+            {significantChange
+              ? 'Cambiaste objetivo, nivel, equipo, lesión o disponibilidad. Guarda el perfil y regenera tu plan para que BilClimb lo use.'
+              : 'Tu perfil guardado cambió datos importantes. Regenera tu plan para usar el contexto nuevo.'}
+          </p>
         </div>
       ) : null}
 
