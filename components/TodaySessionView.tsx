@@ -6,25 +6,12 @@ import { ChevronLeft, Clock3, MapPin } from 'lucide-react';
 import { ExerciseBlock } from '@/components/ExerciseBlock';
 import { loadTrainingPlan } from '@/lib/plan';
 import type { Exercise } from '@/lib/plan';
-import { readStorage, writeStorage } from '@/lib/storage';
+import {
+  getExerciseProgressKey,
+  loadSessionProgress,
+  saveSessionProgress
+} from '@/lib/session-progress';
 import { getTodaySession, type SessionWithContext } from '@/lib/training/current-session';
-
-function progressStorageKey(sessionId: string) {
-  return `bilclimb:session-progress:${sessionId}`;
-}
-
-function exerciseKey(section: string, index: number) {
-  return `${section}-${index}`;
-}
-
-function readProgress(sessionId: string) {
-  const parsedValue = readStorage<string[]>(progressStorageKey(sessionId), []);
-  return Array.isArray(parsedValue) ? parsedValue : [];
-}
-
-function writeProgress(sessionId: string, completedExercises: string[]) {
-  writeStorage(progressStorageKey(sessionId), completedExercises);
-}
 
 export function TodaySessionView() {
   const [sessionContext, setSessionContext] = useState<SessionWithContext | null>(null);
@@ -36,7 +23,7 @@ export function TodaySessionView() {
     setSessionContext(todaySession);
 
     if (todaySession) {
-      setCompletedExercises(readProgress(todaySession.sessionId));
+      setCompletedExercises(loadSessionProgress(todaySession.sessionId));
     }
   }, []);
 
@@ -62,7 +49,7 @@ export function TodaySessionView() {
         ? current.filter((item) => item !== key)
         : [...current, key];
 
-      writeProgress(sessionContext.sessionId, next);
+      saveSessionProgress(sessionContext.sessionId, next);
       return next;
     });
   }
@@ -205,7 +192,7 @@ function ExerciseChecklist({
 
       <div className="space-y-3">
         {exercises.map((exercise, index) => {
-          const key = exerciseKey(section, index);
+          const key = getExerciseProgressKey(section, index);
           const complete = completedExercises.includes(key);
 
           return (
