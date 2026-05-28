@@ -9,6 +9,8 @@ import { TrainingPlanSchema } from '@/lib/ai/training-plan-schema';
 
 export const runtime = 'nodejs';
 
+const MAX_PLAN_GENERATION_ATTEMPTS = 2;
+
 function isUserProfile(value: unknown): value is UserProfile {
   if (!value || typeof value !== 'object') {
     return false;
@@ -138,6 +140,10 @@ function getDetailViolations(plan: TrainingPlan) {
         violations.push(`${label}: vuelta a la calma con menos de 2 ejercicios`);
       }
 
+      if (!session.source || session.source.trim().length < 10) {
+        violations.push(`${label}: falta una fuente o criterio de entrenamiento útil`);
+      }
+
       [...session.warmup, ...session.mainBlock, ...session.cooldown].forEach((exercise) => {
         if (exercise.description.trim().length < 120) {
           violations.push(`${label}: "${exercise.name}" no explica suficientemente qué hacer`);
@@ -151,6 +157,114 @@ function getDetailViolations(plan: TrainingPlan) {
   });
 
   return violations;
+}
+
+function getLanguageViolations(plan: TrainingPlan) {
+  const text = flattenPlanText(plan);
+  const englishPatterns = [
+    'warmup',
+    'cooldown',
+    'workout',
+    'training session',
+    'climbing gym',
+    'rest day',
+    'easy pace',
+    'moderate pace',
+    'sets of',
+    'reps of'
+  ];
+
+  return englishPatterns
+    .filter((pattern) => text.includes(pattern))
+    .map((pattern) => `usa texto en inglés: "${pattern}"`);
+}
+
+function getSafetyViolations(plan: TrainingPlan, profile: UserProfile) {
+  const text = flattenPlanText(plan);
+  const violations: string[] = [];
+  const isMinor = profile.age === 'u16';
+  const isNewerClimber = profile.climbingTime === 'start' || profile.climbingTime === 'less1';
+  const hasInjury =
+    profile.injuries.some((injury) => injury !== 'none') ||
+    Boolean(profile.injuryDescription.trim() || profile.injuryNotes.trim());
+  const fingerLoadPatterns = ['hangboard', 'fingerboard', 'campus', 'maxhang', 'colgadas'];
+  const weightPatterns = ['mancuerna', 'mancuernas', 'barra con peso', 'kettlebell', 'pesas'];
+
+  if ((isMinor || isNewerClimber) && fingerLoadPatterns.some((pattern) => text.includes(pattern))) {
+    violations.push('incluye carga avanzada de dedos para menor o escalador principiante');
+  }
+
+  if (isMinor && weightPatterns.some((pattern) => text.includes(pattern))) {
+    violations.push('incluye pesas para perfil menor de 16 años');
+  }
+
+  if (hasInjury && !text.includes('fisio') && !text.includes('fisioterapeuta')) {
+    violations.push('hay lesión/molestia y el plan no indica consultar a fisio');
+  }
+
+  const longestSession = Math.max(
+    ...plan.weeks.flatMap((week) => week.sessions.map((session) => session.estimatedMinutes)),
+    0
+  );
+
+  if (profile.sessionDuration > 0 && longestSession > profile.sessionDuration + 15) {
+    violations.push(
+      `incluye sesiones de hasta ${longestSession} min aunque el perfil reporta ${profile.sessionDuration} min`
+    );
+  }
+
+  return violations;
+}
+
+function getPlanValidationViolations(plan: TrainingPlan, profile: UserProfile) {
+  return [
+    ...getLanguageViolations(plan),
+    ...getUnavailableEquipmentViolations(plan, profile),
+    ...getDetailViolations(plan),
+    ...getSafetyViolations(plan, profile)
+  ];
+}
+
+async function generatePlanWithResponses({
+  client,
+  profile,
+  vectorStoreId,
+  validationHints
+}: {
+  client: OpenAI;
+  profile: UserProfile;
+  vectorStoreId: string;
+  validationHints: string[];
+}) {
+  const correctionPrompt = validationHints.length
+    ? `\n\nCORRECCIONES OBLIGATORIAS PARA ESTE REINTENTO:\n${validationHints
+        .map((hint) => `- ${hint}`)
+        .join('\n')}`
+    : '';
+
+  return client.responses.parse({
+    model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
+    input: [
+      {
+        role: 'system',
+        content:
+          'Eres BilClimb.ai. Genera planes de entrenamiento seguros, personalizados, basados en evidencia y estructurados para escaladores. Antes de generar el JSON, usa file_search para consultar la biblioteca de BilClimb. Responde todos los campos de texto en español mexicano y respeta estrictamente el equipo disponible del usuario.'
+      },
+      {
+        role: 'user',
+        content: `${buildPlanGeneratorPrompt(profile)}${correctionPrompt}`
+      }
+    ],
+    tools: [
+      {
+        type: 'file_search',
+        vector_store_ids: [vectorStoreId]
+      }
+    ],
+    text: {
+      format: zodTextFormat(TrainingPlanSchema, 'training_plan')
+    }
+  });
 }
 
 export async function POST(request: Request) {
@@ -167,6 +281,15 @@ export async function POST(request: Request) {
     );
   }
 
+  const vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID;
+
+  if (!vectorStoreId) {
+    return NextResponse.json(
+      { error: 'OPENAI_VECTOR_STORE_ID is required to generate grounded training plans.' },
+      { status: 500 }
+    );
+  }
+
   const body = (await request.json()) as { profile?: unknown };
 
   if (!isUserProfile(body.profile)) {
@@ -177,55 +300,37 @@ export async function POST(request: Request) {
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   try {
-    const response = await client.responses.parse({
-      model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
-      input: [
-        {
-          role: 'system',
-          content:
-            'Eres BilClimb.ai. Genera planes de entrenamiento seguros, personalizados y estructurados para escaladores. Responde todos los campos de texto en español mexicano y respeta estrictamente el equipo disponible del usuario.'
-        },
-        {
-          role: 'user',
-          content: buildPlanGeneratorPrompt(profile)
-        }
-      ],
-      text: {
-        format: zodTextFormat(TrainingPlanSchema, 'training_plan')
+    let validationHints: string[] = [];
+
+    for (let attempt = 1; attempt <= MAX_PLAN_GENERATION_ATTEMPTS; attempt += 1) {
+      const response = await generatePlanWithResponses({
+        client,
+        profile,
+        vectorStoreId,
+        validationHints
+      });
+
+      if (!response.output_parsed) {
+        validationHints = ['OpenAI no devolvió un plan estructurado compatible con el schema.'];
+        continue;
       }
-    });
 
-    if (!response.output_parsed) {
-      return NextResponse.json(
-        { error: 'OpenAI did not return a structured training plan.' },
-        { status: 502 }
-      );
+      const plan = normalizePlan(response.output_parsed, profile);
+      const validationViolations = getPlanValidationViolations(plan, profile);
+
+      if (!validationViolations.length) {
+        return NextResponse.json({ plan });
+      }
+
+      validationHints = validationViolations.slice(0, 8);
     }
 
-    const plan = normalizePlan(response.output_parsed, profile);
-    const equipmentViolations = getUnavailableEquipmentViolations(plan, profile);
-
-    if (equipmentViolations.length > 0) {
-      return NextResponse.json(
-        {
-          error: `El plan generado incluyó equipo no disponible: ${equipmentViolations.join(', ')}. Intenta regenerarlo.`
-        },
-        { status: 502 }
-      );
-    }
-
-    const detailViolations = getDetailViolations(plan);
-
-    if (detailViolations.length > 0) {
-      return NextResponse.json(
-        {
-          error: `El plan generado no tiene suficiente detalle práctico: ${detailViolations.slice(0, 5).join('; ')}. Intenta regenerarlo.`
-        },
-        { status: 502 }
-      );
-    }
-
-    return NextResponse.json({ plan });
+    return NextResponse.json(
+      {
+        error: `El plan generado no pasó validación: ${validationHints.slice(0, 5).join('; ')}. Intenta regenerarlo.`
+      },
+      { status: 502 }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to generate plan.';
     return NextResponse.json({ error: message }, { status: 500 });
