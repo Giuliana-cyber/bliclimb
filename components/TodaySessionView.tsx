@@ -181,7 +181,7 @@ export function TodaySessionView() {
       <div className="grid gap-3 sm:grid-cols-2">
         {allExercisesComplete ? (
           <Link
-            href={`/checkin?sessionId=${encodeURIComponent(sessionContext.sessionId)}`}
+            href={`/checkin?week=${week.weekNumber}&day=${session.dayNumber}&sessionId=${encodeURIComponent(sessionContext.sessionId)}`}
             className="flex w-full items-center justify-center rounded-md bg-brand-cyan px-4 py-4 text-base font-bold text-brand-dark transition hover:bg-brand-cyan/90"
           >
             Finalizar sesión y hacer check-in

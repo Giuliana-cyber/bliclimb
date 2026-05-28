@@ -7,7 +7,12 @@ import { saveCheckIn, type CheckIn } from '@/lib/checkin';
 import { loadCheckIns } from '@/lib/checkin';
 import { loadTrainingPlan, saveSessionCheckIn } from '@/lib/plan';
 import { getCheckInAlerts, type CheckInAlert } from '@/lib/training/alerts';
-import { getTodaySession, type SessionWithContext } from '@/lib/training/current-session';
+import {
+  getSessionWithContext,
+  getTodaySession,
+  withDerivedCurrentWeek,
+  type SessionWithContext
+} from '@/lib/training/current-session';
 
 type CompletionValue = 'full' | 'partial' | 'skipped';
 
@@ -119,15 +124,26 @@ export function CheckInForm() {
   const [alerts, setAlerts] = useState<CheckInAlert[]>([]);
 
   useEffect(() => {
-    const plan = loadTrainingPlan();
-    const todaySession = plan ? getTodaySession(plan) : null;
+    const storedPlan = loadTrainingPlan();
+    const plan = storedPlan ? withDerivedCurrentWeek(storedPlan) : null;
     const params = new URLSearchParams(window.location.search);
+    const weekNumber = Number(params.get('week'));
+    const dayNumber = Number(params.get('day'));
+    const selectedSession =
+      plan && Number.isInteger(weekNumber) && Number.isInteger(dayNumber)
+        ? getSessionWithContext(plan, weekNumber, dayNumber)
+        : null;
+    const activeSession = selectedSession ?? (plan ? getTodaySession(plan) : null);
 
     setFallbackPlanId(plan?.id ?? 'manual');
-    setSessionContext(todaySession);
+    setSessionContext(activeSession);
 
-    if (!todaySession || params.get('manual') === '1') {
-      setManualActivity((current) => ({ ...current, enabled: true }));
+    if (!activeSession || params.get('manual') === '1' || params.get('adapt') === '1') {
+      setManualActivity((current) => ({
+        ...current,
+        enabled: true,
+        customizedPlan: params.get('adapt') === '1' ? true : current.customizedPlan
+      }));
     }
   }, []);
 
@@ -178,7 +194,11 @@ export function CheckInForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-7">
       <Link
-        href={sessionContext ? '/session' : '/'}
+        href={
+          sessionContext
+            ? `/session?week=${sessionContext.week.weekNumber}&day=${sessionContext.session.dayNumber}`
+            : '/'
+        }
         className="inline-flex items-center gap-2 text-sm font-semibold text-white/62"
       >
         <ChevronLeft aria-hidden="true" size={17} />

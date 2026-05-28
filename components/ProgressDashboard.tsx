@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Activity, AlertTriangle, BarChart3, CheckCircle2 } from 'lucide-react';
+import { Activity, AlertTriangle, BarChart3, CheckCircle2, Moon, Zap } from 'lucide-react';
 import { loadCheckIns, type CheckIn } from '@/lib/checkin';
 import { loadTrainingPlan, type TrainingPlan } from '@/lib/plan';
 import { withDerivedCurrentWeek } from '@/lib/training/current-session';
@@ -46,8 +46,10 @@ export function ProgressDashboard() {
   const adherence = allSessions.length ? Math.round((completedSessions / allSessions.length) * 100) : 0;
   const averageRpe = getAverage(checkIns.map((checkIn) => checkIn.rpe));
   const averageEnergy = getAverage(checkIns.map((checkIn) => checkIn.energy));
+  const averageSleep = getAverage(checkIns.map((checkIn) => checkIn.sleep));
   const latestFingerPain = checkIns[0]?.fingerPain ?? 0;
   const chartCheckIns = [...checkIns].reverse().slice(-8);
+  const manualActivities = checkIns.filter((checkIn) => checkIn.manualActivity);
 
   return (
     <section className="space-y-6">
@@ -59,7 +61,7 @@ export function ProgressDashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Metric
           icon={CheckCircle2}
           label="Sesiones completadas"
@@ -68,6 +70,8 @@ export function ProgressDashboard() {
         <Metric icon={BarChart3} label="Adherencia" value={`${adherence}%`} />
         <Metric icon={Activity} label="RPE promedio" value={averageRpe ? averageRpe.toFixed(1) : '-'} />
         <Metric icon={AlertTriangle} label="Dolor dedos" value={`${latestFingerPain}/10`} />
+        <Metric icon={Zap} label="Energía" value={averageEnergy ? `${averageEnergy.toFixed(1)}/5` : '-'} />
+        <Metric icon={Moon} label="Sueño" value={averageSleep ? `${averageSleep.toFixed(1)}/5` : '-'} />
       </div>
 
       <LineChart
@@ -98,6 +102,59 @@ export function ProgressDashboard() {
           <p className="mt-2 text-sm text-white/58">{averageEnergy.toFixed(1)} de 5</p>
         </div>
       ) : null}
+
+      <section>
+        <h2 className="mb-3 text-xl font-bold">Actividades manuales</h2>
+        {manualActivities.length ? (
+          <div className="space-y-3">
+            {manualActivities.slice(0, 6).map((checkIn) => (
+              <article
+                key={`manual-${checkIn.id}`}
+                className="rounded-lg border border-brand-cyan/20 bg-brand-cyan/10 p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-brand-cyan">
+                      {formatDate(checkIn.date)}
+                    </p>
+                    <h3 className="mt-1 font-bold text-white">
+                      {checkIn.manualActivity?.title ?? 'Actividad libre'}
+                    </h3>
+                  </div>
+                  {checkIn.manualActivity?.customizedPlan ? (
+                    <span className="rounded-md border border-brand-cyan/30 px-2 py-1 text-xs font-bold text-brand-cyan">
+                      adaptación
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-2 text-sm font-semibold text-white/58">
+                  {checkIn.manualActivity?.location || 'libre'}
+                  {checkIn.manualActivity?.durationMinutes
+                    ? ` · ${checkIn.manualActivity.durationMinutes} min`
+                    : ''}
+                </p>
+                {checkIn.manualActivity?.details ? (
+                  <p className="mt-2 text-sm leading-6 text-white/70">
+                    {checkIn.manualActivity.details}
+                  </p>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
+            <p className="text-sm leading-6 text-white/68">
+              Cuando hagas roca, movilidad o fuerza fuera del plan, quedará registrado aquí.
+            </p>
+            <Link
+              href="/checkin?manual=1"
+              className="mt-4 inline-flex w-full items-center justify-center rounded-md border border-white/12 px-4 py-3 text-sm font-bold text-white/76"
+            >
+              Registrar actividad manual
+            </Link>
+          </div>
+        )}
+      </section>
 
       <section>
         <h2 className="mb-3 text-xl font-bold">Últimos check-ins</h2>
