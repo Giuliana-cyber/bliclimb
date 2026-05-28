@@ -25,7 +25,7 @@ export function BillingSuccess() {
 
       try {
         const response = await fetch(
-          `/api/billing/verify-session?preapproval_id=${encodeURIComponent(preapprovalId)}`
+          `/api/billing/verify-subscription?preapproval_id=${encodeURIComponent(preapprovalId)}`
         );
         const data = (await response.json()) as { active?: boolean; error?: string };
 

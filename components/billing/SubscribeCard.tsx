@@ -14,7 +14,7 @@ export function SubscribeCard({ compact = false }: { compact?: boolean }) {
     setError('');
 
     try {
-      const response = await fetch('/api/billing/create-checkout-session', {
+      const response = await fetch('/api/billing/create-subscription', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
