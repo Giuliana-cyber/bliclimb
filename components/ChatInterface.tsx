@@ -10,6 +10,50 @@ type ChatMessage = {
   content: string;
 };
 
+type SseEvent = {
+  event: string;
+  data: {
+    text?: string;
+    message?: string;
+  };
+};
+
+function parseSseEvents(buffer: string) {
+  const normalizedBuffer = buffer.replace(/\r\n/g, '\n');
+  const rawEvents = normalizedBuffer.split('\n\n');
+  const remainder = rawEvents.pop() ?? '';
+  const events: SseEvent[] = [];
+
+  rawEvents.forEach((rawEvent) => {
+    const eventLines = rawEvent.split('\n');
+    const eventName =
+      eventLines.find((line) => line.startsWith('event:'))?.replace(/^event:\s?/, '') ??
+      'message';
+    const dataText = eventLines
+      .filter((line) => line.startsWith('data:'))
+      .map((line) => line.replace(/^data:\s?/, ''))
+      .join('\n');
+
+    if (!dataText) {
+      return;
+    }
+
+    try {
+      events.push({
+        event: eventName,
+        data: JSON.parse(dataText) as SseEvent['data']
+      });
+    } catch {
+      events.push({
+        event: 'error',
+        data: { message: 'No pudimos leer la respuesta del coach.' }
+      });
+    }
+  });
+
+  return { events, remainder };
+}
+
 export function ChatInterface() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [character, setCharacter] = useState<UserProfile['character']>('bill');
@@ -98,31 +142,29 @@ export function ChatInterface() {
         const { done, value } = await reader.read();
 
         if (done) {
+          if (buffer.trim()) {
+            const parsed = parseSseEvents(`${buffer}\n\n`);
+            parsed.events.forEach((event) => {
+              if (event.event === 'delta' && event.data.text) {
+                assistantMessage += event.data.text;
+              }
+
+              if (event.event === 'error') {
+                throw new Error(event.data.message ?? 'No pudimos responder el mensaje.');
+              }
+            });
+          }
+
           break;
         }
 
         buffer += decoder.decode(value, { stream: true });
-        const events = buffer.split('\n\n');
-        buffer = events.pop() ?? '';
+        const parsed = parseSseEvents(buffer);
+        buffer = parsed.remainder;
 
-        for (const rawEvent of events) {
-          const eventName = rawEvent
-            .split('\n')
-            .find((line) => line.startsWith('event: '))
-            ?.replace('event: ', '');
-          const dataLine = rawEvent
-            .split('\n')
-            .find((line) => line.startsWith('data: '))
-            ?.replace('data: ', '');
-
-          if (!dataLine) {
-            continue;
-          }
-
-          const data = JSON.parse(dataLine) as { text?: string; message?: string };
-
-          if (eventName === 'delta' && data.text) {
-            assistantMessage += data.text;
+        for (const event of parsed.events) {
+          if (event.event === 'delta' && event.data.text) {
+            assistantMessage += event.data.text;
             setMessages((current) =>
               current.map((message, index) =>
                 index === current.length - 1 ? { ...message, content: assistantMessage } : message
@@ -130,8 +172,8 @@ export function ChatInterface() {
             );
           }
 
-          if (eventName === 'error') {
-            throw new Error(data.message ?? 'No pudimos responder el mensaje.');
+          if (event.event === 'error') {
+            throw new Error(event.data.message ?? 'No pudimos responder el mensaje.');
           }
         }
       }
