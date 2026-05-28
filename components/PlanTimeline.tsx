@@ -12,7 +12,7 @@ import {
   RefreshCw,
   Target
 } from 'lucide-react';
-import { ExerciseHelpLink } from '@/components/ExerciseHelpLink';
+import { ExerciseGuide } from '@/components/ExerciseGuide';
 import { loadTrainingPlan, type Exercise, type TrainingPlan } from '@/lib/plan';
 import { formatTimerSeconds, getExerciseTimerConfig } from '@/lib/training/exercise-timer';
 import { getTodayTrainingState, withDerivedCurrentWeek } from '@/lib/training/current-session';
@@ -311,7 +311,7 @@ function ExerciseSection({
             <div key={`${title}-${exercise.name}`} className="rounded-md border border-white/10 bg-white/[0.03] p-3">
               <div className="flex items-start justify-between gap-3">
                 <p className="min-w-0 flex-1 text-sm font-bold text-white">{exercise.name}</p>
-                <ExerciseHelpLink exercise={exercise} contextLabel={`${title} - ${sessionTitle}`} />
+                <ExerciseGuide exercise={exercise} contextLabel={`${title} - ${sessionTitle}`} />
               </div>
               <p className="mt-2 text-sm leading-6 text-white/66">{exercise.description}</p>
 

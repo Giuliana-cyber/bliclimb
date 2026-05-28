@@ -2,7 +2,7 @@
 
 import { Check } from 'lucide-react';
 import type { Exercise } from '@/lib/plan';
-import { ExerciseHelpLink } from '@/components/ExerciseHelpLink';
+import { ExerciseGuide } from '@/components/ExerciseGuide';
 import { Timer } from '@/components/Timer';
 import { getExerciseTimerConfig } from '@/lib/training/exercise-timer';
 
@@ -83,7 +83,7 @@ export function ExerciseBlock({ exercise, complete, onToggle }: ExerciseBlockPro
           <Check aria-hidden="true" size={15} strokeWidth={2.8} />
           {complete ? 'Hecho' : 'Marcar hecho'}
         </button>
-        <ExerciseHelpLink exercise={exercise} contextLabel="Sesion de hoy" />
+        <ExerciseGuide exercise={exercise} contextLabel="Sesión de hoy" />
       </div>
     </article>
   );

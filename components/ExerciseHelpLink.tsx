@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { MessageCircleQuestion } from 'lucide-react';
 import type { Exercise } from '@/lib/plan';
 
-function buildExerciseQuestion(exercise: Exercise, contextLabel?: string) {
+export function buildExerciseQuestion(exercise: Exercise, contextLabel?: string) {
   const details = [
     `Ejercicio: ${exercise.name}`,
     `Descripcion del plan: ${exercise.description}`,
