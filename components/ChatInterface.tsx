@@ -1,13 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { SendHorizonal, UserRound } from 'lucide-react';
+import { BookOpenCheck, SendHorizonal, UserRound } from 'lucide-react';
 import { loadProfile, saveProfile } from '@/lib/profile';
 import type { UserProfile } from '@/lib/profile';
+import type { LibraryTraceability } from '@/lib/ai/response-sources';
 
 type ChatMessage = {
   role: 'user' | 'assistant';
   content: string;
+  metadata?: LibraryTraceability;
 };
 
 type SseEvent = {
@@ -15,6 +17,8 @@ type SseEvent = {
   data: {
     text?: string;
     message?: string;
+    usedFileSearch?: boolean;
+    sourceNames?: string[];
   };
 };
 
@@ -67,6 +71,7 @@ export function ChatInterface() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const showDevelopmentSources = process.env.NODE_ENV !== 'production';
 
   useEffect(() => {
     const storedProfile = loadProfile();
@@ -149,6 +154,19 @@ export function ChatInterface() {
                 assistantMessage += event.data.text;
               }
 
+              if (event.event === 'done') {
+                const metadata = {
+                  usedFileSearch: Boolean(event.data.usedFileSearch),
+                  sourceNames: event.data.sourceNames ?? []
+                };
+
+                setMessages((current) =>
+                  current.map((message, index) =>
+                    index === current.length - 1 ? { ...message, metadata } : message
+                  )
+                );
+              }
+
               if (event.event === 'error') {
                 throw new Error(event.data.message ?? 'No pudimos responder el mensaje.');
               }
@@ -168,6 +186,19 @@ export function ChatInterface() {
             setMessages((current) =>
               current.map((message, index) =>
                 index === current.length - 1 ? { ...message, content: assistantMessage } : message
+              )
+            );
+          }
+
+          if (event.event === 'done') {
+            const metadata = {
+              usedFileSearch: Boolean(event.data.usedFileSearch),
+              sourceNames: event.data.sourceNames ?? []
+            };
+
+            setMessages((current) =>
+              current.map((message, index) =>
+                index === current.length - 1 ? { ...message, metadata } : message
               )
             );
           }
@@ -239,6 +270,12 @@ export function ChatInterface() {
             ].join(' ')}
           >
             {message.content}
+            {message.role === 'assistant' && message.metadata?.usedFileSearch ? (
+              <LibraryTraceBadge
+                sourceNames={message.metadata.sourceNames}
+                showSources={showDevelopmentSources}
+              />
+            ) : null}
           </div>
         ))}
         {loading ? (
@@ -318,5 +355,25 @@ function CharacterButton({
         <span className="block text-xs text-white/48">{description}</span>
       </span>
     </button>
+  );
+}
+
+function LibraryTraceBadge({
+  sourceNames,
+  showSources
+}: {
+  sourceNames: string[];
+  showSources: boolean;
+}) {
+  return (
+    <div className="mt-3 space-y-1 border-t border-white/10 pt-2">
+      <span className="inline-flex items-center gap-1.5 rounded-md border border-brand-cyan/25 bg-brand-cyan/10 px-2 py-1 text-[11px] font-bold text-brand-cyan">
+        <BookOpenCheck aria-hidden="true" size={13} strokeWidth={2.4} />
+        Basado en biblioteca BilClimb
+      </span>
+      {showSources && sourceNames.length ? (
+        <p className="text-xs leading-5 text-white/46">Fuente: {sourceNames.join(', ')}</p>
+      ) : null}
+    </div>
   );
 }

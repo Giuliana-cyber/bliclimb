@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import type { UserProfile } from '@/lib/profile';
 import { requireSubscriptionAccess } from '@/lib/billing/subscription';
 import { buildCoachSystemPrompt } from '@/lib/prompts/coach-system';
+import { extractLibraryTraceability } from '@/lib/ai/response-sources';
 
 export const runtime = 'nodejs';
 
@@ -102,7 +103,7 @@ export async function POST(request: Request) {
           }
 
           if (event.type === 'response.completed') {
-            controller.enqueue(sse('done', {}));
+            controller.enqueue(sse('done', extractLibraryTraceability(event.response)));
           }
         }
       } catch (error) {
