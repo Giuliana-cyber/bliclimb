@@ -134,6 +134,10 @@ NIVEL DE DETALLE OBLIGATORIO:
 - Evita textos tipo ensayo: usa frases cortas, visuales y ejecutables.
 - La descripción de cada ejercicio debe explicar: objetivo del ejercicio, cómo hacerlo paso a
   paso, qué sensación/intensidad buscar y cuándo bajar o detener la intensidad.
+- Para la guía visual de cada ejercicio, incluye estos campos cuando sea posible:
+  objective, howTo, feelCues, commonMistakes, stopIf, alternative, equipment.
+- howTo, feelCues, commonMistakes y stopIf deben ser arrays de bullets cortos.
+- stopIf siempre debe incluir señales de dolor, pérdida de técnica o fatiga peligrosa.
 - No escribas descripciones tipo "Escalada continua" o "Ejercicios de verticalidad" sin explicar
   exactamente qué hacer. Eso es insuficiente.
 - En notes agrega un cue técnico concreto o una adaptación: por ejemplo respiración, pies,

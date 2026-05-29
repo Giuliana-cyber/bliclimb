@@ -47,6 +47,13 @@ export interface Exercise {
   intensity: string | null; // "BW" | "+5%" | "2 grados debajo"
   notes: string | null;
   timerSeconds: number | null; // Para activar timer
+  objective?: string;
+  howTo?: string[];
+  feelCues?: string[];
+  commonMistakes?: string[];
+  stopIf?: string[];
+  alternative?: string;
+  equipment?: string;
 }
 
 export function loadTrainingPlan() {

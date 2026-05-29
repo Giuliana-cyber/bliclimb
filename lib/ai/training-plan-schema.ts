@@ -31,7 +31,14 @@ export const ExerciseSchema = z.object({
   rest: z.string().nullable(),
   intensity: z.string().nullable(),
   notes: z.string().min(40).nullable(),
-  timerSeconds: z.number().nullable()
+  timerSeconds: z.number().nullable(),
+  objective: z.string().optional(),
+  howTo: z.array(z.string()).optional(),
+  feelCues: z.array(z.string()).optional(),
+  commonMistakes: z.array(z.string()).optional(),
+  stopIf: z.array(z.string()).optional(),
+  alternative: z.string().optional(),
+  equipment: z.string().optional()
 });
 
 export const SessionSchema = z.object({

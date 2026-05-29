@@ -3,28 +3,17 @@ import { MessageCircleQuestion } from 'lucide-react';
 import type { Exercise } from '@/lib/plan';
 
 export function buildExerciseQuestion(exercise: Exercise, contextLabel?: string) {
-  const details = [
-    `Ejercicio: ${exercise.name}`,
-    `Descripcion del plan: ${exercise.description}`,
-    exercise.sets ? `Series: ${exercise.sets}` : null,
-    exercise.reps ? `Reps/tiempo: ${exercise.reps}` : null,
-    exercise.rest ? `Descanso: ${exercise.rest}` : null,
-    exercise.intensity ? `Intensidad: ${exercise.intensity}` : null,
-    exercise.notes ? `Notas del plan: ${exercise.notes}` : null,
-    contextLabel ? `Contexto: ${contextLabel}` : null
+  const context = [
+    contextLabel,
+    exercise.equipment ? `equipo: ${exercise.equipment}` : null,
+    exercise.reps ? `reps/tiempo: ${exercise.reps}` : null,
+    exercise.rest ? `descanso: ${exercise.rest}` : null,
+    exercise.intensity ? `intensidad: ${exercise.intensity}` : null
   ].filter(Boolean);
 
-  return `Senda, explicame como hacer este ejercicio paso a paso y de forma segura.
-
-${details.join('\n')}
-
-Incluye:
-- preparacion y posicion inicial
-- ejecucion paso a paso
-- errores comunes
-- como saber si lo estoy haciendo bien
-- senales para bajar intensidad o parar
-- una alternativa si no tengo el equipo o no tengo climbing gym`;
+  return `Senda, explícame cómo hacer ${exercise.name} en pasos simples. Mi contexto: ${
+    context.join(' · ') || 'no especificado'
+  }. Incluye errores comunes, qué debo sentir y cuándo parar.`;
 }
 
 export function ExerciseHelpLink({

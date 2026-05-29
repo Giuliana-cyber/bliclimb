@@ -2,7 +2,19 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { BookOpen, MessageCircleQuestion, X } from 'lucide-react';
+import {
+  Activity,
+  AlertTriangle,
+  BookOpen,
+  HeartPulse,
+  ListChecks,
+  MessageCircleQuestion,
+  Package,
+  RefreshCw,
+  Target,
+  X,
+  type LucideIcon
+} from 'lucide-react';
 import type { Exercise } from '@/lib/plan';
 import { buildExerciseQuestion } from '@/components/ExerciseHelpLink';
 
@@ -11,12 +23,90 @@ type ExerciseGuideProps = {
   contextLabel?: string;
 };
 
+function cleanText(value: string) {
+  return value.trim().replace(/\s+/g, ' ');
+}
+
+function firstSentence(value: string | null | undefined) {
+  if (!value) {
+    return '';
+  }
+
+  return cleanText(value).split(/(?<=[.!?])\s+/)[0] ?? cleanText(value);
+}
+
+function toItems(value: string[] | string | null | undefined) {
+  if (!value) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(cleanText).filter(Boolean);
+  }
+
+  return value
+    .split(/\n|;/)
+    .map(cleanText)
+    .filter(Boolean);
+}
+
+function buildGuide(exercise: Exercise) {
+  const dosage = [
+    exercise.sets ? `${exercise.sets} series` : null,
+    exercise.reps,
+    exercise.rest ? `descansa ${exercise.rest}` : null,
+    exercise.intensity ? `intensidad: ${exercise.intensity}` : null
+  ].filter(Boolean);
+  const fallbackStep = [exercise.description, dosage.length ? dosage.join(' · ') : null]
+    .filter(Boolean)
+    .join(' ');
+
+  return {
+    objective:
+      exercise.objective ??
+      firstSentence(exercise.description) ??
+      'Ejecutar el bloque con control y técnica limpia.',
+    howTo: toItems(exercise.howTo).length
+      ? toItems(exercise.howTo)
+      : [
+          fallbackStep,
+          'Empieza suave y sube intensidad solo si la técnica se mantiene estable.',
+          'Respira entre intentos y respeta el descanso indicado.'
+        ].filter(Boolean),
+    feelCues: toItems(exercise.feelCues).length
+      ? toItems(exercise.feelCues)
+      : [
+          exercise.intensity ? `Esfuerzo esperado: ${exercise.intensity}.` : 'Trabajo controlado, no máximo.',
+          exercise.notes ?? 'Debe sentirse retador pero repetible.'
+        ],
+    commonMistakes: toItems(exercise.commonMistakes).length
+      ? toItems(exercise.commonMistakes)
+      : [
+          'Apurar repeticiones cuando la técnica ya se rompió.',
+          'Aumentar intensidad antes de calentar bien.',
+          'Ignorar dolor o molestias que cambian tu movimiento.'
+        ],
+    stopIf: toItems(exercise.stopIf).length
+      ? toItems(exercise.stopIf)
+      : [
+          'El dolor sube a 3/10 o aparece dolor punzante.',
+          'Pierdes coordinación, agarre o control corporal.',
+          'La técnica se rompe aunque descanses.'
+        ],
+    alternative:
+      exercise.alternative ??
+      'Reduce intensidad, baja volumen o cambia a movilidad y técnica sin dolor.',
+    equipment: exercise.equipment ?? 'Equipo indicado por tu plan y tu contexto disponible.'
+  };
+}
+
 export function ExerciseGuide({ exercise, contextLabel }: ExerciseGuideProps) {
   const [open, setOpen] = useState(false);
   const params = new URLSearchParams({
     character: 'senda',
     ask: buildExerciseQuestion(exercise, contextLabel)
   });
+  const guide = buildGuide(exercise);
 
   return (
     <>
@@ -59,26 +149,29 @@ export function ExerciseGuide({ exercise, contextLabel }: ExerciseGuideProps) {
             </div>
 
             <div className="mt-5 space-y-4">
-              <GuideSection title="Qué vas a trabajar">{exercise.description}</GuideSection>
-
-              <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-5">
                 <GuideMetric label="Series" value={exercise.sets ? String(exercise.sets) : null} />
                 <GuideMetric label="Reps/tiempo" value={exercise.reps} />
                 <GuideMetric label="Descanso" value={exercise.rest} />
                 <GuideMetric label="Intensidad" value={exercise.intensity} />
+                <GuideMetric label="Equipo" value={guide.equipment} />
               </div>
 
-              {exercise.notes ? <GuideSection title="Cue técnico">{exercise.notes}</GuideSection> : null}
-
-              <GuideSection title="Cómo ejecutarlo">
-                Empieza suave, revisa que el movimiento no genere dolor agudo y mantén respiración
-                constante. Si la técnica se rompe, baja intensidad, aumenta descanso o detén el
-                bloque.
-              </GuideSection>
+              <VisualGuideCard icon={Target} title="Objetivo" items={[guide.objective]} />
+              <VisualGuideCard icon={ListChecks} title="Paso a paso" items={guide.howTo} />
+              <VisualGuideCard icon={HeartPulse} title="Qué debes sentir" items={guide.feelCues} />
+              <VisualGuideCard
+                icon={AlertTriangle}
+                title="Errores comunes"
+                items={guide.commonMistakes}
+                tone="warning"
+              />
+              <VisualGuideCard icon={Activity} title="Señales para parar" items={guide.stopIf} tone="danger" />
+              <VisualGuideCard icon={RefreshCw} title="Alternativa" items={[guide.alternative]} />
 
               <Link
                 href={`/chat?${params.toString()}`}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-brand-cyan px-4 py-3 text-sm font-bold text-brand-dark transition hover:bg-brand-cyan/90"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-white/12 px-4 py-3 text-sm font-bold text-white/76 transition hover:border-brand-cyan/40 hover:bg-brand-cyan/10 hover:text-brand-cyan"
                 onClick={() => setOpen(false)}
               >
                 <MessageCircleQuestion aria-hidden="true" size={17} />
@@ -92,11 +185,40 @@ export function ExerciseGuide({ exercise, contextLabel }: ExerciseGuideProps) {
   );
 }
 
-function GuideSection({ title, children }: { title: string; children: React.ReactNode }) {
+function VisualGuideCard({
+  icon: Icon,
+  title,
+  items,
+  tone = 'neutral'
+}: {
+  icon: LucideIcon;
+  title: string;
+  items: string[];
+  tone?: 'neutral' | 'warning' | 'danger';
+}) {
+  const toneClassName =
+    tone === 'danger'
+      ? 'border-red-400/24 bg-red-400/10 text-red-100'
+      : tone === 'warning'
+        ? 'border-brand-mustard/24 bg-brand-mustard/10 text-brand-mustard'
+        : 'border-white/10 bg-white/[0.04] text-brand-cyan';
+
   return (
-    <section className="rounded-md border border-white/10 bg-white/[0.04] p-3">
-      <h3 className="text-xs font-bold uppercase text-brand-mustard">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-white/74">{children}</p>
+    <section className={`rounded-md border p-3 ${toneClassName}`}>
+      <div className="flex items-center gap-2">
+        <span className="grid size-8 shrink-0 place-items-center rounded-md bg-white/8">
+          <Icon aria-hidden="true" size={17} strokeWidth={2.4} />
+        </span>
+        <h3 className="text-xs font-bold uppercase tracking-[0.08em]">{title}</h3>
+      </div>
+      <ul className="mt-3 space-y-2">
+        {items.map((item, index) => (
+          <li key={`${item}-${index}`} className="flex gap-2 text-sm leading-6 text-white/74">
+            <span className="mt-2 size-1.5 shrink-0 rounded-full bg-current opacity-80" />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -104,7 +226,10 @@ function GuideSection({ title, children }: { title: string; children: React.Reac
 function GuideMetric({ label, value }: { label: string; value: string | null }) {
   return (
     <div className="rounded-md border border-white/10 bg-white/[0.04] p-2">
-      <p className="text-xs font-semibold text-white/42">{label}</p>
+      <p className="inline-flex items-center gap-1 text-xs font-semibold text-white/42">
+        {label === 'Equipo' ? <Package aria-hidden="true" size={12} /> : null}
+        {label}
+      </p>
       <p className="mt-1 text-sm font-bold text-white/82">{value ?? '-'}</p>
     </div>
   );
