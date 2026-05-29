@@ -1,5 +1,7 @@
 import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
+import type { CheckIn } from '@/lib/checkin';
+import type { TrainingPlan } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
 import { requireSubscriptionAccess } from '@/lib/billing/subscription';
 import { buildCoachSystemPrompt } from '@/lib/prompts/coach-system';
@@ -16,6 +18,8 @@ type ChatRequestBody = {
   messages?: ChatMessage[];
   profile?: UserProfile | null;
   character?: UserProfile['character'];
+  plan?: TrainingPlan | null;
+  checkIns?: CheckIn[];
 };
 
 function isChatMessage(value: unknown): value is ChatMessage {
@@ -47,6 +51,8 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as ChatRequestBody;
   const messages = Array.isArray(body.messages) ? body.messages.filter(isChatMessage) : [];
+  const checkIns = Array.isArray(body.checkIns) ? body.checkIns.slice(0, 5) : [];
+  const plan = body.plan && typeof body.plan === 'object' ? body.plan : null;
   const character =
     body.character === 'bill' || body.character === 'senda' ? body.character : undefined;
 
@@ -80,7 +86,9 @@ export async function POST(request: Request) {
               role: 'system',
               content: buildCoachSystemPrompt({
                 profile: body.profile ?? null,
-                character
+                character,
+                plan,
+                checkIns
               })
             },
             ...messages.map((message) => ({

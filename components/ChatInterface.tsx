@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { BookOpenCheck, SendHorizonal, UserRound } from 'lucide-react';
+import { loadCheckIns } from '@/lib/checkin';
+import { loadTrainingPlan } from '@/lib/plan';
 import { loadProfile, saveProfile } from '@/lib/profile';
 import type { UserProfile } from '@/lib/profile';
 import type { LibraryTraceability } from '@/lib/ai/response-sources';
@@ -127,7 +129,9 @@ export function ChatInterface() {
         body: JSON.stringify({
           messages: nextMessages.slice(-8),
           profile: profile ? { ...profile, character } : null,
-          character
+          character,
+          plan: loadTrainingPlan(),
+          checkIns: loadCheckIns().slice(0, 5)
         })
       });
 
@@ -263,13 +267,17 @@ export function ChatInterface() {
           <div
             key={`${message.role}-${index}`}
             className={[
-              'max-w-[86%] whitespace-pre-wrap rounded-lg px-4 py-3 text-sm leading-6',
+              'max-w-[86%] rounded-lg px-4 py-3 text-sm leading-6',
               message.role === 'user'
-                ? 'ml-auto bg-brand-cyan text-brand-dark'
+                ? 'ml-auto whitespace-pre-wrap bg-brand-cyan text-brand-dark'
                 : 'mr-auto border border-white/10 bg-brand-dark/58 text-white/78'
             ].join(' ')}
           >
-            {message.content}
+            {message.role === 'assistant' ? (
+              <FormattedCoachMessage content={message.content} />
+            ) : (
+              message.content
+            )}
             {message.role === 'assistant' && message.metadata?.usedFileSearch ? (
               <LibraryTraceBadge
                 sourceNames={message.metadata.sourceNames}
@@ -374,6 +382,64 @@ function LibraryTraceBadge({
       {showSources && sourceNames.length ? (
         <p className="text-xs leading-5 text-white/46">Fuente: {sourceNames.join(', ')}</p>
       ) : null}
+    </div>
+  );
+}
+
+function cleanInlineMarkdown(value: string) {
+  return value
+    .replace(/^\s{0,3}#{1,6}\s+/g, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/__(.*?)__/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .trim();
+}
+
+function parseCoachLines(content: string) {
+  return content
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const bulletMatch = line.match(/^[-*•]\s+(.*)$/);
+      const numberedMatch = line.match(/^\d+[.)]\s+(.*)$/);
+
+      if (bulletMatch || numberedMatch) {
+        return {
+          type: 'bullet' as const,
+          text: cleanInlineMarkdown((bulletMatch ?? numberedMatch)?.[1] ?? line)
+        };
+      }
+
+      return {
+        type: 'text' as const,
+        text: cleanInlineMarkdown(line)
+      };
+    });
+}
+
+function FormattedCoachMessage({ content }: { content: string }) {
+  const lines = parseCoachLines(content);
+
+  if (!lines.length) {
+    return <span className="text-white/42">...</span>;
+  }
+
+  return (
+    <div className="space-y-2">
+      {lines.map((line, index) =>
+        line.type === 'bullet' ? (
+          <div key={`${line.text}-${index}`} className="flex gap-2 text-white/76">
+            <span className="mt-2 size-1.5 shrink-0 rounded-full bg-brand-cyan" />
+            <span>{line.text}</span>
+          </div>
+        ) : (
+          <p key={`${line.text}-${index}`} className="font-semibold text-white/84">
+            {line.text}
+          </p>
+        )
+      )}
     </div>
   );
 }

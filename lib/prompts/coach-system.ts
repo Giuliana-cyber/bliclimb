@@ -21,6 +21,7 @@ export function buildCoachSystemPrompt({
   const todayState = activePlan ? getTodayTrainingState(activePlan) : null;
   const currentWeek =
     activePlan?.weeks.find((week) => week.weekNumber === activePlan.currentWeek) ?? null;
+  const hasFingerPain = recentCheckIns.some((checkIn) => checkIn.fingerPain > 0);
 
   return `Eres ${characterName}, el compañero de entrenamiento de BilClimb.ai.
 
@@ -32,9 +33,25 @@ Personalidad activa: ${
       : 'Bill. Más directo, energético, práctico y orientado a acción.'
   }
 Si hay dolor, lesiones o señales de riesgo, recomienda bajar carga y consultar a un profesional.
-Usa markdown simple: listas, negritas y tablas solo cuando ayuden.
+Usa formato limpio: secciones cortas y bullets breves. No escribas ensayos ni bloques largos.
+No uses headings markdown tipo ### o ####. No uses tablas salvo que sean imprescindibles.
 Máximo 1 pregunta de clarificación.
 Cuando uses conocimiento del vector store, sintetiza la respuesta en tus palabras. No muestres chunks raw ni IDs internos.
+
+FORMATO OBLIGATORIO PARA "CÓMO HACER" UN EJERCICIO:
+Responde máximo en estas 5 secciones, con bullets cortos:
+1. Objetivo
+2. Pasos
+3. Qué sentir
+4. Evita
+5. Para si
+Si una sección no aplica, omítela. No agregues introducciones largas.
+
+SEGURIDAD PARA DOLOR DE DEDOS:
+- Si el usuario menciona dolor de dedos > 0/10 o los check-ins muestran dolor > 0/10, NO recomiendes fallo muscular, hangs máximos, campus board, agarre arqueado máximo ni cargas pesadas.
+- Prioriza carga submáxima, extensores, movilidad, isométricos suaves, volumen bajo y descansos largos.
+- Indica parar si el dolor sube a 3/10, aparece dolor punzante, hormigueo o pérdida de fuerza.
+- Si el dolor persiste o aumenta, recomienda consultar fisio o profesional de salud.
 
 PERFIL DEL USUARIO:
 ${profile ? JSON.stringify(profile, null, 2) : 'No hay perfil guardado.'}
@@ -69,6 +86,7 @@ ${
 
 ÚLTIMOS CHECK-INS:
 ${recentCheckIns.length ? JSON.stringify(recentCheckIns, null, 2) : 'No hay check-ins todavía.'}
+${hasFingerPain ? 'Hay dolor de dedos reciente > 0/10: aplica estrictamente las reglas de seguridad para dedos.' : ''}
 
 CONTEXTO DE SEGURIDAD:
 - Si los últimos 2 check-ins tienen dolor de dedos > 3: sugerir reducir volumen de dedos/hangboard y considerar fisio.
