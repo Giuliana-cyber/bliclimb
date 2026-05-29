@@ -13,8 +13,8 @@ export interface TrainingPlan {
   weeks: Week[];
   status: 'active' | 'completed' | 'paused';
   createdAt: string;
-  usedFileSearch?: boolean;
-  librarySources?: string[];
+  usedFileSearch?: boolean | null;
+  librarySources?: string[] | null;
 }
 
 export interface Week {
@@ -47,13 +47,13 @@ export interface Exercise {
   intensity: string | null; // "BW" | "+5%" | "2 grados debajo"
   notes: string | null;
   timerSeconds: number | null; // Para activar timer
-  objective?: string;
-  howTo?: string[];
-  feelCues?: string[];
-  commonMistakes?: string[];
-  stopIf?: string[];
-  alternative?: string;
-  equipment?: string;
+  objective?: string | null;
+  howTo?: string[] | null;
+  feelCues?: string[] | null;
+  commonMistakes?: string[] | null;
+  stopIf?: string[] | null;
+  alternative?: string | null;
+  equipment?: string | null;
 }
 
 export function loadTrainingPlan() {

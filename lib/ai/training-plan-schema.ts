@@ -32,13 +32,13 @@ export const ExerciseSchema = z.object({
   intensity: z.string().nullable(),
   notes: z.string().min(40).nullable(),
   timerSeconds: z.number().nullable(),
-  objective: z.string().optional(),
-  howTo: z.array(z.string()).optional(),
-  feelCues: z.array(z.string()).optional(),
-  commonMistakes: z.array(z.string()).optional(),
-  stopIf: z.array(z.string()).optional(),
-  alternative: z.string().optional(),
-  equipment: z.string().optional()
+  objective: z.string().nullable(),
+  howTo: z.array(z.string()).nullable(),
+  feelCues: z.array(z.string()).nullable(),
+  commonMistakes: z.array(z.string()).nullable(),
+  stopIf: z.array(z.string()).nullable(),
+  alternative: z.string().nullable(),
+  equipment: z.string().nullable()
 });
 
 export const SessionSchema = z.object({
@@ -72,6 +72,6 @@ export const TrainingPlanSchema = z.object({
   weeks: z.array(WeekSchema),
   status: z.enum(['active', 'completed', 'paused']),
   createdAt: z.string(),
-  usedFileSearch: z.boolean().optional(),
-  librarySources: z.array(z.string()).optional()
+  usedFileSearch: z.boolean().nullable(),
+  librarySources: z.array(z.string()).nullable()
 });
