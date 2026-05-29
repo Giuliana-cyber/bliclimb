@@ -1,4 +1,6 @@
 export const LOCAL_SESSION_STORAGE_KEY = 'bilclimb:session';
+const LOCAL_SESSION_COOKIE_NAME = 'bilclimb_session';
+const LOCAL_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
 export interface LocalSession {
   id: string;
@@ -16,6 +18,66 @@ function getSessionId(email: string) {
   return encodeURIComponent(normalizeEmail(email));
 }
 
+function isLocalSession(value: unknown): value is LocalSession {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const session = value as Partial<LocalSession>;
+
+  return Boolean(
+    session.id &&
+      session.email &&
+      session.name &&
+      session.createdAt &&
+      session.lastSeenAt
+  );
+}
+
+function readSessionCookie() {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  const cookie = document.cookie
+    .split('; ')
+    .find((item) => item.startsWith(`${LOCAL_SESSION_COOKIE_NAME}=`));
+
+  if (!cookie) {
+    return null;
+  }
+
+  try {
+    const parsedValue = JSON.parse(
+      decodeURIComponent(cookie.slice(LOCAL_SESSION_COOKIE_NAME.length + 1))
+    );
+
+    return isLocalSession(parsedValue) ? parsedValue : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSessionCookie(session: LocalSession) {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+
+  document.cookie = `${LOCAL_SESSION_COOKIE_NAME}=${encodeURIComponent(
+    JSON.stringify(session)
+  )}; Max-Age=${LOCAL_SESSION_MAX_AGE_SECONDS}; Path=/; SameSite=Lax${secure}`;
+}
+
+function clearSessionCookie() {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  document.cookie = `${LOCAL_SESSION_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
+}
+
 export function loadLocalSession() {
   if (typeof window === 'undefined') {
     return null;
@@ -24,21 +86,28 @@ export function loadLocalSession() {
   const rawValue = window.localStorage.getItem(LOCAL_SESSION_STORAGE_KEY);
 
   if (!rawValue) {
-    return null;
+    const cookieSession = readSessionCookie();
+
+    if (cookieSession) {
+      window.localStorage.setItem(LOCAL_SESSION_STORAGE_KEY, JSON.stringify(cookieSession));
+    }
+
+    return cookieSession;
   }
 
   try {
-    const session = JSON.parse(rawValue) as LocalSession;
+    const session = JSON.parse(rawValue) as unknown;
 
-    if (!session.email || !session.id) {
+    if (!isLocalSession(session)) {
       window.localStorage.removeItem(LOCAL_SESSION_STORAGE_KEY);
-      return null;
+      return readSessionCookie();
     }
 
+    writeSessionCookie(session);
     return session;
   } catch {
     window.localStorage.removeItem(LOCAL_SESSION_STORAGE_KEY);
-    return null;
+    return readSessionCookie();
   }
 }
 
@@ -48,6 +117,7 @@ export function saveLocalSession(session: LocalSession) {
   }
 
   window.localStorage.setItem(LOCAL_SESSION_STORAGE_KEY, JSON.stringify(session));
+  writeSessionCookie(session);
   return session;
 }
 
@@ -91,4 +161,5 @@ export function clearLocalSession() {
   }
 
   window.localStorage.removeItem(LOCAL_SESSION_STORAGE_KEY);
+  clearSessionCookie();
 }
