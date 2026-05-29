@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
+  BookOpenCheck,
   CheckCircle2,
   ChevronDown,
   Circle,
@@ -96,6 +97,7 @@ export function PlanTimeline() {
   const [plan, setPlan] = useState<TrainingPlan | null>(null);
   const [openWeeks, setOpenWeeks] = useState<number[]>([]);
   const [openSessions, setOpenSessions] = useState<string[]>([]);
+  const showDevelopmentSources = process.env.NODE_ENV !== 'production';
 
   useEffect(() => {
     const storedPlan = loadTrainingPlan();
@@ -177,6 +179,19 @@ export function PlanTimeline() {
         <p className="mt-2 text-sm leading-6 text-white/62">
           Objetivo: {plan.objective} · Inicio: {formatDate(plan.startDate)}
         </p>
+        {plan.usedFileSearch ? (
+          <div className="mt-3 inline-flex max-w-full flex-col items-start gap-1 rounded-md border border-brand-cyan/25 bg-brand-cyan/10 px-3 py-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-cyan">
+              <BookOpenCheck aria-hidden="true" size={14} strokeWidth={2.4} />
+              Plan basado en biblioteca BilClimb
+            </span>
+            {showDevelopmentSources && plan.librarySources?.length ? (
+              <span className="text-xs leading-5 text-white/52">
+                Fuentes: {plan.librarySources.join(', ')}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-3 gap-3">

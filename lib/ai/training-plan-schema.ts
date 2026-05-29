@@ -64,5 +64,7 @@ export const TrainingPlanSchema = z.object({
   startDate: z.string(),
   weeks: z.array(WeekSchema),
   status: z.enum(['active', 'completed', 'paused']),
-  createdAt: z.string()
+  createdAt: z.string(),
+  usedFileSearch: z.boolean().optional(),
+  librarySources: z.array(z.string()).optional()
 });

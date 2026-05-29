@@ -13,6 +13,8 @@ export interface TrainingPlan {
   weeks: Week[];
   status: 'active' | 'completed' | 'paused';
   createdAt: string;
+  usedFileSearch?: boolean;
+  librarySources?: string[];
 }
 
 export interface Week {

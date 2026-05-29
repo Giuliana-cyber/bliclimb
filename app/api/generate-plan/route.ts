@@ -6,6 +6,7 @@ import { buildPlanGeneratorPrompt } from '@/lib/prompts/plan-generator';
 import type { TrainingPlan } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
 import { TrainingPlanSchema } from '@/lib/ai/training-plan-schema';
+import { extractLibraryTraceability, type LibraryTraceability } from '@/lib/ai/response-sources';
 
 export const runtime = 'nodejs';
 
@@ -32,7 +33,11 @@ function isUserProfile(value: unknown): value is UserProfile {
   );
 }
 
-function normalizePlan(plan: TrainingPlan, profile: UserProfile): TrainingPlan {
+function normalizePlan(
+  plan: TrainingPlan,
+  profile: UserProfile,
+  libraryTraceability?: LibraryTraceability
+): TrainingPlan {
   const now = new Date().toISOString();
 
   return {
@@ -44,6 +49,10 @@ function normalizePlan(plan: TrainingPlan, profile: UserProfile): TrainingPlan {
     status: 'active',
     createdAt: plan.createdAt || now,
     startDate: plan.startDate || now,
+    usedFileSearch: libraryTraceability?.usedFileSearch ?? plan.usedFileSearch,
+    librarySources: libraryTraceability?.sourceNames.length
+      ? libraryTraceability.sourceNames
+      : plan.librarySources,
     weeks: plan.weeks.map((week) => ({
       ...week,
       sessions: week.sessions.map((session) => ({
@@ -315,7 +324,8 @@ export async function POST(request: Request) {
         continue;
       }
 
-      const plan = normalizePlan(response.output_parsed, profile);
+      const libraryTraceability = extractLibraryTraceability(response);
+      const plan = normalizePlan(response.output_parsed, profile, libraryTraceability);
       const validationViolations = getPlanValidationViolations(plan, profile);
 
       if (!validationViolations.length) {
