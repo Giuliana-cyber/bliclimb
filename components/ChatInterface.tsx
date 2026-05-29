@@ -1,7 +1,17 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { BookOpenCheck, SendHorizonal, UserRound } from 'lucide-react';
+import {
+  AlertTriangle,
+  Ban,
+  BookOpenCheck,
+  HeartPulse,
+  ListChecks,
+  SendHorizonal,
+  Target,
+  UserRound,
+  type LucideIcon
+} from 'lucide-react';
 import { loadCheckIns } from '@/lib/checkin';
 import { loadTrainingPlan } from '@/lib/plan';
 import { loadProfile, saveProfile } from '@/lib/profile';
@@ -395,51 +405,183 @@ function cleanInlineMarkdown(value: string) {
     .trim();
 }
 
-function parseCoachLines(content: string) {
-  return content
+type VisualSection = {
+  id: string;
+  title: string;
+  items: string[];
+};
+
+const visualSectionConfig: Record<
+  string,
+  {
+    title: string;
+    icon: LucideIcon;
+    className: string;
+  }
+> = {
+  objective: {
+    title: 'Objetivo',
+    icon: Target,
+    className: 'border-brand-cyan/24 bg-brand-cyan/10 text-brand-cyan'
+  },
+  steps: {
+    title: 'Pasos',
+    icon: ListChecks,
+    className: 'border-white/10 bg-white/[0.04] text-white/82'
+  },
+  feel: {
+    title: 'Qué sentir',
+    icon: HeartPulse,
+    className: 'border-brand-cyan/20 bg-brand-cyan/[0.07] text-brand-cyan'
+  },
+  avoid: {
+    title: 'Evita',
+    icon: Ban,
+    className: 'border-brand-mustard/24 bg-brand-mustard/10 text-brand-mustard'
+  },
+  stop: {
+    title: 'Detente si',
+    icon: AlertTriangle,
+    className: 'border-red-400/24 bg-red-400/10 text-red-100'
+  },
+  general: {
+    title: 'Respuesta',
+    icon: BookOpenCheck,
+    className: 'border-white/10 bg-white/[0.04] text-white/82'
+  }
+};
+
+function normalizeSectionLabel(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/^\d+[.)]\s*/, '')
+    .replace(/^[-*•]\s*/, '')
+    .replace(/[:.]+$/g, '')
+    .trim();
+}
+
+function getSectionId(value: string) {
+  const normalizedValue = normalizeSectionLabel(cleanInlineMarkdown(value));
+
+  if (['objetivo', 'meta'].includes(normalizedValue)) {
+    return 'objective';
+  }
+
+  if (['pasos', 'paso a paso', 'como hacerlo', 'como hacer'].includes(normalizedValue)) {
+    return 'steps';
+  }
+
+  if (['que sentir', 'que debes sentir', 'sensaciones'].includes(normalizedValue)) {
+    return 'feel';
+  }
+
+  if (['evita', 'errores comunes', 'no hagas'].includes(normalizedValue)) {
+    return 'avoid';
+  }
+
+  if (
+    ['para si', 'detente si', 'para cuando', 'senales para parar', 'cuando parar'].includes(
+      normalizedValue
+    )
+  ) {
+    return 'stop';
+  }
+
+  return null;
+}
+
+function stripListPrefix(value: string) {
+  return value.replace(/^[-*•]\s+/, '').replace(/^\d+[.)]\s+/, '');
+}
+
+function parseVisualCoachSections(content: string) {
+  const sections: VisualSection[] = [];
+  let activeSection: VisualSection | null = null;
+
+  content
     .replace(/\r\n/g, '\n')
     .split('\n')
-    .map((line) => line.trim())
+    .map((line) => cleanInlineMarkdown(stripListPrefix(line.trim())))
     .filter(Boolean)
-    .map((line) => {
-      const bulletMatch = line.match(/^[-*•]\s+(.*)$/);
-      const numberedMatch = line.match(/^\d+[.)]\s+(.*)$/);
+    .forEach((line) => {
+      const colonMatch = line.match(/^([^:]{3,36}):\s*(.+)$/);
+      const inlineSectionId = colonMatch ? getSectionId(colonMatch[1]) : null;
+      const lineSectionId = getSectionId(line);
+      const sectionId = inlineSectionId ?? lineSectionId;
 
-      if (bulletMatch || numberedMatch) {
-        return {
-          type: 'bullet' as const,
-          text: cleanInlineMarkdown((bulletMatch ?? numberedMatch)?.[1] ?? line)
+      if (sectionId) {
+        activeSection = {
+          id: sectionId,
+          title: visualSectionConfig[sectionId]?.title ?? line,
+          items: []
         };
+        sections.push(activeSection);
+
+        if (inlineSectionId && colonMatch?.[2]) {
+          activeSection.items.push(cleanInlineMarkdown(colonMatch[2]));
+        }
+
+        return;
       }
 
-      return {
-        type: 'text' as const,
-        text: cleanInlineMarkdown(line)
-      };
+      if (!activeSection) {
+        activeSection = {
+          id: 'general',
+          title: visualSectionConfig.general.title,
+          items: []
+        };
+        sections.push(activeSection);
+      }
+
+      activeSection.items.push(line);
     });
+
+  return sections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(Boolean)
+    }))
+    .filter((section) => section.items.length > 0);
 }
 
 function FormattedCoachMessage({ content }: { content: string }) {
-  const lines = parseCoachLines(content);
+  const visualSections = parseVisualCoachSections(content);
 
-  if (!lines.length) {
+  if (!visualSections.length) {
     return <span className="text-white/42">...</span>;
   }
 
   return (
-    <div className="space-y-2">
-      {lines.map((line, index) =>
-        line.type === 'bullet' ? (
-          <div key={`${line.text}-${index}`} className="flex gap-2 text-white/76">
-            <span className="mt-2 size-1.5 shrink-0 rounded-full bg-brand-cyan" />
-            <span>{line.text}</span>
-          </div>
-        ) : (
-          <p key={`${line.text}-${index}`} className="font-semibold text-white/84">
-            {line.text}
-          </p>
-        )
-      )}
+    <div className="space-y-3">
+      {visualSections.map((section, sectionIndex) => (
+        <CoachVisualCard key={`${section.id}-${sectionIndex}`} section={section} />
+      ))}
     </div>
+  );
+}
+
+function CoachVisualCard({ section }: { section: VisualSection }) {
+  const config = visualSectionConfig[section.id] ?? visualSectionConfig.general;
+  const Icon = config.icon;
+
+  return (
+    <section className={`rounded-md border p-3 ${config.className}`}>
+      <div className="flex items-center gap-2">
+        <span className="grid size-8 shrink-0 place-items-center rounded-md bg-white/8">
+          <Icon aria-hidden="true" size={17} strokeWidth={2.4} />
+        </span>
+        <h3 className="text-xs font-bold uppercase tracking-[0.08em]">{config.title}</h3>
+      </div>
+      <div className="mt-3 space-y-2">
+        {section.items.map((item, index) => (
+          <div key={`${item}-${index}`} className="flex gap-2 text-sm leading-6 text-white/76">
+            <span className="mt-2 size-1.5 shrink-0 rounded-full bg-current opacity-80" />
+            <span>{item}</span>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
