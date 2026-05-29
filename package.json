@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.39.5",
     "lucide-react": "^1.14.0",
     "next": "^14.2.35",
     "openai": "^6.37.0",

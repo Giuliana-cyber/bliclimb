@@ -18,6 +18,10 @@ function getSessionId(email: string) {
   return encodeURIComponent(normalizeEmail(email));
 }
 
+function getExternalSessionId(provider: string, providerUserId: string) {
+  return encodeURIComponent(`${provider}:${providerUserId}`);
+}
+
 function isLocalSession(value: unknown): value is LocalSession {
   if (!value || typeof value !== 'object') {
     return false;
@@ -137,6 +141,31 @@ export function createLocalSession({
     id,
     email: normalizedEmail,
     name: name.trim() || normalizedEmail.split('@')[0] || 'climber',
+    createdAt: currentSession?.id === id ? currentSession.createdAt : now,
+    lastSeenAt: now
+  });
+}
+
+export function createExternalSession({
+  provider,
+  providerUserId,
+  email,
+  name
+}: {
+  provider: string;
+  providerUserId: string;
+  email?: string | null;
+  name?: string | null;
+}) {
+  const id = getExternalSessionId(provider, providerUserId);
+  const normalizedEmail = normalizeEmail(email || `${providerUserId}@${provider}.local`);
+  const now = new Date().toISOString();
+  const currentSession = loadLocalSession();
+
+  return saveLocalSession({
+    id,
+    email: normalizedEmail,
+    name: name?.trim() || normalizedEmail.split('@')[0] || 'climber',
     createdAt: currentSession?.id === id ? currentSession.createdAt : now,
     lastSeenAt: now
   });

@@ -6,15 +6,14 @@ import { usePathname } from 'next/navigation';
 import {
   BarChart3,
   ClipboardList,
-  CreditCard,
   Dumbbell,
   Home,
   MessageCircle,
-  Settings,
   UserRound
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { LocalAuthGate } from '@/components/LocalAuthGate';
+import { AuthGate } from '@/components/AuthGate';
+import { AuthHeaderActions } from '@/components/AuthHeaderActions';
 import { SubscribeCard } from '@/components/billing/SubscribeCard';
 
 type NavItem = {
@@ -32,7 +31,14 @@ const navItems: NavItem[] = [
   { label: 'Perfil', href: '/profile', icon: UserRound }
 ];
 
-const routesWithoutShell = ['/onboarding', '/generating-plan', '/subscribe', '/billing/success'];
+const routesWithoutShell = [
+  '/onboarding',
+  '/generating-plan',
+  '/subscribe',
+  '/billing/success',
+  '/sign-in',
+  '/sign-up'
+];
 
 function isActive(pathname: string, href: string) {
   if (href === '/') {
@@ -78,37 +84,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             BilClimb.ai
           </Link>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="grid size-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/76 transition hover:border-brand-cyan/60 hover:text-brand-cyan"
-              aria-label="Abrir ajustes"
-              title="Ajustes"
-            >
-              <Settings aria-hidden="true" size={19} strokeWidth={2.2} />
-            </button>
-            <Link
-              href="/subscribe"
-              className="grid size-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/76 transition hover:border-brand-cyan/60 hover:text-brand-cyan"
-              aria-label="Abrir suscripción"
-              title="Suscripción"
-            >
-              <CreditCard aria-hidden="true" size={19} strokeWidth={2.2} />
-            </Link>
-            <Link
-              href="/profile"
-              className="grid size-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/76 transition hover:border-brand-mustard/70 hover:text-brand-mustard"
-              aria-label="Abrir perfil"
-              title="Perfil"
-            >
-              <UserRound aria-hidden="true" size={19} strokeWidth={2.2} />
-            </Link>
-          </div>
+          <AuthHeaderActions />
         </div>
       </header>
 
       <main className="mx-auto min-h-[calc(100vh-4rem)] w-full max-w-3xl px-4 pb-28 pt-6">
-        <LocalAuthGate>
+        <AuthGate>
           {subscriptionState === 'loading' ? (
             <div className="grid min-h-[50vh] place-items-center text-sm font-semibold text-white/54">
               Revisando suscripción...
@@ -118,7 +99,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ) : (
             children
           )}
-        </LocalAuthGate>
+        </AuthGate>
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-brand-dark/96 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 backdrop-blur">

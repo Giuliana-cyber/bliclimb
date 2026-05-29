@@ -32,6 +32,10 @@ Configura estas variables en Vercel para `Production` y `Preview`:
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4o-mini
 OPENAI_VECTOR_STORE_ID=
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
 REQUIRE_SUBSCRIPTION=true
 NEXT_PUBLIC_APP_URL=https://TU-DOMINIO.vercel.app
 MERCADO_PAGO_ACCESS_TOKEN=
@@ -44,6 +48,7 @@ SUBSCRIPTION_COOKIE_SECRET=
 Notas:
 
 - `OPENAI_VECTOR_STORE_ID` debe ser el vector store con la base de conocimiento de escalada.
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` y `CLERK_SECRET_KEY` activan el login real. Puedes crearlas desde Clerk o instalar Clerk desde Vercel Marketplace.
 - `SUBSCRIPTION_COOKIE_SECRET` debe ser una frase larga aleatoria. No uses llaves de OpenAI ni Mercado Pago.
 - Para pruebas, deja `MERCADO_PAGO_USE_SANDBOX=true` y usa credenciales sandbox de Mercado Pago.
 - Para produccion, cambia `MERCADO_PAGO_USE_SANDBOX=false` y usa credenciales reales.
@@ -65,7 +70,25 @@ Despues del primer deploy, actualiza `NEXT_PUBLIC_APP_URL` con el dominio real y
 5. Inicia la suscripcion con un email de prueba.
 6. Al volver a `/billing/success`, verifica que la app cree la cookie de suscripcion.
 
-## 5. Pruebas de OpenAI
+## 5. Login con Clerk
+
+1. Crea una aplicacion en Clerk o instala Clerk desde Vercel Marketplace.
+2. Copia `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` y `CLERK_SECRET_KEY` en Vercel.
+3. Agrega tambien:
+
+```env
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+```
+
+4. Haz redeploy.
+5. Abre la app en una ventana normal y confirma que te manda a `/sign-in`.
+6. Crea una cuenta y vuelve a BilClimb.
+7. Cierra y abre el navegador: la sesion debe seguir activa.
+
+Importante: este login ya identifica usuarios de forma real. La sincronizacion completa de plan/progreso entre dispositivos requiere una base de datos, porque el MVP todavia guarda esos datos en `localStorage`.
+
+## 6. Pruebas de OpenAI
 
 Prueba esto con `REQUIRE_SUBSCRIPTION=false` primero para aislar errores:
 
@@ -77,7 +100,7 @@ Prueba esto con `REQUIRE_SUBSCRIPTION=false` primero para aislar errores:
 
 Luego activa `REQUIRE_SUBSCRIPTION=true` y confirma que chat/generate-plan pidan suscripcion si no hay acceso.
 
-## 6. Pruebas funcionales
+## 7. Pruebas funcionales
 
 Haz este flujo completo:
 
@@ -92,7 +115,7 @@ Haz este flujo completo:
 9. Perfil: cambiar objetivo/equipo/lesion/nivel/dias y confirmar aviso para regenerar plan.
 10. Suscripcion: probar `/subscribe`, `/billing/success` y `/api/billing/status`.
 
-## 7. Deploy por CLI opcional
+## 8. Deploy por CLI opcional
 
 Si prefieres CLI:
 
@@ -102,6 +125,10 @@ vercel link
 vercel env add OPENAI_API_KEY production
 vercel env add OPENAI_MODEL production
 vercel env add OPENAI_VECTOR_STORE_ID production
+vercel env add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY production
+vercel env add CLERK_SECRET_KEY production
+vercel env add NEXT_PUBLIC_CLERK_SIGN_IN_URL production
+vercel env add NEXT_PUBLIC_CLERK_SIGN_UP_URL production
 vercel env add REQUIRE_SUBSCRIPTION production
 vercel env add NEXT_PUBLIC_APP_URL production
 vercel env add MERCADO_PAGO_ACCESS_TOKEN production
