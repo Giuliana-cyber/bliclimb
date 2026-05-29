@@ -51,7 +51,7 @@ export function ExerciseBlock({ exercise, complete, onToggle }: ExerciseBlockPro
 
       <dl className="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
         <ExerciseMetric label="Series" value={exercise.sets ? String(exercise.sets) : null} />
-        <ExerciseMetric label="Reps" value={exercise.reps} />
+        <ExerciseMetric label="Repeticiones" value={exercise.reps} />
         <ExerciseMetric label="Descanso" value={exercise.rest} />
         <ExerciseMetric label="Intensidad" value={exercise.intensity} />
       </dl>

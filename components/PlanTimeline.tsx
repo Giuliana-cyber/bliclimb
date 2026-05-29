@@ -93,6 +93,16 @@ function getSessionEquipment(session: Session) {
   return session.location === 'roca' ? 'roca y material personal' : 'sin equipo especial';
 }
 
+function formatPlanStatus(status: TrainingPlan['status']) {
+  const statusLabels: Record<TrainingPlan['status'], string> = {
+    active: 'Activo',
+    completed: 'Completado',
+    paused: 'Pausado'
+  };
+
+  return statusLabels[status];
+}
+
 export function PlanTimeline() {
   const [plan, setPlan] = useState<TrainingPlan | null>(null);
   const [openWeeks, setOpenWeeks] = useState<number[]>([]);
@@ -197,7 +207,7 @@ export function PlanTimeline() {
       <div className="grid grid-cols-3 gap-3">
         <Metric label="Semana" value={`${plan.currentWeek}/${plan.totalWeeks}`} />
         <Metric label="Sesiones" value={`${completedSessions}/${totalSessions}`} />
-        <Metric label="Estado" value={plan.status} />
+        <Metric label="Estado" value={formatPlanStatus(plan.status)} />
       </div>
 
       <div className="space-y-3">

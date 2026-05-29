@@ -1,4 +1,5 @@
 import type { CheckIn } from '@/lib/checkin';
+import { normalizePlanLanguage } from '@/lib/plan-language';
 import { readStorage, removeStorage, writeStorage } from '@/lib/storage';
 
 const PLAN_STORAGE_KEY = 'bilclimb:plan';
@@ -57,12 +58,25 @@ export interface Exercise {
 }
 
 export function loadTrainingPlan() {
-  return readStorage<TrainingPlan | null>(PLAN_STORAGE_KEY, null);
+  const plan = readStorage<TrainingPlan | null>(PLAN_STORAGE_KEY, null);
+
+  if (!plan) {
+    return null;
+  }
+
+  const normalizedPlan = normalizePlanLanguage(plan);
+
+  if (JSON.stringify(normalizedPlan) !== JSON.stringify(plan)) {
+    writeStorage(PLAN_STORAGE_KEY, normalizedPlan);
+  }
+
+  return normalizedPlan;
 }
 
 export function saveTrainingPlan(plan: TrainingPlan) {
-  writeStorage(PLAN_STORAGE_KEY, plan);
-  return plan;
+  const normalizedPlan = normalizePlanLanguage(plan);
+  writeStorage(PLAN_STORAGE_KEY, normalizedPlan);
+  return normalizedPlan;
 }
 
 export function updateTrainingPlan(updates: Partial<TrainingPlan>) {
