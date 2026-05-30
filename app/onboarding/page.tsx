@@ -35,12 +35,22 @@ type OnboardingForm = {
   daysPerWeek: number;
   availableDays: string[];
   sessionDuration: number;
+  maxSessionDuration: number;
   equipment: string[];
   equipmentNotes: string;
   previousTraining: string;
+  pullUpAbility: string;
+  fingerTrainingExperience: string;
+  campusExperience: string;
+  currentFingerPain: number;
+  currentShoulderPain: number;
+  currentElbowPain: number;
+  trainingAggressiveness: string;
+  outdoorFrequency: string;
   goals: string[];
   goalDescription: string;
   project: string;
+  rockProjectDescription: string;
   durationChoice: DurationChoice;
 };
 
@@ -69,12 +79,22 @@ const initialForm: OnboardingForm = {
   daysPerWeek: 0,
   availableDays: [],
   sessionDuration: 90,
+  maxSessionDuration: 90,
   equipment: [],
   equipmentNotes: '',
   previousTraining: '',
+  pullUpAbility: '',
+  fingerTrainingExperience: '',
+  campusExperience: '',
+  currentFingerPain: 0,
+  currentShoulderPain: 0,
+  currentElbowPain: 0,
+  trainingAggressiveness: 'balanced',
+  outdoorFrequency: '',
   goals: [],
   goalDescription: '',
   project: '',
+  rockProjectDescription: '',
   durationChoice: ''
 };
 
@@ -177,6 +197,8 @@ const sessionDurationOptions = [
   { label: '120 min', value: 120 }
 ];
 
+const painScaleOptions = [0, 1, 2, 3, 4, 5];
+
 const equipmentOptions: Option[] = [
   { label: 'Gym de escalada', value: 'gym' },
   { label: 'Hangboard', value: 'hangboard' },
@@ -185,7 +207,8 @@ const equipmentOptions: Option[] = [
   { label: 'Solo roca', value: 'rock' },
   { label: 'Casa sin equipo', value: 'home' },
   { label: 'Bandas elásticas', value: 'bands' },
-  { label: 'Barra de dominadas', value: 'pullup_bar' }
+  { label: 'Barra de dominadas', value: 'pullup_bar' },
+  { label: 'TRX / anillas', value: 'trx' }
 ];
 
 const previousTrainingOptions: Option[] = [
@@ -193,6 +216,43 @@ const previousTrainingOptions: Option[] = [
   { label: 'Sí pero informal', value: 'informal' },
   { label: 'Sí con estructura', value: 'structured' },
   { label: 'Sí con entrenador', value: 'coach' }
+];
+
+const pullUpAbilityOptions: Option[] = [
+  { label: 'No sé / no hago', value: 'unknown' },
+  { label: '0 estrictas', value: 'none' },
+  { label: '1-3 estrictas', value: '1to3' },
+  { label: '4-8 estrictas', value: '4to8' },
+  { label: '9+ estrictas', value: '9plus' },
+  { label: 'Con peso', value: 'weighted' }
+];
+
+const trainingExperienceOptions: Option[] = [
+  { label: 'No sé', value: 'unknown' },
+  { label: 'Nunca', value: 'none' },
+  { label: 'Poca', value: 'light' },
+  { label: 'Estructurada', value: 'structured' },
+  { label: 'Avanzada', value: 'advanced' }
+];
+
+const campusExperienceOptions: Option[] = [
+  { label: 'Nunca', value: 'none' },
+  { label: 'Pocas veces', value: 'light' },
+  { label: 'Con estructura', value: 'structured' },
+  { label: 'Avanzada', value: 'advanced' }
+];
+
+const outdoorFrequencyOptions: Option[] = [
+  { label: 'Casi nunca', value: 'rarely' },
+  { label: '1 vez/mes', value: 'monthly' },
+  { label: '1 vez/semana', value: 'weekly' },
+  { label: 'Varias/semana', value: 'multiple_weekly' }
+];
+
+const trainingAggressivenessOptions: Option[] = [
+  { label: 'Conservador', value: 'conservative' },
+  { label: 'Balanceado', value: 'balanced' },
+  { label: 'Retador', value: 'aggressive' }
 ];
 
 const goalOptions: Option[] = [
@@ -401,15 +461,30 @@ export default function OnboardingPage() {
       daysPerWeek: form.daysPerWeek,
       availableDays: form.availableDays,
       sessionDuration: form.sessionDuration,
+      maxSessionDuration: form.maxSessionDuration,
       equipment: form.equipment,
       equipmentNotes: form.equipmentNotes.trim(),
       previousTraining: form.previousTraining,
       trainingHistory: form.previousTraining,
+      accessToCampusBoard: form.equipment.includes('campus'),
+      accessToHangboard: form.equipment.includes('hangboard'),
+      accessToTRX: form.equipment.includes('trx'),
+      accessToWeights: form.equipment.includes('weights'),
+      pullUpAbility: form.pullUpAbility || 'unknown',
+      fingerTrainingExperience: form.fingerTrainingExperience || 'unknown',
+      campusExperience: form.campusExperience || 'none',
+      currentFingerPain: form.currentFingerPain,
+      currentShoulderPain: form.currentShoulderPain,
+      currentElbowPain: form.currentElbowPain,
+      wantsConservativePlan: form.trainingAggressiveness === 'conservative',
+      trainingAggressiveness: form.trainingAggressiveness,
+      outdoorFrequency: form.outdoorFrequency || 'unknown',
       goal: goals[0],
       goals,
       goalDescription: form.goalDescription.trim(),
       project: form.project.trim(),
       projectDescription: form.project.trim(),
+      rockProjectDescription: form.rockProjectDescription.trim() || form.project.trim(),
       sleepQuality: form.sleep,
       energyLevel: form.energy,
       injuryDescription: form.injuryNotes.trim(),
@@ -631,6 +706,24 @@ export default function OnboardingPage() {
               onChange={(value) => setForm((current) => ({ ...current, injuryNotes: value }))}
             />
 
+            <PainScaleField
+              title="Dolor de dedos hoy"
+              value={form.currentFingerPain}
+              onChange={(value) => setForm((current) => ({ ...current, currentFingerPain: value }))}
+            />
+
+            <PainScaleField
+              title="Dolor de hombro hoy"
+              value={form.currentShoulderPain}
+              onChange={(value) => setForm((current) => ({ ...current, currentShoulderPain: value }))}
+            />
+
+            <PainScaleField
+              title="Dolor de codo hoy"
+              value={form.currentElbowPain}
+              onChange={(value) => setForm((current) => ({ ...current, currentElbowPain: value }))}
+            />
+
             <FieldGroup title="¿Calientas antes de escalar?">
               <OptionGrid>
                 {warmupOptions.map((option) => (
@@ -730,6 +823,22 @@ export default function OnboardingPage() {
               </OptionGrid>
             </FieldGroup>
 
+            <FieldGroup title="Máximo real si una sesión se alarga">
+              <OptionGrid>
+                {sessionDurationOptions.map((option) => (
+                  <OptionButton
+                    key={option.value}
+                    active={form.maxSessionDuration === option.value}
+                    onClick={() =>
+                      setForm((current) => ({ ...current, maxSessionDuration: option.value }))
+                    }
+                  >
+                    {option.label}
+                  </OptionButton>
+                ))}
+              </OptionGrid>
+            </FieldGroup>
+
             <FieldGroup title="¿A qué tienes acceso? (selecciona todo)">
               <OptionGrid>
                 {equipmentOptions.map((option) => (
@@ -766,6 +875,80 @@ export default function OnboardingPage() {
                     active={form.previousTraining === option.value}
                     onClick={() =>
                       setForm((current) => ({ ...current, previousTraining: option.value }))
+                    }
+                  >
+                    {option.label}
+                  </OptionButton>
+                ))}
+              </OptionGrid>
+            </FieldGroup>
+
+            <FieldGroup title="Dominadas estrictas actuales">
+              <OptionGrid>
+                {pullUpAbilityOptions.map((option) => (
+                  <OptionButton
+                    key={option.value}
+                    active={form.pullUpAbility === option.value}
+                    onClick={() => setForm((current) => ({ ...current, pullUpAbility: option.value }))}
+                  >
+                    {option.label}
+                  </OptionButton>
+                ))}
+              </OptionGrid>
+            </FieldGroup>
+
+            <FieldGroup title="Experiencia entrenando dedos">
+              <OptionGrid>
+                {trainingExperienceOptions.map((option) => (
+                  <OptionButton
+                    key={option.value}
+                    active={form.fingerTrainingExperience === option.value}
+                    onClick={() =>
+                      setForm((current) => ({ ...current, fingerTrainingExperience: option.value }))
+                    }
+                  >
+                    {option.label}
+                  </OptionButton>
+                ))}
+              </OptionGrid>
+            </FieldGroup>
+
+            <FieldGroup title="Experiencia con campus board">
+              <OptionGrid>
+                {campusExperienceOptions.map((option) => (
+                  <OptionButton
+                    key={option.value}
+                    active={form.campusExperience === option.value}
+                    onClick={() => setForm((current) => ({ ...current, campusExperience: option.value }))}
+                  >
+                    {option.label}
+                  </OptionButton>
+                ))}
+              </OptionGrid>
+            </FieldGroup>
+
+            <FieldGroup title="Frecuencia en roca">
+              <OptionGrid>
+                {outdoorFrequencyOptions.map((option) => (
+                  <OptionButton
+                    key={option.value}
+                    active={form.outdoorFrequency === option.value}
+                    onClick={() => setForm((current) => ({ ...current, outdoorFrequency: option.value }))}
+                  >
+                    {option.label}
+                  </OptionButton>
+                ))}
+              </OptionGrid>
+            </FieldGroup>
+
+            <FieldGroup title="Qué tan agresivo quieres el plan">
+              <OptionGrid>
+                {trainingAggressivenessOptions.map((option) => (
+                  <OptionButton
+                    key={option.value}
+                    active={form.trainingAggressiveness === option.value}
+                    onClick={() =>
+                      setForm((current) => ({ ...current, trainingAggressiveness: option.value }))
                     }
                   >
                     {option.label}
@@ -822,6 +1005,15 @@ export default function OnboardingPage() {
               onChange={(value) => setForm((current) => ({ ...current, project: value }))}
             />
 
+            <TextareaField
+              label="Contexto del proyecto en roca"
+              value={form.rockProjectDescription}
+              placeholder="Tipo de ruta, estilo, crux, agarres, desplome/placa, fecha del viaje, miedos o limitantes..."
+              onChange={(value) =>
+                setForm((current) => ({ ...current, rockProjectDescription: value }))
+              }
+            />
+
             <FieldGroup title="¿En cuántas semanas quieres ver resultados?">
               <OptionGrid>
                 {durationOptions.map((option) => (
@@ -872,6 +1064,14 @@ export default function OnboardingPage() {
                 <SummaryRow label="Duración sesión" value={`${form.sessionDuration} min`} />
                 <SummaryRow label="Equipo" value={getLabels(equipmentOptions, form.equipment)} />
                 <SummaryRow label="Lesión" value={getLabels(injuryOptions, form.injuries)} />
+                <SummaryRow
+                  label="Dolor actual"
+                  value={`Dedos ${form.currentFingerPain}/5 · hombro ${form.currentShoulderPain}/5 · codo ${form.currentElbowPain}/5`}
+                />
+                <SummaryRow
+                  label="Carga"
+                  value={getLabel(trainingAggressivenessOptions, form.trainingAggressiveness)}
+                />
                 <SummaryRow label="Duración" value={durationLabel} />
               </dl>
             </div>
@@ -908,6 +1108,38 @@ function FieldGroup({ title, children }: { title: string; children: React.ReactN
 
 function OptionGrid({ children }: { children: React.ReactNode }) {
   return <div className="grid gap-2 sm:grid-cols-2">{children}</div>;
+}
+
+function PainScaleField({
+  title,
+  value,
+  onChange
+}: {
+  title: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <FieldGroup title={`${title} (0-5)`}>
+      <div className="grid grid-cols-6 gap-2">
+        {painScaleOptions.map((score) => (
+          <button
+            key={score}
+            type="button"
+            onClick={() => onChange(score)}
+            className={classNames(
+              'grid h-11 place-items-center rounded-md border text-sm font-bold transition',
+              value === score
+                ? 'border-brand-cyan bg-brand-cyan/14 text-brand-cyan'
+                : 'border-white/10 bg-white/[0.04] text-white/68 hover:border-white/24'
+            )}
+          >
+            {score}
+          </button>
+        ))}
+      </div>
+    </FieldGroup>
+  );
 }
 
 function InputField({

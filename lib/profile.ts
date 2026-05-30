@@ -30,7 +30,22 @@ export interface UserProfile {
   project: string; // "La Catrina 5.12a en El Salto"
   projectDescription: string;
   sessionDuration: number; // minutes available per training session
+  maxSessionDuration: number; // maximum minutes if the plan needs a longer day
   availableDays: string[]; // ['monday', 'wednesday', ...]
+  accessToCampusBoard: boolean;
+  accessToHangboard: boolean;
+  accessToTRX: boolean;
+  accessToWeights: boolean;
+  pullUpAbility: string;
+  fingerTrainingExperience: string;
+  campusExperience: string;
+  currentFingerPain: number;
+  currentShoulderPain: number;
+  currentElbowPain: number;
+  wantsConservativePlan: boolean;
+  trainingAggressiveness: string;
+  outdoorFrequency: string;
+  rockProjectDescription: string;
   sleepQuality: string;
   energyLevel: string;
   injuryDescription: string;
@@ -53,6 +68,11 @@ function normalizeProfile(profile: UserProfile | null) {
   const energy = typeof profile.energy === 'string' ? profile.energy : '';
   const previousTraining =
     typeof profile.previousTraining === 'string' ? profile.previousTraining : '';
+  const equipment = Array.isArray(profile.equipment) ? profile.equipment : [];
+  const normalizedSessionDuration =
+    typeof profile.sessionDuration === 'number' && profile.sessionDuration > 0
+      ? profile.sessionDuration
+      : 90;
 
   return {
     ...profile,
@@ -61,11 +81,53 @@ function normalizeProfile(profile: UserProfile | null) {
     goalDescription: typeof profile.goalDescription === 'string' ? profile.goalDescription : '',
     project,
     projectDescription: project,
-    sessionDuration:
-      typeof profile.sessionDuration === 'number' && profile.sessionDuration > 0
-        ? profile.sessionDuration
-        : 90,
+    sessionDuration: normalizedSessionDuration,
+    maxSessionDuration:
+      typeof profile.maxSessionDuration === 'number' && profile.maxSessionDuration > 0
+        ? profile.maxSessionDuration
+        : normalizedSessionDuration,
     availableDays: Array.isArray(profile.availableDays) ? profile.availableDays : [],
+    accessToCampusBoard:
+      typeof profile.accessToCampusBoard === 'boolean'
+        ? profile.accessToCampusBoard
+        : equipment.includes('campus'),
+    accessToHangboard:
+      typeof profile.accessToHangboard === 'boolean'
+        ? profile.accessToHangboard
+        : equipment.includes('hangboard'),
+    accessToTRX:
+      typeof profile.accessToTRX === 'boolean' ? profile.accessToTRX : equipment.includes('trx'),
+    accessToWeights:
+      typeof profile.accessToWeights === 'boolean'
+        ? profile.accessToWeights
+        : equipment.includes('weights'),
+    pullUpAbility: typeof profile.pullUpAbility === 'string' ? profile.pullUpAbility : 'unknown',
+    fingerTrainingExperience:
+      typeof profile.fingerTrainingExperience === 'string'
+        ? profile.fingerTrainingExperience
+        : 'unknown',
+    campusExperience:
+      typeof profile.campusExperience === 'string' ? profile.campusExperience : 'none',
+    currentFingerPain:
+      typeof profile.currentFingerPain === 'number' ? profile.currentFingerPain : 0,
+    currentShoulderPain:
+      typeof profile.currentShoulderPain === 'number' ? profile.currentShoulderPain : 0,
+    currentElbowPain:
+      typeof profile.currentElbowPain === 'number' ? profile.currentElbowPain : 0,
+    wantsConservativePlan:
+      typeof profile.wantsConservativePlan === 'boolean'
+        ? profile.wantsConservativePlan
+        : profile.trainingAggressiveness === 'conservative',
+    trainingAggressiveness:
+      typeof profile.trainingAggressiveness === 'string'
+        ? profile.trainingAggressiveness
+        : 'balanced',
+    outdoorFrequency:
+      typeof profile.outdoorFrequency === 'string' ? profile.outdoorFrequency : 'unknown',
+    rockProjectDescription:
+      typeof profile.rockProjectDescription === 'string'
+        ? profile.rockProjectDescription
+        : project,
     sleepQuality: sleep,
     energyLevel: energy,
     injuryNotes,

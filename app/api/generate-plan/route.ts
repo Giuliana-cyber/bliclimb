@@ -128,6 +128,11 @@ function hasLoadRestriction(profile: UserProfile) {
   return (
     profile.injuries.some((injury) => injury !== 'none') ||
     Boolean(injuryText.trim()) ||
+    profile.currentFingerPain > 0 ||
+    profile.currentShoulderPain > 0 ||
+    profile.currentElbowPain > 0 ||
+    profile.wantsConservativePlan ||
+    profile.trainingAggressiveness === 'conservative' ||
     profile.energyLevel === 'low' ||
     profile.energy === 'low' ||
     profile.sleepQuality === 'bad' ||

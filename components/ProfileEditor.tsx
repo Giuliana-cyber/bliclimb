@@ -121,6 +121,8 @@ const sessionDurationOptions = [
   { label: '120 min', value: 120 }
 ];
 
+const painScaleOptions = [0, 1, 2, 3, 4, 5];
+
 const equipmentOptions: Option[] = [
   { label: 'Gym de escalada', value: 'gym' },
   { label: 'Hangboard', value: 'hangboard' },
@@ -129,7 +131,8 @@ const equipmentOptions: Option[] = [
   { label: 'Solo roca', value: 'rock' },
   { label: 'Casa sin equipo', value: 'home' },
   { label: 'Bandas elásticas', value: 'bands' },
-  { label: 'Barra de dominadas', value: 'pullup_bar' }
+  { label: 'Barra de dominadas', value: 'pullup_bar' },
+  { label: 'TRX / anillas', value: 'trx' }
 ];
 
 const previousTrainingOptions: Option[] = [
@@ -137,6 +140,43 @@ const previousTrainingOptions: Option[] = [
   { label: 'Sí pero informal', value: 'informal' },
   { label: 'Sí con estructura', value: 'structured' },
   { label: 'Sí con entrenador', value: 'coach' }
+];
+
+const pullUpAbilityOptions: Option[] = [
+  { label: 'No sé / no hago', value: 'unknown' },
+  { label: '0 estrictas', value: 'none' },
+  { label: '1-3 estrictas', value: '1to3' },
+  { label: '4-8 estrictas', value: '4to8' },
+  { label: '9+ estrictas', value: '9plus' },
+  { label: 'Con peso', value: 'weighted' }
+];
+
+const trainingExperienceOptions: Option[] = [
+  { label: 'No sé', value: 'unknown' },
+  { label: 'Nunca', value: 'none' },
+  { label: 'Poca', value: 'light' },
+  { label: 'Estructurada', value: 'structured' },
+  { label: 'Avanzada', value: 'advanced' }
+];
+
+const campusExperienceOptions: Option[] = [
+  { label: 'Nunca', value: 'none' },
+  { label: 'Pocas veces', value: 'light' },
+  { label: 'Con estructura', value: 'structured' },
+  { label: 'Avanzada', value: 'advanced' }
+];
+
+const outdoorFrequencyOptions: Option[] = [
+  { label: 'Casi nunca', value: 'rarely' },
+  { label: '1 vez/mes', value: 'monthly' },
+  { label: '1 vez/semana', value: 'weekly' },
+  { label: 'Varias/semana', value: 'multiple_weekly' }
+];
+
+const trainingAggressivenessOptions: Option[] = [
+  { label: 'Conservador', value: 'conservative' },
+  { label: 'Balanceado', value: 'balanced' },
+  { label: 'Retador', value: 'aggressive' }
 ];
 
 const goalOptions: Option[] = [
@@ -207,11 +247,21 @@ export function ProfileEditor() {
       initialProfile.daysPerWeek !== profile.daysPerWeek ||
       initialProfile.availableDays.join(',') !== profile.availableDays.join(',') ||
       initialProfile.sessionDuration !== profile.sessionDuration ||
+      initialProfile.maxSessionDuration !== profile.maxSessionDuration ||
       initialProfile.planDuration !== profile.planDuration ||
       initialProfile.injuryNotes !== profile.injuryNotes ||
       initialProfile.injuries.join(',') !== profile.injuries.join(',') ||
       initialProfile.equipment.join(',') !== profile.equipment.join(',') ||
-      initialProfile.equipmentNotes !== profile.equipmentNotes
+      initialProfile.equipmentNotes !== profile.equipmentNotes ||
+      initialProfile.currentFingerPain !== profile.currentFingerPain ||
+      initialProfile.currentShoulderPain !== profile.currentShoulderPain ||
+      initialProfile.currentElbowPain !== profile.currentElbowPain ||
+      initialProfile.fingerTrainingExperience !== profile.fingerTrainingExperience ||
+      initialProfile.campusExperience !== profile.campusExperience ||
+      initialProfile.pullUpAbility !== profile.pullUpAbility ||
+      initialProfile.trainingAggressiveness !== profile.trainingAggressiveness ||
+      initialProfile.outdoorFrequency !== profile.outdoorFrequency ||
+      initialProfile.rockProjectDescription !== profile.rockProjectDescription
     );
   }, [initialProfile, profile]);
 
@@ -244,6 +294,11 @@ export function ProfileEditor() {
 
     const nextProfile = {
       ...profile,
+      accessToCampusBoard: profile.equipment.includes('campus'),
+      accessToHangboard: profile.equipment.includes('hangboard'),
+      accessToTRX: profile.equipment.includes('trx'),
+      accessToWeights: profile.equipment.includes('weights'),
+      wantsConservativePlan: profile.trainingAggressiveness === 'conservative',
       projectDescription: profile.project.trim(),
       sleepQuality: profile.sleep,
       energyLevel: profile.energy,
@@ -463,6 +518,21 @@ export function ProfileEditor() {
           value={profile.injuryNotes}
           onChange={(value) => updateProfileField('injuryNotes', value)}
         />
+        <PainScaleField
+          title="Dolor de dedos hoy"
+          value={profile.currentFingerPain}
+          onChange={(value) => updateProfileField('currentFingerPain', value)}
+        />
+        <PainScaleField
+          title="Dolor de hombro hoy"
+          value={profile.currentShoulderPain}
+          onChange={(value) => updateProfileField('currentShoulderPain', value)}
+        />
+        <PainScaleField
+          title="Dolor de codo hoy"
+          value={profile.currentElbowPain}
+          onChange={(value) => updateProfileField('currentElbowPain', value)}
+        />
         <FieldGroup title="Calentamiento">
           <OptionGrid>
             {warmupOptions.map((option) => (
@@ -549,6 +619,19 @@ export function ProfileEditor() {
             ))}
           </OptionGrid>
         </FieldGroup>
+        <FieldGroup title="Máximo real si una sesión se alarga">
+          <OptionGrid>
+            {sessionDurationOptions.map((option) => (
+              <OptionButton
+                key={option.value}
+                active={profile.maxSessionDuration === option.value}
+                onClick={() => updateProfileField('maxSessionDuration', option.value)}
+              >
+                {option.label}
+              </OptionButton>
+            ))}
+          </OptionGrid>
+        </FieldGroup>
         <FieldGroup title="Equipo disponible">
           <OptionGrid>
             {equipmentOptions.map((option) => (
@@ -574,6 +657,71 @@ export function ProfileEditor() {
                 key={option.value}
                 active={profile.previousTraining === option.value}
                 onClick={() => updateProfileField('previousTraining', option.value)}
+              >
+                {option.label}
+              </OptionButton>
+            ))}
+          </OptionGrid>
+        </FieldGroup>
+        <FieldGroup title="Dominadas estrictas actuales">
+          <OptionGrid>
+            {pullUpAbilityOptions.map((option) => (
+              <OptionButton
+                key={option.value}
+                active={profile.pullUpAbility === option.value}
+                onClick={() => updateProfileField('pullUpAbility', option.value)}
+              >
+                {option.label}
+              </OptionButton>
+            ))}
+          </OptionGrid>
+        </FieldGroup>
+        <FieldGroup title="Experiencia entrenando dedos">
+          <OptionGrid>
+            {trainingExperienceOptions.map((option) => (
+              <OptionButton
+                key={option.value}
+                active={profile.fingerTrainingExperience === option.value}
+                onClick={() => updateProfileField('fingerTrainingExperience', option.value)}
+              >
+                {option.label}
+              </OptionButton>
+            ))}
+          </OptionGrid>
+        </FieldGroup>
+        <FieldGroup title="Experiencia con campus board">
+          <OptionGrid>
+            {campusExperienceOptions.map((option) => (
+              <OptionButton
+                key={option.value}
+                active={profile.campusExperience === option.value}
+                onClick={() => updateProfileField('campusExperience', option.value)}
+              >
+                {option.label}
+              </OptionButton>
+            ))}
+          </OptionGrid>
+        </FieldGroup>
+        <FieldGroup title="Frecuencia en roca">
+          <OptionGrid>
+            {outdoorFrequencyOptions.map((option) => (
+              <OptionButton
+                key={option.value}
+                active={profile.outdoorFrequency === option.value}
+                onClick={() => updateProfileField('outdoorFrequency', option.value)}
+              >
+                {option.label}
+              </OptionButton>
+            ))}
+          </OptionGrid>
+        </FieldGroup>
+        <FieldGroup title="Qué tan agresivo quieres el plan">
+          <OptionGrid>
+            {trainingAggressivenessOptions.map((option) => (
+              <OptionButton
+                key={option.value}
+                active={profile.trainingAggressiveness === option.value}
+                onClick={() => updateProfileField('trainingAggressiveness', option.value)}
               >
                 {option.label}
               </OptionButton>
@@ -622,6 +770,12 @@ export function ProfileEditor() {
           value={profile.project}
           placeholder="Ruta, boulder, fecha, zona o grado que traes en mente..."
           onChange={(value) => updateProfileField('project', value)}
+        />
+        <TextareaField
+          label="Contexto del proyecto en roca"
+          value={profile.rockProjectDescription}
+          placeholder="Tipo de ruta, estilo, crux, agarres, desplome/placa, fecha del viaje..."
+          onChange={(value) => updateProfileField('rockProjectDescription', value)}
         />
         <FieldGroup title="Duración del plan">
           <OptionGrid>
@@ -714,6 +868,38 @@ function FieldGroup({ title, children }: { title: string; children: React.ReactN
 
 function OptionGrid({ children }: { children: React.ReactNode }) {
   return <div className="grid gap-2 sm:grid-cols-3">{children}</div>;
+}
+
+function PainScaleField({
+  title,
+  value,
+  onChange
+}: {
+  title: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <FieldGroup title={`${title} (0-5)`}>
+      <div className="grid grid-cols-6 gap-2">
+        {painScaleOptions.map((score) => (
+          <button
+            key={score}
+            type="button"
+            onClick={() => onChange(score)}
+            className={classNames(
+              'grid h-10 place-items-center rounded-md border text-sm font-bold transition',
+              value === score
+                ? 'border-brand-cyan bg-brand-cyan/14 text-brand-cyan'
+                : 'border-white/10 bg-white/[0.04] text-white/68 hover:border-white/24'
+            )}
+          >
+            {score}
+          </button>
+        ))}
+      </div>
+    </FieldGroup>
+  );
 }
 
 function OptionButton({

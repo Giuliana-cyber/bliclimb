@@ -8,7 +8,8 @@ const equipmentLabels: Record<string, string> = {
   rock: 'roca / escalada outdoor',
   home: 'casa sin equipo',
   bands: 'bandas elásticas',
-  pullup_bar: 'barra de dominadas'
+  pullup_bar: 'barra de dominadas',
+  trx: 'TRX / anillas'
 };
 
 const goalLabels: Record<string, string> = {
@@ -68,6 +69,25 @@ function getLevelSummary(profile: UserProfile) {
     .join('\n');
 }
 
+function getSafetyContext(profile: UserProfile) {
+  return [
+    `Dolor dedos actual: ${profile.currentFingerPain ?? 0}/10`,
+    `Dolor hombro actual: ${profile.currentShoulderPain ?? 0}/10`,
+    `Dolor codo actual: ${profile.currentElbowPain ?? 0}/10`,
+    `Experiencia entrenando dedos: ${profile.fingerTrainingExperience || 'no especificada'}`,
+    `Experiencia campus: ${profile.campusExperience || 'no especificada'}`,
+    `Dominadas estrictas: ${profile.pullUpAbility || 'no especificado'}`,
+    `Agresividad deseada: ${profile.trainingAggressiveness || 'balanced'}`,
+    `Plan conservador: ${profile.wantsConservativePlan ? 'sí' : 'no'}`,
+    `Frecuencia outdoor: ${profile.outdoorFrequency || 'no especificada'}`,
+    `Proyecto en roca: ${profile.rockProjectDescription || profile.projectDescription || profile.project || 'no especificado'}`,
+    `Acceso campus: ${profile.accessToCampusBoard ? 'sí' : 'no'}`,
+    `Acceso hangboard: ${profile.accessToHangboard ? 'sí' : 'no'}`,
+    `Acceso TRX: ${profile.accessToTRX ? 'sí' : 'no'}`,
+    `Acceso pesas: ${profile.accessToWeights ? 'sí' : 'no'}`
+  ].join('\n');
+}
+
 function getEquipmentRestrictions(profile: UserProfile) {
   const restrictions = [
     'Nunca asumas acceso a equipo no incluido en equipment.',
@@ -83,15 +103,15 @@ function getEquipmentRestrictions(profile: UserProfile) {
     restrictions.push('Este perfil NO tiene gym de escalada: evita completamente cualquier bloque que requiera muro indoor.');
   }
 
-  if (!profile.equipment.includes('hangboard')) {
+  if (!profile.equipment.includes('hangboard') && !profile.accessToHangboard) {
     restrictions.push('Este perfil NO tiene hangboard: no propongas colgadas ni protocolos tipo MaxHangs.');
   }
 
-  if (!profile.equipment.includes('campus')) {
+  if (!profile.equipment.includes('campus') && !profile.accessToCampusBoard) {
     restrictions.push('Este perfil NO tiene campus board: no propongas campus.');
   }
 
-  if (!profile.equipment.includes('weights')) {
+  if (!profile.equipment.includes('weights') && !profile.accessToWeights) {
     restrictions.push('Este perfil NO tiene gym de pesas: no propongas ejercicios con pesas.');
   }
 
@@ -119,6 +139,8 @@ REGLAS DE SEGURIDAD ABSOLUTAS:
 - Si casi nunca calienta: TODAS las sesiones deben empezar con 15 min de calentamiento
   obligatorio y una nota educativa sobre prevención.
 - Si duerme mal o tiene energía baja: reducir volumen total un 20% vs lo normal.
+- Si currentFingerPain, currentShoulderPain o currentElbowPain es mayor a 0, trata ese dato
+  como restricción activa aunque el usuario no haya seleccionado lesión.
 - Si hay dolor de dedos mayor a 0 o molestia descrita de dedos: NO incluir campus,
   hangs máximos, MaxHangs, fallo muscular, arqueo máximo ni alta intensidad de dedos.
   Prioriza carga submáxima, movilidad, extensores, isométricos suaves, agarres abiertos,
@@ -233,6 +255,10 @@ DISPONIBILIDAD Y RECUPERACIÓN:
 - Energía: ${profile.energyLevel || profile.energy || 'no especificado'}
 - Historial de entrenamiento: ${profile.trainingHistory || profile.previousTraining || 'no especificado'}
 - Lesión o molestia descrita: ${profile.injuryDescription || profile.injuryNotes || 'ninguna descrita'}
+- Duración máxima si un día se alarga: ${profile.maxSessionDuration || profile.sessionDuration} minutos
+
+CONTEXTO DE SEGURIDAD Y CAPACIDAD:
+${getSafetyContext(profile)}
 
 RESTRICCIONES ESTRICTAS DE EQUIPO:
 ${getEquipmentRestrictions(profile)}
