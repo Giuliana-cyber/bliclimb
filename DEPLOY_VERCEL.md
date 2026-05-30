@@ -93,6 +93,25 @@ NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
 6. Crea una cuenta y vuelve a BilClimb.
 7. Cierra y abre el navegador: la sesion debe seguir activa.
 
+Prueba rapida:
+
+```txt
+https://TU-DOMINIO.vercel.app/api/auth/status
+```
+
+Debe responder `clerkConfigured: true`. Si responde `false`, falta una de estas variables
+en el entorno del deploy o no hiciste redeploy:
+
+```env
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+```
+
+Si en produccion ves un formulario que solo pide correo y nombre, estas viendo una version vieja
+del deploy. La app actual ya no usa login local en produccion.
+
 Importante: este login ya identifica usuarios de forma real. La sincronizacion completa de plan/progreso entre dispositivos requiere una base de datos, porque el MVP todavia guarda esos datos en `localStorage`.
 
 ## 6. Pruebas de OpenAI
