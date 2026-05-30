@@ -6,6 +6,7 @@ import { ChevronLeft, Clock3, MapPin } from 'lucide-react';
 import { ExerciseBlock } from '@/components/ExerciseBlock';
 import { loadTrainingPlan } from '@/lib/plan';
 import type { Exercise } from '@/lib/plan';
+import type { Session } from '@/lib/plan';
 import {
   getExerciseProgressKey,
   loadSessionProgress,
@@ -46,8 +47,10 @@ export function TodaySessionView() {
       return 0;
     }
 
-    const { session } = sessionContext;
-    return session.warmup.length + session.mainBlock.length + session.cooldown.length;
+    return getSessionSections(sessionContext.session).reduce(
+      (total, section) => total + section.exercises.length,
+      0
+    );
   }, [sessionContext]);
 
   const completedCount = Math.min(completedExercises.length, totalExercises);
@@ -131,6 +134,16 @@ export function TodaySessionView() {
         </div>
       </div>
 
+      {session.objective || session.why || session.intensityTarget ? (
+        <div className="grid gap-3 sm:grid-cols-3">
+          {session.objective ? <SessionInfo label="Objetivo" value={session.objective} /> : null}
+          {session.why ? <SessionInfo label="Por qué" value={session.why} /> : null}
+          {session.intensityTarget ? (
+            <SessionInfo label="Intensidad" value={session.intensityTarget} />
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm font-semibold text-white/74">Progreso de sesión</p>
@@ -146,31 +159,22 @@ export function TodaySessionView() {
         </div>
       </div>
 
-      <ExerciseChecklist
-        title="Calentamiento"
-        minutesLabel="15 min"
-        section="warmup"
-        exercises={session.warmup}
-        completedExercises={completedExercises}
-        onToggle={toggleExercise}
-      />
+      {getSessionSections(session).map((section) => (
+        <ExerciseChecklist
+          key={section.key}
+          title={section.title}
+          minutesLabel={section.minutesLabel}
+          section={section.key}
+          exercises={section.exercises}
+          completedExercises={completedExercises}
+          onToggle={toggleExercise}
+        />
+      ))}
 
-      <ExerciseChecklist
-        title="Bloque principal"
-        minutesLabel={`${Math.max(session.estimatedMinutes - 25, 20)} min`}
-        section="main"
-        exercises={session.mainBlock}
-        completedExercises={completedExercises}
-        onToggle={toggleExercise}
-      />
-
-      <ExerciseChecklist
-        title="Vuelta a la calma"
-        minutesLabel="10 min"
-        section="cooldown"
-        exercises={session.cooldown}
-        completedExercises={completedExercises}
-        onToggle={toggleExercise}
+      <SessionRuleCards
+        safetyNotes={session.safetyNotes}
+        adjustmentRules={session.adjustmentRules}
+        successCriteria={session.successCriteria}
       />
 
       <div className="rounded-lg border border-brand-mustard/24 bg-brand-mustard/10 p-4">
@@ -203,6 +207,89 @@ export function TodaySessionView() {
         </Link>
       </div>
     </section>
+  );
+}
+
+function getSessionSections(session: Session) {
+  const hasProfessionalWarmup = Boolean(session.warmupGeneral?.length || session.warmupSpecific?.length);
+
+  return [
+    {
+      key: 'warmup-general',
+      title: 'Calentamiento general',
+      minutesLabel: '8-10 min',
+      exercises: hasProfessionalWarmup ? session.warmupGeneral ?? [] : session.warmup
+    },
+    {
+      key: 'warmup-specific',
+      title: 'Calentamiento específico',
+      minutesLabel: '6-10 min',
+      exercises: session.warmupSpecific ?? []
+    },
+    {
+      key: 'main',
+      title: 'Parte principal',
+      minutesLabel: `${Math.max(session.estimatedMinutes - 30, 20)} min`,
+      exercises: session.mainBlock
+    },
+    {
+      key: 'final',
+      title: 'Parte final',
+      minutesLabel: '8-15 min',
+      exercises: session.finalBlock ?? []
+    },
+    {
+      key: 'cooldown',
+      title: 'Vuelta a la calma',
+      minutesLabel: '8-10 min',
+      exercises: session.cooldown
+    }
+  ].filter((section) => section.exercises.length > 0);
+}
+
+function SessionInfo({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.08em] text-brand-cyan">{label}</p>
+      <p className="mt-2 text-sm leading-6 text-white/72">{value}</p>
+    </div>
+  );
+}
+
+function SessionRuleCards({
+  safetyNotes,
+  adjustmentRules,
+  successCriteria
+}: {
+  safetyNotes?: string[] | null;
+  adjustmentRules?: string[] | null;
+  successCriteria?: string[] | null;
+}) {
+  const cards = [
+    { title: 'Seguridad', items: safetyNotes },
+    { title: 'Ajusta si', items: adjustmentRules },
+    { title: 'Bien hecho si', items: successCriteria }
+  ].filter((card) => card.items?.length);
+
+  if (!cards.length) {
+    return null;
+  }
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-3">
+      {cards.map((card) => (
+        <section key={card.title} className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+          <h2 className="text-sm font-bold text-brand-cyan">{card.title}</h2>
+          <ul className="mt-3 space-y-2">
+            {card.items?.map((item) => (
+              <li key={item} className="text-sm leading-6 text-white/66">
+                {item}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
   );
 }
 

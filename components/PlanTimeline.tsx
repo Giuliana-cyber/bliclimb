@@ -38,6 +38,10 @@ function getSessionKey(weekNumber: number, dayNumber: number) {
 }
 
 function getSessionObjective(session: Session) {
+  if (session.objective) {
+    return session.objective;
+  }
+
   const mainExercises = session.mainBlock
     .map((exercise) => exercise.name)
     .filter(Boolean)
@@ -48,6 +52,10 @@ function getSessionObjective(session: Session) {
 }
 
 function getSessionReason(week: Week, session: Session) {
+  if (session.why) {
+    return session.why;
+  }
+
   const focus = week.focusAreas.filter(Boolean).slice(0, 2).join(' + ') || week.theme;
 
   if (session.source) {
@@ -58,6 +66,10 @@ function getSessionReason(week: Week, session: Session) {
 }
 
 function getSessionIntensity(session: Session) {
+  if (session.intensityTarget) {
+    return session.intensityTarget;
+  }
+
   const intensity = [...session.mainBlock, ...session.warmup, ...session.cooldown]
     .map((exercise) => exercise.intensity)
     .find((value): value is string => Boolean(value));
@@ -185,9 +197,11 @@ export function PlanTimeline() {
     <section className="space-y-6">
       <div>
         <p className="text-sm font-semibold text-brand-cyan">Mi Plan</p>
-        <h1 className="mt-2 text-3xl font-bold">Plan de {plan.totalWeeks} semanas</h1>
+        <h1 className="mt-2 text-3xl font-bold">
+          {plan.mesocycleType || `Plan de ${plan.totalWeeks} semanas`}
+        </h1>
         <p className="mt-2 text-sm leading-6 text-white/62">
-          Objetivo: {plan.objective} · Inicio: {formatDate(plan.startDate)}
+          Objetivo: {plan.mainObjective || plan.objective} · Inicio: {formatDate(plan.startDate)}
         </p>
         {plan.usedFileSearch ? (
           <div className="mt-3 inline-flex max-w-full flex-col items-start gap-1 rounded-md border border-brand-cyan/25 bg-brand-cyan/10 px-3 py-2">
@@ -209,6 +223,18 @@ export function PlanTimeline() {
         <Metric label="Sesiones" value={`${completedSessions}/${totalSessions}`} />
         <Metric label="Estado" value={formatPlanStatus(plan.status)} />
       </div>
+
+      {plan.athleteSummary || plan.riskSummary || plan.recoveryGuidelines?.length ? (
+        <div className="grid gap-3 sm:grid-cols-3">
+          {plan.athleteSummary ? (
+            <InfoCard label="Atleta" value={plan.athleteSummary} />
+          ) : null}
+          {plan.riskSummary ? <InfoCard label="Riesgo" value={plan.riskSummary} /> : null}
+          {plan.recoveryGuidelines?.length ? (
+            <InfoCard label="Recuperación" value={plan.recoveryGuidelines.join(' ')} />
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="space-y-3">
         {plan.weeks.map((week) => {
@@ -242,6 +268,11 @@ export function PlanTimeline() {
                   </div>
                   <h2 className="mt-1 truncate text-lg font-bold">{week.theme}</h2>
                   <p className="mt-1 text-sm text-white/52">{week.focusAreas.join(' + ')}</p>
+                  {week.microcycle || week.progression ? (
+                    <p className="mt-2 text-xs leading-5 text-white/50">
+                      {[week.microcycle, week.progression].filter(Boolean).join(' · ')}
+                    </p>
+                  ) : null}
                 </div>
                 <ChevronDown
                   aria-hidden="true"
@@ -317,19 +348,39 @@ export function PlanTimeline() {
                           {isSessionOpen ? (
                             <div className="mt-4 space-y-4 border-t border-white/10 pt-4">
                               <ExerciseSection
-                                title="Calentamiento"
+                                title="Calentamiento general"
                                 sessionTitle={session.title}
-                                exercises={session.warmup}
+                                exercises={session.warmupGeneral?.length ? session.warmupGeneral : session.warmup}
                               />
+                              {session.warmupSpecific?.length ? (
+                                <ExerciseSection
+                                  title="Calentamiento específico"
+                                  sessionTitle={session.title}
+                                  exercises={session.warmupSpecific}
+                                />
+                              ) : null}
                               <ExerciseSection
-                                title="Bloque principal"
+                                title="Parte principal"
                                 sessionTitle={session.title}
                                 exercises={session.mainBlock}
                               />
+                              {session.finalBlock?.length ? (
+                                <ExerciseSection
+                                  title="Parte final"
+                                  sessionTitle={session.title}
+                                  exercises={session.finalBlock}
+                                />
+                              ) : null}
                               <ExerciseSection
                                 title="Vuelta a la calma"
                                 sessionTitle={session.title}
                                 exercises={session.cooldown}
+                              />
+
+                              <SessionRules
+                                safetyNotes={session.safetyNotes}
+                                adjustmentRules={session.adjustmentRules}
+                                successCriteria={session.successCriteria}
                               />
 
                               <div className="rounded-md border border-brand-mustard/20 bg-brand-mustard/10 p-3">
@@ -401,11 +452,13 @@ function ExerciseSection({
               <p className="mt-2 text-sm leading-6 text-white/66">{exercise.description}</p>
 
               <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-white/46">
-                {exercise.sets ? <span>{exercise.sets} series</span> : null}
-                {exercise.reps ? <span>{exercise.reps}</span> : null}
-                {exercise.rest ? <span>descanso {exercise.rest}</span> : null}
-                {exercise.intensity ? <span>{exercise.intensity}</span> : null}
-              </div>
+              {exercise.sets ? <span>{exercise.sets} series</span> : null}
+              {exercise.reps ? <span>{exercise.reps}</span> : null}
+              {exercise.duration ? <span>{exercise.duration}</span> : null}
+              {exercise.rest ? <span>descanso {exercise.rest}</span> : null}
+              {exercise.intensity ? <span>{exercise.intensity}</span> : null}
+              {exercise.intensityPercent ? <span>{exercise.intensityPercent}</span> : null}
+            </div>
 
               {exercise.notes ? (
                 <p className="mt-2 text-xs leading-5 text-white/52">Nota: {exercise.notes}</p>
@@ -418,11 +471,57 @@ function ExerciseSection({
   );
 }
 
+function SessionRules({
+  safetyNotes,
+  adjustmentRules,
+  successCriteria
+}: {
+  safetyNotes?: string[] | null;
+  adjustmentRules?: string[] | null;
+  successCriteria?: string[] | null;
+}) {
+  const groups = [
+    { title: 'Seguridad', items: safetyNotes },
+    { title: 'Ajuste', items: adjustmentRules },
+    { title: 'Éxito', items: successCriteria }
+  ].filter((group) => group.items?.length);
+
+  if (!groups.length) {
+    return null;
+  }
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-3">
+      {groups.map((group) => (
+        <div key={group.title} className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+          <p className="text-xs font-bold uppercase text-brand-cyan">{group.title}</p>
+          <ul className="mt-2 space-y-1">
+            {group.items?.map((item) => (
+              <li key={item} className="text-xs leading-5 text-white/60">
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function SessionStrategy({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
       <p className="text-xs font-semibold uppercase tracking-[0.08em] text-white/42">{label}</p>
       <p className="mt-2 text-sm font-bold leading-5 text-white/82">{value}</p>
+    </div>
+  );
+}
+
+function InfoCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[0.04] p-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-white/42">{label}</p>
+      <p className="mt-2 line-clamp-4 text-sm leading-5 text-white/72">{value}</p>
     </div>
   );
 }

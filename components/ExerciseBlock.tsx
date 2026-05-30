@@ -51,10 +51,22 @@ export function ExerciseBlock({ exercise, complete, onToggle }: ExerciseBlockPro
 
       <dl className="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
         <ExerciseMetric label="Series" value={exercise.sets ? String(exercise.sets) : null} />
-        <ExerciseMetric label="Repeticiones" value={exercise.reps} />
+        <ExerciseMetric label="Dosis" value={exercise.reps ?? exercise.duration ?? null} />
         <ExerciseMetric label="Descanso" value={exercise.rest} />
-        <ExerciseMetric label="Intensidad" value={exercise.intensity} />
+        <ExerciseMetric label="Intensidad" value={exercise.intensityPercent ?? exercise.intensity} />
       </dl>
+
+      {exercise.tempo || exercise.riskLevel || exercise.sourceConcept ? (
+        <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-white/46">
+          {exercise.tempo ? <span className="rounded-md bg-white/[0.05] px-2 py-1">Tempo: {exercise.tempo}</span> : null}
+          {exercise.riskLevel ? <span className="rounded-md bg-white/[0.05] px-2 py-1">Riesgo: {exercise.riskLevel}</span> : null}
+          {exercise.sourceConcept ? (
+            <span className="rounded-md bg-brand-cyan/10 px-2 py-1 text-brand-cyan">
+              {exercise.sourceConcept}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
 
       {exercise.notes ? (
         <div className="mt-4 rounded-md border border-brand-mustard/20 bg-brand-mustard/10 p-3">
