@@ -20,6 +20,7 @@ usar `http://localhost:3003`.
 npm run typecheck
 npm run build
 npm run lint
+node scripts/upload-knowledge-pdfs.mjs "/ruta/al/documento.pdf"
 ```
 
 ## Variables de entorno
@@ -49,6 +50,7 @@ SUBSCRIPTION_COOKIE_SECRET=
 - Onboarding y perfil editable.
 - Login real con Clerk.
 - Generacion de planes de entrenamiento.
+- Base de conocimiento con PDFs mediante OpenAI File Search.
 - Dashboard orientado a la sesion de hoy.
 - Vista semanal del plan.
 - Modo sesion con timers y progreso persistente.
