@@ -23,6 +23,14 @@ const goalLabels: Record<string, string> = {
   other: 'otro objetivo redactado por la persona'
 };
 
+const levelLabels: Record<string, string> = {
+  none: 'sin nivel declarado',
+  beginner: 'principiante',
+  intermediate: 'intermedio',
+  advanced: 'avanzado',
+  elite: 'élite'
+};
+
 function getAvailableEquipment(profile: UserProfile) {
   return profile.equipment.map((item) => equipmentLabels[item] ?? item).join(', ');
 }
@@ -38,6 +46,23 @@ function getGoalSummary(profile: UserProfile) {
     selectedGoals ? `Objetivos seleccionados: ${selectedGoals}` : null,
     details ? `Objetivo redactado por la persona: ${details}` : null,
     project ? `Proyecto o ruta específica: ${project}` : null
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+function getLevelSummary(profile: UserProfile) {
+  const level = levelLabels[profile.level] ?? profile.level ?? 'sin nivel declarado';
+  const history = profile.trainingHistory || profile.previousTraining || 'no especificado';
+
+  return [
+    `Nivel declarado: ${level}`,
+    `Tiempo escalando: ${profile.climbingTime}`,
+    `Historial de entrenamiento: ${history}`,
+    profile.goalDescription ? `Texto libre de objetivo: ${profile.goalDescription}` : null,
+    profile.projectDescription || profile.project
+      ? `Proyecto/contexto específico: ${profile.projectDescription || profile.project}`
+      : null
   ]
     .filter(Boolean)
     .join('\n');
@@ -94,8 +119,24 @@ REGLAS DE SEGURIDAD ABSOLUTAS:
 - Si casi nunca calienta: TODAS las sesiones deben empezar con 15 min de calentamiento
   obligatorio y una nota educativa sobre prevención.
 - Si duerme mal o tiene energía baja: reducir volumen total un 20% vs lo normal.
+- Si hay dolor de dedos mayor a 0 o molestia descrita de dedos: NO incluir campus,
+  hangs máximos, MaxHangs, fallo muscular, arqueo máximo ni alta intensidad de dedos.
+  Prioriza carga submáxima, movilidad, extensores, isométricos suaves, agarres abiertos,
+  volumen bajo y progresión conservadora.
+- Si el perfil es principiante: NO incluir campus ni suspensiones intensas.
+- Si no tiene gym, NO prescribas muro indoor, campus de gimnasio ni circuitos en muro.
+- Si no tiene el equipo, no lo inventes. Da una alternativa real con lo disponible.
 
 REGLAS DE DISEÑO DEL PLAN:
+- No generes una lista básica de ejercicios. Genera un plan tipo entrenador profesional
+  con objetivo del mesociclo, microciclos, progresión, criterios de ajuste y feedback.
+- Usa la estructura de un mesociclo de escalada: semanas 1-2 construyen base específica,
+  semanas 3-4 suben especificidad/intensidad o consolidan, y la última semana descarga si
+  la fatiga, dolor o duración del bloque lo pide.
+- Cuando el plan tenga 4 días por semana, organiza el patrón como días 1/3 y 2/4: dos días
+  con estímulo parecido pero progresado, y dos días complementarios. Cuando tenga 3 días,
+  reparte técnica/proyecto, acondicionamiento físico y resistencia/volumen.
+- Cada semana debe explicar su microciclo y la progresión respecto a la semana anterior.
 - Adaptar TODO al equipo que tiene disponible. Si no tiene hangboard, no incluir
   hangboard; usar alternativas como boulder en presas pequeñas o trabajo técnico.
 - Cada sesión debe tener: calentamiento, bloque principal, vuelta a la calma,
@@ -110,6 +151,44 @@ REGLAS DE DISEÑO DEL PLAN:
 - Si el usuario seleccionó varios objetivos, combinarlos con prioridades claras por semana.
 - Si escribió un objetivo con sus propias palabras, tratar ese texto como contexto de mayor
   prioridad que las etiquetas genéricas.
+- El texto libre del onboarding NO es decorativo: úsalo para decidir selección de ejercicios,
+  progresión, intensidad, volumen, descansos y foco técnico. El plan debe sentirse escrito para
+  esta persona, no para una plantilla general.
+
+PERSONALIZACIÓN POR NIVEL:
+- Si el nivel es avanzado o élite, NO prescribas regresiones de principiante por defecto como
+  dominadas asistidas, suspensión con pies apoyados, circuitos demasiado básicos o movilidad
+  como estímulo principal, salvo que haya lesión, dolor, sueño malo o energía baja que lo justifique.
+- Para nivel avanzado/élite, usa estímulos profesionales y submáximos: trabajo de proyecto/crux,
+  potencia o fuerza controlada, tensión corporal, resistencia específica, análisis de beta,
+  descansos completos, tempo, pausas, calidad de movimiento y progresión semana a semana.
+- Si hay lesión o dolor, adapta con carga baja y explica la regresión como protección, no como
+  nivel de habilidad.
+- Para principiante/intermedio, prioriza técnica, base aeróbica, fuerza general y seguridad.
+
+ESTRUCTURA PROFESIONAL OBLIGATORIA:
+- TrainingPlan debe incluir mesocycleType, mainObjective, secondaryObjectives,
+  athleteSummary, riskSummary, equipmentSummary, weeklyFeedbackPrompt, recoveryGuidelines
+  y safetyRules.
+- Cada Week debe incluir microcycle y progression. En semanas de descarga, usa deloadFocus.
+- Cada Session debe incluir objective, why, intensityTarget, warmupGeneral, warmupSpecific,
+  mainBlock, finalBlock, cooldown, safetyNotes, adjustmentRules y successCriteria.
+- warmupGeneral prepara temperatura, articulaciones, movilidad y respiración.
+- warmupSpecific prepara dedos/hombros/pies/patrón técnico según la sesión.
+- mainBlock contiene el estímulo central del día con dosis clara.
+- finalBlock contiene trabajo accesorio, táctico, preventivo o consolidación. No lo confundas
+  con cooldown; cooldown baja activación y ayuda a recuperar.
+- Cada ejercicio debe incluir dosis completa: series, reps o duration, rest cuando aplique,
+  intensity o intensityPercent, tempo cuando aplique, howTo, feelCues, commonMistakes,
+  stopIf, regressions, progressions, sourceConcept y riskLevel.
+- Si un ejercicio incluye dedos, hombros, codos, barra, colgadas, tracción intensa o campus,
+  stopIf y regressions son obligatorios y específicos.
+- Incluye criterios de éxito observables: por ejemplo "termina con 2 repeticiones en reserva",
+  "mantiene técnica de pies", "dolor no sube", "RPE se mantiene en rango".
+- Incluye reglas para bajar intensidad: menos series, mayor descanso, agarres mejores,
+  menos inclinación, menor rango, cambiar a movilidad o técnica.
+- Incluye reglas para parar: dolor punzante, dolor que sube a 3/10, pérdida de técnica,
+  hormigueo, inestabilidad de hombro/codo/dedos o fatiga que altera caídas.
 
 REGLAS DE VARIEDAD Y PROGRESIÓN:
 - Está PROHIBIDO copiar y pegar la misma sesión en varios días.
@@ -119,6 +198,9 @@ REGLAS DE VARIEDAD Y PROGRESIÓN:
   contexto; si lo repites, explica la progresión en notes.
 - Distribuye estímulos diferentes: técnica, resistencia, fuerza base/core, movilidad/recuperación
   y proyecto según el objetivo.
+- La progresión no debe ser "más de lo mismo". Cambia una variable clara por semana:
+  volumen, intensidad, densidad, complejidad técnica, descanso, especificidad de proyecto
+  o descarga.
 - No pongas "movilidad general + activación escapular + plancha" todos los días. Eso es un
   calentamiento útil, pero no puede ser todo el plan.
 - Los títulos de sesión deben ser específicos y distintos: evita títulos genéricos repetidos.
@@ -140,6 +222,9 @@ ${getAvailableEquipment(profile) || 'Sin equipo declarado'}
 
 OBJETIVOS DEL USUARIO:
 ${getGoalSummary(profile) || 'Sin objetivo declarado'}
+
+NIVEL, HISTORIAL Y TEXTO LIBRE:
+${getLevelSummary(profile)}
 
 DISPONIBILIDAD Y RECUPERACIÓN:
 - Días disponibles: ${profile.availableDays.length ? profile.availableDays.join(', ') : 'no especificado'}
@@ -182,6 +267,14 @@ REQUISITOS DE JSON:
 - Usa status: "active".
 - Todas las sesiones deben iniciar con completed: false y checkIn: null.
 - startDate y createdAt deben estar en formato ISO.
+- Llena los campos profesionales nuevos. No uses null en mesocycleType, mainObjective,
+  secondaryObjectives, athleteSummary, riskSummary, equipmentSummary, weeklyFeedbackPrompt,
+  recoveryGuidelines ni safetyRules.
+- Para cada sesión, warmup debe contener la combinación de warmupGeneral + warmupSpecific
+  para compatibilidad con la app vieja.
+- finalBlock debe contener parte final/accesoria; cooldown debe contener vuelta a la calma.
+- Si no hay video real, usa videoUrl: null. No inventes enlaces.
+- sourceConcept debe resumir el principio de biblioteca o entrenamiento usado, sin citar chunks.
 - Incluye sesiones por semana de acuerdo con daysPerWeek: ${profile.daysPerWeek}.
 - Ajusta estimatedMinutes y volumen para que cada sesión quepa en sessionDuration:
   ${profile.sessionDuration} minutos.
