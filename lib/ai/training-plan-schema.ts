@@ -47,7 +47,7 @@ export const SessionSchema = z.object({
   location: z.string(),
   estimatedMinutes: z.number(),
   warmup: z.array(ExerciseSchema).min(3),
-  mainBlock: z.array(ExerciseSchema).min(2),
+  mainBlock: z.array(ExerciseSchema).min(3),
   cooldown: z.array(ExerciseSchema).min(2),
   nutritionTip: z.string().min(40),
   source: z.string(),

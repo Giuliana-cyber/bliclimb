@@ -123,6 +123,18 @@ REGLAS DE VARIEDAD Y PROGRESIÓN:
   calentamiento útil, pero no puede ser todo el plan.
 - Los títulos de sesión deben ser específicos y distintos: evita títulos genéricos repetidos.
 
+ACONDICIONAMIENTO FÍSICO OBLIGATORIO:
+- El plan NO puede ser solo escalar y hacer técnica. Debe incluir preparación física semanal.
+- Cada semana debe incluir al menos 2 estímulos de acondicionamiento físico entre:
+  core/tensión corporal, tracción y escápulas, antagonistas/extensores, piernas/cadera,
+  resistencia aeróbica fácil y movilidad de recuperación.
+- En el bloque principal de al menos 2 sesiones por semana debe aparecer un ejercicio físico
+  claro, no solo en el calentamiento.
+- Usa acondicionamiento submáximo y seguro: evita fallo muscular, cargas máximas y volumen
+  excesivo, especialmente si hay dolor, lesión, poco sueño o baja energía.
+- Si no hay gym ni pesas, prescribe acondicionamiento en casa: plancha, hollow/dead bug,
+  sentadillas, estocadas, activación escapular, bandas, extensores, caminata o circuito suave.
+
 EQUIPO DISPONIBLE DEL USUARIO:
 ${getAvailableEquipment(profile) || 'Sin equipo declarado'}
 
@@ -141,7 +153,7 @@ RESTRICCIONES ESTRICTAS DE EQUIPO:
 ${getEquipmentRestrictions(profile)}
 
 NIVEL DE DETALLE OBLIGATORIO:
-- Cada sesión debe tener 3 a 5 ejercicios de calentamiento, 2 a 5 ejercicios en bloque
+- Cada sesión debe tener 3 a 5 ejercicios de calentamiento, 3 a 5 ejercicios en bloque
   principal y 2 a 4 ejercicios de vuelta a la calma.
 - Cada ejercicio debe incluir descripción accionable de 1 a 3 frases, sets/reps/rest/intensity
   cuando aplique, y notes con foco técnico o ajuste de seguridad.

@@ -12,7 +12,7 @@ export const runtime = 'nodejs';
 
 const MAX_PLAN_GENERATION_ATTEMPTS = 2;
 const PLAN_MAX_OUTPUT_TOKENS = 8000;
-const MAX_STRUCTURED_SESSIONS = 12;
+const MAX_STRUCTURED_SESSIONS = 8;
 const DAYS_BY_COUNT = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const DAY_LABELS: Record<string, string> = {
   monday: 'Lunes',
@@ -67,6 +67,15 @@ const weekBlueprints = [
     focusAreas: ['recuperación', 'movilidad', 'técnica fácil']
   }
 ];
+
+const CONDITIONING_KEYWORDS = {
+  core: ['core', 'plancha', 'hollow', 'dead bug', 'abdomen', 'tensión corporal', 'tension corporal'],
+  traction: ['tracción', 'traccion', 'dominada', 'remo', 'barra', 'escapular', 'escápula', 'hombro'],
+  antagonist: ['antagonista', 'extensores', 'banda', 'aperturas de dedos', 'antebrazo'],
+  legs: ['sentadilla', 'estocada', 'zancada', 'piernas', 'cadera', 'glúteo', 'gluteo'],
+  endurance: ['resistencia', 'continuidad', 'aeróbica', 'aerobica', 'circuito', 'volumen submáximo'],
+  mobility: ['movilidad', 'torácica', 'toracica', 'rotación', 'rotacion', 'vuelta a la calma']
+};
 
 function isUserProfile(value: unknown): value is UserProfile {
   if (!value || typeof value !== 'object') {
@@ -197,8 +206,8 @@ function getDetailViolations(plan: TrainingPlan) {
         violations.push(`${label}: calentamiento con menos de 3 ejercicios`);
       }
 
-      if (session.mainBlock.length < 2) {
-        violations.push(`${label}: bloque principal con menos de 2 ejercicios`);
+      if (session.mainBlock.length < 3) {
+        violations.push(`${label}: bloque principal con menos de 3 ejercicios`);
       }
 
       if (session.cooldown.length < 2) {
@@ -350,13 +359,75 @@ function getPlanVarietyViolations(plan: TrainingPlan) {
   return violations;
 }
 
+function getConditioningCategoriesForText(text: string) {
+  const normalizedText = normalizeTextKey(text);
+
+  return Object.entries(CONDITIONING_KEYWORDS)
+    .filter(([, keywords]) =>
+      keywords.some((keyword) => normalizedText.includes(normalizeTextKey(keyword)))
+    )
+    .map(([category]) => category);
+}
+
+function getExerciseConditioningCategories(exercise: TrainingPlan['weeks'][number]['sessions'][number]['mainBlock'][number]) {
+  return getConditioningCategoriesForText(
+    [
+      exercise.name,
+      exercise.description,
+      exercise.objective,
+      exercise.notes,
+      exercise.equipment
+    ]
+      .filter(Boolean)
+      .join(' ')
+  );
+}
+
+function getPhysicalConditioningViolations(plan: TrainingPlan) {
+  const violations: string[] = [];
+
+  plan.weeks.forEach((week) => {
+    const weeklyCategories = new Set<string>();
+    let sessionsWithConditioning = 0;
+
+    week.sessions.forEach((session) => {
+      const sessionMainCategories = new Set(
+        session.mainBlock.flatMap((exercise) => getExerciseConditioningCategories(exercise))
+      );
+
+      sessionMainCategories.forEach((category) => weeklyCategories.add(category));
+
+      if (sessionMainCategories.size > 0) {
+        sessionsWithConditioning += 1;
+      }
+    });
+
+    const minimumConditioningSessions = Math.min(week.sessions.length, 2);
+
+    if (sessionsWithConditioning < minimumConditioningSessions) {
+      violations.push(
+        `Semana ${week.weekNumber}: falta acondicionamiento físico en el bloque principal de al menos ${minimumConditioningSessions} sesiones`
+      );
+    }
+
+    if (weeklyCategories.size < 2) {
+      violations.push(
+        `Semana ${week.weekNumber}: falta variedad de acondicionamiento físico (core, tracción/escápulas, antagonistas, piernas/cadera o movilidad)`
+      );
+    }
+  });
+
+  return violations;
+}
+
 function getPlanValidationViolations(plan: TrainingPlan, profile: UserProfile) {
   return [
     ...getLanguageViolations(plan),
     ...getUnavailableEquipmentViolations(plan, profile),
     ...getDetailViolations(plan),
     ...getSafetyViolations(plan, profile),
-    ...getPlanVarietyViolations(plan)
+    ...getPlanVarietyViolations(plan),
+    ...getPhysicalConditioningViolations(plan)
   ];
 }
 
@@ -524,6 +595,139 @@ function makeWarmupExercises(profile: UserProfile, kind: SessionKind, weekNumber
   ];
 }
 
+function makeConditioningExercise(profile: UserProfile, weekNumber: number, sessionIndex: number, kind: SessionKind) {
+  const hasBands = profile.equipment.includes('bands');
+  const hasPullupBar = profile.equipment.includes('pullup_bar');
+  const fingerPainContext =
+    profile.injuries.includes('fingers') || profile.injuryDescription.toLowerCase().includes('dedo');
+  const option = (weekNumber + sessionIndex) % 5;
+
+  if (isDownloadWeek(weekNumber)) {
+    return toExercise({
+      name: 'Acondicionamiento suave de recuperación',
+      description:
+        'Haz una ronda tranquila de movilidad torácica, respiración y activación ligera de abdomen. Mantén todo en RPE bajo para salir con menos tensión de la que empezaste.',
+      sets: 2,
+      reps: '6 a 8 repeticiones por movimiento',
+      rest: '45 segundos',
+      intensity: 'Muy suave, RPE 2 a 3/10',
+      notes:
+        'Semana de descarga: este acondicionamiento existe para recuperar, no para acumular fatiga extra.',
+      objective: 'Mantener movilidad, core suave y recuperación activa sin añadir carga intensa.',
+      howTo: ['Rango cómodo', 'Respira lento', 'Activa abdomen suave'],
+      feelCues: ['Menos rigidez', 'Respiración amplia', 'Cuerpo ligero'],
+      commonMistakes: ['Convertirlo en entrenamiento duro', 'Forzar rango', 'Saltar respiración'],
+      stopIf: ['Dolor punzante', 'Fatiga aumenta', 'Mareo'],
+      alternative: 'Camina 10 minutos y haz respiración nasal si estás muy cansado.',
+      equipment: 'sin equipo'
+    });
+  }
+
+  if (option === 0 || kind === 'homeCore') {
+    return toExercise({
+      name: 'Acondicionamiento de core para tensión corporal',
+      description:
+        'Alterna plancha frontal corta y hollow body ajustado, siempre dejando dos repeticiones en reserva. Busca una línea estable que puedas transferir a desplomes, taloneos y movimientos largos.',
+      sets: 3,
+      reps: '20 segundos de plancha + 15 segundos de hollow',
+      rest: '60 segundos',
+      intensity: 'Moderada, RPE 5/10',
+      notes:
+        'No persigas quemazón máxima. Si la espalda baja se arquea, reduce tiempo o apoya rodillas.',
+      objective: 'Construir acondicionamiento físico de core específico para mantener tensión al escalar.',
+      howTo: ['Costillas abajo', 'Respira corto', 'Termina antes de colapsar'],
+      feelCues: ['Abdomen activo', 'Cadera estable', 'Respiración posible'],
+      commonMistakes: ['Aguantar aire', 'Arquear lumbar', 'Alargar series con mala forma'],
+      stopIf: ['Dolor lumbar', 'Calambre fuerte', 'Pérdida de técnica'],
+      alternative: 'Haz dead bug lento con rodillas flexionadas.',
+      equipment: 'sin equipo'
+    });
+  }
+
+  if ((option === 1 || kind === 'homeStrength') && hasPullupBar && !fingerPainContext) {
+    return toExercise({
+      name: 'Acondicionamiento de tracción asistida',
+      description:
+        'Haz dominadas asistidas o negativas muy lentas con pies apoyados para controlar la carga. Mantén hombros activos y termina cada serie antes de llegar al fallo.',
+      sets: 3,
+      reps: '4 a 6 repeticiones controladas',
+      rest: '90 segundos',
+      intensity: 'Submáxima, RPE 5 a 6/10',
+      notes:
+        'Esto prepara espalda y escápulas para escalar sin convertir la sesión en fuerza máxima.',
+      objective: 'Desarrollar tracción general y estabilidad escapular para tolerar mejor volumen de escalada.',
+      howTo: ['Apoya pies', 'Sube controlado', 'Baja lento'],
+      feelCues: ['Espalda activa', 'Hombros estables', 'Cero tirón en dedos'],
+      commonMistakes: ['Ir al fallo', 'Colgar pasivo', 'Subir con cuello tenso'],
+      stopIf: ['Dolor de codo u hombro', 'Dolor de dedos', 'No controlas la bajada'],
+      alternative: 'Cambia por activación escapular de pie y plancha.',
+      equipment: 'barra de dominadas'
+    });
+  }
+
+  if (option === 2 || hasBands) {
+    return toExercise({
+      name: hasBands ? 'Acondicionamiento antagonista con banda' : 'Acondicionamiento antagonista sin equipo',
+      description: hasBands
+        ? 'Haz aperturas de dedos, rotación externa de hombro y jalón ligero con banda. Mantén tensión baja y controlada, sin dolor ni búsqueda de fallo.'
+        : 'Haz aperturas activas de dedos, empujes contra pared y retracción escapular suave. Mantén respiración estable y control en todo el rango.',
+      sets: 3,
+      reps: '10 a 12 repeticiones por ejercicio',
+      rest: '45 a 60 segundos',
+      intensity: 'Suave a moderada, RPE 4/10',
+      notes:
+        'El objetivo es equilibrar tanto agarre y tracción de la escalada con trabajo de extensores y hombro.',
+      objective: 'Acondicionar antagonistas, extensores de dedos y hombros para prevención de lesiones.',
+      howTo: ['Tensión ligera', 'Muñeca neutra', 'Movimiento lento'],
+      feelCues: ['Dorso de mano activo', 'Hombros despiertos', 'Sin irritación'],
+      commonMistakes: ['Banda muy dura', 'Ir rápido', 'Apretar mandíbula'],
+      stopIf: ['Dolor punzante', 'Dolor de dedos sube a 3/10', 'Hormigueo'],
+      alternative: 'Haz solo aperturas suaves de dedos y movilidad de hombro.',
+      equipment: hasBands ? 'bandas elásticas' : 'sin equipo'
+    });
+  }
+
+  if (option === 3) {
+    return toExercise({
+      name: 'Acondicionamiento de piernas y cadera',
+      description:
+        'Combina sentadilla peso corporal con estocada y rotación de tronco. Muévete lento, cuida rodillas y busca cadera estable para mejorar empujes de pies en la pared.',
+      sets: 3,
+      reps: '8 sentadillas + 6 estocadas por lado',
+      rest: '75 segundos',
+      intensity: 'Moderada, RPE 5/10',
+      notes:
+        'Las piernas descargan antebrazos cuando sabes empujar con pies. Este bloque construye esa base física.',
+      objective: 'Fortalecer piernas, cadera y control rotacional para usar mejor los pies.',
+      howTo: ['Pies firmes', 'Rodilla alineada', 'Gira lento'],
+      feelCues: ['Glúteos activos', 'Cadera estable', 'Respiración controlada'],
+      commonMistakes: ['Rodillas caen adentro', 'Apurarse', 'Perder postura'],
+      stopIf: ['Dolor de rodilla', 'Pinzamiento de cadera', 'Dolor lumbar'],
+      alternative: 'Haz sentadilla a una silla y rotación torácica en el suelo.',
+      equipment: 'sin equipo'
+    });
+  }
+
+  return toExercise({
+    name: 'Acondicionamiento aeróbico fácil',
+    description:
+      'Camina rápido, sube escaleras suave o haz circuito muy ligero de movilidad durante varios minutos. Debes poder hablar frases completas todo el tiempo.',
+    sets: 1,
+    reps: '12 a 18 minutos continuos',
+    rest: 'Sin descanso',
+    intensity: 'RPE 3 a 4/10',
+    notes:
+      'La base aeróbica ayuda a recuperarte entre pegues y tolerar sesiones más largas sin depender de intensidad alta.',
+    objective: 'Construir resistencia general y capacidad de recuperación para escalar más consistente.',
+    howTo: ['Ritmo cómodo', 'Respira nasal si puedes', 'No busques cansarte'],
+    feelCues: ['Calor ligero', 'Puedes hablar', 'Energía estable'],
+    commonMistakes: ['Ir demasiado fuerte', 'Saltarlo siempre', 'Terminar exhausto'],
+    stopIf: ['Mareo', 'Dolor en pecho', 'Fatiga rara'],
+    alternative: 'Haz 3 rondas suaves de movilidad si no puedes caminar.',
+    equipment: 'sin equipo'
+  });
+}
+
 function makeMainExercises(profile: UserProfile, weekNumber: number, sessionIndex: number, kind: SessionKind) {
   const hasRock = profile.equipment.includes('rock');
   const hasGym = profile.equipment.includes('gym');
@@ -572,7 +776,8 @@ function makeMainExercises(profile: UserProfile, weekNumber: number, sessionInde
         stopIf: ['Miedo altera decisiones', 'Fatiga alta', 'Condiciones inseguras'],
         alternative: 'Dibuja la ruta o describe la secuencia si no puedes escalar ese día.',
         equipment: 'roca'
-      })
+      }),
+      makeConditioningExercise(profile, weekNumber, sessionIndex, kind)
     ];
   }
 
@@ -611,7 +816,8 @@ function makeMainExercises(profile: UserProfile, weekNumber: number, sessionInde
         stopIf: ['Miedo alto', 'Fatiga excesiva', 'Dolor punzante'],
         alternative: 'Practica respiración y sacudidas de manos de pie en casa.',
         equipment: 'roca'
-      })
+      }),
+      makeConditioningExercise(profile, weekNumber, sessionIndex, kind)
     ];
   }
 
@@ -651,7 +857,8 @@ function makeMainExercises(profile: UserProfile, weekNumber: number, sessionInde
         stopIf: ['Tensión emocional alta', 'Dolor punzante', 'Fatiga cambia la caída'],
         alternative: 'Ensaya la secuencia en el suelo con gestos y respiración.',
         equipment: 'roca'
-      })
+      }),
+      makeConditioningExercise(profile, weekNumber, sessionIndex, kind)
     ];
   }
 
@@ -690,7 +897,8 @@ function makeMainExercises(profile: UserProfile, weekNumber: number, sessionInde
         stopIf: ['No aplica físicamente', 'Si hay dolor fuerte, prioriza consulta'],
         alternative: 'Graba una nota de voz breve si no quieres escribir.',
         equipment: 'sin equipo'
-      })
+      }),
+      makeConditioningExercise(profile, weekNumber, sessionIndex, kind)
     ];
   }
 
@@ -753,7 +961,8 @@ function makeMainExercises(profile: UserProfile, weekNumber: number, sessionInde
         stopIf: ['Fatiga alta', 'Dolor punzante', 'Frustración cambia la técnica'],
         alternative: 'Haz visualización de ruta desde el piso.',
         equipment: 'gym de escalada'
-      })
+      }),
+      makeConditioningExercise(profile, weekNumber, sessionIndex, kind)
     ];
   }
 
@@ -872,7 +1081,8 @@ function makeMainExercises(profile: UserProfile, weekNumber: number, sessionInde
         stopIf: ['Dolor sube', 'Tensión aumenta', 'Hormigueo'],
         alternative: 'Escribe la secuencia en la bitácora.',
         equipment: hasBands && recovery ? 'bandas elásticas opcionales' : 'sin equipo'
-      })
+      }),
+      makeConditioningExercise(profile, weekNumber, sessionIndex, kind)
     ];
   }
 
