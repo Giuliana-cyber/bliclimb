@@ -8,6 +8,15 @@ export interface TrainingPlan {
   id: string;
   profileId: string;
   objective: string;
+  mesocycleType?: string | null;
+  mainObjective?: string | null;
+  secondaryObjectives?: string[] | null;
+  athleteSummary?: string | null;
+  riskSummary?: string | null;
+  equipmentSummary?: string | null;
+  weeklyFeedbackPrompt?: string | null;
+  recoveryGuidelines?: string[] | null;
+  safetyRules?: string[] | null;
   totalWeeks: number;
   currentWeek: number;
   startDate: string;
@@ -22,6 +31,9 @@ export interface Week {
   weekNumber: number;
   theme: string; // "Diagnóstico + base"
   focusAreas: string[]; // ["fuerza dedos", "técnica"]
+  microcycle?: string | null;
+  progression?: string | null;
+  deloadFocus?: string | null;
   sessions: Session[];
 }
 
@@ -30,9 +42,18 @@ export interface Session {
   title: string; // "Hangboard + técnica"
   location: string; // "gym" | "casa" | "roca"
   estimatedMinutes: number;
+  objective?: string | null;
+  why?: string | null;
+  intensityTarget?: string | null;
   warmup: Exercise[];
+  warmupGeneral?: Exercise[] | null;
+  warmupSpecific?: Exercise[] | null;
   mainBlock: Exercise[];
+  finalBlock?: Exercise[] | null;
   cooldown: Exercise[];
+  safetyNotes?: string[] | null;
+  adjustmentRules?: string[] | null;
+  successCriteria?: string[] | null;
   nutritionTip: string;
   source: string; // "Eva López - MaxHangs"
   completed: boolean;
@@ -49,10 +70,18 @@ export interface Exercise {
   notes: string | null;
   timerSeconds: number | null; // Para activar timer
   objective?: string | null;
+  duration?: string | null;
+  intensityPercent?: string | null;
+  tempo?: string | null;
   howTo?: string[] | null;
   feelCues?: string[] | null;
   commonMistakes?: string[] | null;
   stopIf?: string[] | null;
+  regressions?: string[] | null;
+  progressions?: string[] | null;
+  videoUrl?: string | null;
+  sourceConcept?: string | null;
+  riskLevel?: 'bajo' | 'medio' | 'alto' | null;
   alternative?: string | null;
   equipment?: string | null;
 }

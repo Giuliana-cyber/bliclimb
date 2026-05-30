@@ -115,10 +115,16 @@ function normalizeExerciseLanguage(exercise: Exercise): Exercise {
     intensity: translateTrainingText(exercise.intensity),
     notes: translateTrainingText(exercise.notes),
     objective: translateTrainingText(exercise.objective),
+    duration: translateTrainingText(exercise.duration),
+    intensityPercent: translateTrainingText(exercise.intensityPercent),
+    tempo: translateTrainingText(exercise.tempo),
     howTo: translateStringArray(exercise.howTo),
     feelCues: translateStringArray(exercise.feelCues),
     commonMistakes: translateStringArray(exercise.commonMistakes),
     stopIf: translateStringArray(exercise.stopIf),
+    regressions: translateStringArray(exercise.regressions),
+    progressions: translateStringArray(exercise.progressions),
+    sourceConcept: translateTrainingText(exercise.sourceConcept),
     alternative: translateTrainingText(exercise.alternative),
     equipment: translateTrainingText(exercise.equipment)
   };
@@ -129,10 +135,19 @@ function normalizeSessionLanguage(session: Session): Session {
     ...session,
     title: translateTrainingText(session.title) ?? session.title,
     location: translateTrainingText(session.location) ?? session.location,
+    objective: translateTrainingText(session.objective),
+    why: translateTrainingText(session.why),
+    intensityTarget: translateTrainingText(session.intensityTarget),
     nutritionTip: translateTrainingText(session.nutritionTip) ?? session.nutritionTip,
     source: translateTrainingText(session.source) ?? session.source,
+    safetyNotes: translateStringArray(session.safetyNotes),
+    adjustmentRules: translateStringArray(session.adjustmentRules),
+    successCriteria: translateStringArray(session.successCriteria),
     warmup: session.warmup.map(normalizeExerciseLanguage),
+    warmupGeneral: session.warmupGeneral?.map(normalizeExerciseLanguage) ?? session.warmupGeneral,
+    warmupSpecific: session.warmupSpecific?.map(normalizeExerciseLanguage) ?? session.warmupSpecific,
     mainBlock: session.mainBlock.map(normalizeExerciseLanguage),
+    finalBlock: session.finalBlock?.map(normalizeExerciseLanguage) ?? session.finalBlock,
     cooldown: session.cooldown.map(normalizeExerciseLanguage)
   };
 }
@@ -142,6 +157,9 @@ function normalizeWeekLanguage(week: Week): Week {
     ...week,
     theme: translateTrainingText(week.theme) ?? week.theme,
     focusAreas: week.focusAreas.map((focus) => translateTrainingText(focus) ?? focus),
+    microcycle: translateTrainingText(week.microcycle),
+    progression: translateTrainingText(week.progression),
+    deloadFocus: translateTrainingText(week.deloadFocus),
     sessions: week.sessions.map(normalizeSessionLanguage)
   };
 }
@@ -150,6 +168,15 @@ export function normalizePlanLanguage(plan: TrainingPlan): TrainingPlan {
   return {
     ...plan,
     objective: translateTrainingText(plan.objective) ?? plan.objective,
+    mesocycleType: translateTrainingText(plan.mesocycleType),
+    mainObjective: translateTrainingText(plan.mainObjective),
+    secondaryObjectives: translateStringArray(plan.secondaryObjectives),
+    athleteSummary: translateTrainingText(plan.athleteSummary),
+    riskSummary: translateTrainingText(plan.riskSummary),
+    equipmentSummary: translateTrainingText(plan.equipmentSummary),
+    weeklyFeedbackPrompt: translateTrainingText(plan.weeklyFeedbackPrompt),
+    recoveryGuidelines: translateStringArray(plan.recoveryGuidelines),
+    safetyRules: translateStringArray(plan.safetyRules),
     weeks: plan.weeks.map(normalizeWeekLanguage)
   };
 }
