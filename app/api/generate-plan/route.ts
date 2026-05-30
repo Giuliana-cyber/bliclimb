@@ -7,12 +7,14 @@ import type { TrainingPlan } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
 import { TrainingPlanSchema } from '@/lib/ai/training-plan-schema';
 import { extractLibraryTraceability, type LibraryTraceability } from '@/lib/ai/response-sources';
+import { validateProfessionalPlan } from '@/lib/ai/validate-professional-plan';
 
 export const runtime = 'nodejs';
 
 const MAX_PLAN_GENERATION_ATTEMPTS = 2;
-const PLAN_MAX_OUTPUT_TOKENS = 8000;
+const PLAN_MAX_OUTPUT_TOKENS = 14000;
 const MAX_STRUCTURED_SESSIONS = 8;
+const PERSONALIZED_STRUCTURED_SESSION_LIMIT = 16;
 const DAYS_BY_COUNT = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const DAY_LABELS: Record<string, string> = {
   monday: 'Lunes',
@@ -76,6 +78,104 @@ const CONDITIONING_KEYWORDS = {
   endurance: ['resistencia', 'continuidad', 'aeróbica', 'aerobica', 'circuito', 'volumen submáximo'],
   mobility: ['movilidad', 'torácica', 'toracica', 'rotación', 'rotacion', 'vuelta a la calma']
 };
+
+const PERSONALIZATION_STOP_WORDS = new Set([
+  'para',
+  'porque',
+  'quiero',
+  'busco',
+  'mejorar',
+  'tener',
+  'hacer',
+  'como',
+  'pero',
+  'este',
+  'esta',
+  'esto',
+  'algo',
+  'todo',
+  'todos',
+  'todas',
+  'entrenar',
+  'entrenamiento',
+  'escalada',
+  'escalar',
+  'nivel',
+  'plan',
+  'mes',
+  'semana',
+  'semanas',
+  'dias',
+  'día',
+  'con',
+  'sin',
+  'una',
+  'uno',
+  'las',
+  'los',
+  'del',
+  'que',
+  'por'
+]);
+
+function isAdvancedProfile(profile: UserProfile) {
+  return profile.level === 'advanced' || profile.level === 'elite';
+}
+
+function hasLoadRestriction(profile: UserProfile) {
+  const injuryText = `${profile.injuryDescription} ${profile.injuryNotes}`.toLowerCase();
+
+  return (
+    profile.injuries.some((injury) => injury !== 'none') ||
+    Boolean(injuryText.trim()) ||
+    profile.energyLevel === 'low' ||
+    profile.energy === 'low' ||
+    profile.sleepQuality === 'bad' ||
+    profile.sleep === 'bad'
+  );
+}
+
+function hasDetailedOnboardingContext(profile: UserProfile) {
+  const freeTextLength = [
+    profile.goalDescription,
+    profile.projectDescription,
+    profile.project,
+    profile.trainingHistory,
+    profile.previousTraining,
+    profile.equipmentNotes,
+    profile.injuryDescription
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .trim().length;
+
+  return isAdvancedProfile(profile) || freeTextLength >= 80 || profile.goals.length > 1;
+}
+
+function getProfileLevelLabel(profile: UserProfile) {
+  const labels: Record<string, string> = {
+    none: 'sin nivel declarado',
+    beginner: 'principiante',
+    intermediate: 'intermedio',
+    advanced: 'avanzado',
+    elite: 'élite'
+  };
+
+  return labels[profile.level] ?? profile.level ?? 'sin nivel declarado';
+}
+
+function getProfileContextSummary(profile: UserProfile) {
+  return [
+    `nivel ${getProfileLevelLabel(profile)}`,
+    profile.goalDescription ? `objetivo: ${profile.goalDescription}` : null,
+    profile.projectDescription || profile.project
+      ? `proyecto: ${profile.projectDescription || profile.project}`
+      : null,
+    profile.trainingHistory ? `historial: ${profile.trainingHistory}` : null
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
 
 function isUserProfile(value: unknown): value is UserProfile {
   if (!value || typeof value !== 'object') {
@@ -420,24 +520,145 @@ function getPhysicalConditioningViolations(plan: TrainingPlan) {
   return violations;
 }
 
+function getProfileKeywords(profile: UserProfile) {
+  const sourceText = [
+    profile.goalDescription,
+    profile.projectDescription,
+    profile.project,
+    profile.trainingHistory,
+    profile.equipmentNotes
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  return Array.from(
+    new Set(
+      normalizeTextKey(sourceText)
+        .split(' ')
+        .filter((word) => word.length >= 5 && !PERSONALIZATION_STOP_WORDS.has(word))
+    )
+  ).slice(0, 14);
+}
+
+function getPersonalizationViolations(plan: TrainingPlan, profile: UserProfile) {
+  const violations: string[] = [];
+  const text = flattenPlanText(plan);
+  const normalizedText = normalizeTextKey(text);
+  const mainText = normalizeTextKey(
+    plan.weeks
+      .flatMap((week) =>
+        week.sessions.flatMap((session) => [
+          session.title,
+          session.source,
+          ...session.mainBlock.flatMap((exercise) => [
+            exercise.name,
+            exercise.description,
+            exercise.objective,
+            exercise.notes,
+            exercise.reps,
+            exercise.intensity
+          ])
+        ])
+      )
+      .filter(Boolean)
+      .join(' ')
+  );
+
+  if (isAdvancedProfile(profile) && !hasLoadRestriction(profile)) {
+    const beginnerPatterns = [
+      'dominada asistida',
+      'dominadas asistidas',
+      'pies apoyados',
+      'suspension asistida',
+      'principiante'
+    ];
+    const matchedBeginnerPatterns = beginnerPatterns.filter((pattern) =>
+      mainText.includes(normalizeTextKey(pattern))
+    );
+
+    if (matchedBeginnerPatterns.length) {
+      violations.push(
+        `perfil ${getProfileLevelLabel(profile)} sin restricción fuerte: evita regresiones de principiante (${matchedBeginnerPatterns
+          .slice(0, 3)
+          .join(', ')})`
+      );
+    }
+
+    const advancedPatterns = [
+      'proyecto',
+      'crux',
+      'beta',
+      'tension',
+      'potencia',
+      'resistencia',
+      'intervalo',
+      'bloque',
+      'coordinacion',
+      'traccion estricta',
+      'tempo',
+      'submaxima'
+    ];
+
+    if (!advancedPatterns.some((pattern) => mainText.includes(normalizeTextKey(pattern)))) {
+      violations.push(
+        `perfil ${getProfileLevelLabel(profile)}: el bloque principal no refleja trabajo avanzado, proyecto, tensión, potencia, resistencia o beta`
+      );
+    }
+  }
+
+  const keywords = getProfileKeywords(profile);
+
+  if (keywords.length >= 4) {
+    const matchedKeywords = keywords.filter((keyword) => normalizedText.includes(keyword));
+    const minimumMatches = Math.min(4, Math.max(2, Math.ceil(keywords.length * 0.25)));
+
+    if (matchedKeywords.length < minimumMatches) {
+      violations.push(
+        `el plan casi no usa el contexto escrito del onboarding; debe incorporar objetivo/proyecto/historial del usuario`
+      );
+    }
+  }
+
+  return violations;
+}
+
 function getPlanValidationViolations(plan: TrainingPlan, profile: UserProfile) {
-  return [
+  return Array.from(new Set([
     ...getLanguageViolations(plan),
     ...getUnavailableEquipmentViolations(plan, profile),
     ...getDetailViolations(plan),
     ...getSafetyViolations(plan, profile),
     ...getPlanVarietyViolations(plan),
-    ...getPhysicalConditioningViolations(plan)
-  ];
+    ...getPhysicalConditioningViolations(plan),
+    ...getPersonalizationViolations(plan, profile),
+    ...validateProfessionalPlan(plan, profile).violations
+  ]));
 }
 
 function toExercise(exercise: ExerciseDraft): TrainingPlan['weeks'][number]['sessions'][number]['warmup'][number] {
+  const riskText = `${exercise.name} ${exercise.description} ${exercise.equipment ?? ''}`.toLowerCase();
+  const riskLevel =
+    exercise.riskLevel ??
+    (['dedo', 'regleta', 'campus', 'hangboard', 'codo', 'hombro', 'barra', 'tracción', 'traccion'].some((term) =>
+      riskText.includes(term)
+    )
+      ? 'medio'
+      : 'bajo');
+
   return {
     sets: exercise.sets ?? null,
     reps: exercise.reps ?? null,
     rest: exercise.rest ?? null,
     intensity: exercise.intensity ?? null,
     timerSeconds: exercise.timerSeconds ?? null,
+    duration: exercise.duration ?? exercise.reps ?? null,
+    intensityPercent: exercise.intensityPercent ?? null,
+    tempo: exercise.tempo ?? null,
+    regressions: exercise.regressions ?? [exercise.alternative ?? 'Reduce rango, volumen o intensidad manteniendo técnica limpia.'],
+    progressions: exercise.progressions ?? ['Aumenta solo una variable cuando termines con técnica limpia y margen.'],
+    videoUrl: exercise.videoUrl ?? null,
+    sourceConcept: exercise.sourceConcept ?? exercise.objective ?? 'Principio BilClimb de carga progresiva y técnica segura.',
+    riskLevel,
     ...exercise
   };
 }
@@ -598,6 +819,7 @@ function makeWarmupExercises(profile: UserProfile, kind: SessionKind, weekNumber
 function makeConditioningExercise(profile: UserProfile, weekNumber: number, sessionIndex: number, kind: SessionKind) {
   const hasBands = profile.equipment.includes('bands');
   const hasPullupBar = profile.equipment.includes('pullup_bar');
+  const advanced = isAdvancedProfile(profile);
   const fingerPainContext =
     profile.injuries.includes('fingers') || profile.injuryDescription.toLowerCase().includes('dedo');
   const option = (weekNumber + sessionIndex) % 5;
@@ -645,6 +867,27 @@ function makeConditioningExercise(profile: UserProfile, weekNumber: number, sess
   }
 
   if ((option === 1 || kind === 'homeStrength') && hasPullupBar && !fingerPainContext) {
+    if (advanced && !hasLoadRestriction(profile)) {
+      return toExercise({
+        name: 'Tracción estricta submáxima en barra',
+        description:
+          'Haz dominadas estrictas o negativas controladas dejando siempre dos repeticiones en reserva. Usa tempo lento, escápulas activas y evita convertirlo en prueba máxima.',
+        sets: 4,
+        reps: '3 a 5 repeticiones estrictas',
+        rest: '2 minutos',
+        intensity: 'Submáxima, RPE 6 a 7/10',
+        notes:
+          'Para nivel avanzado no uses asistencia por defecto: ajusta dificultad con tempo, pausas o menos repeticiones, no con fallo muscular.',
+        objective: 'Desarrollar tracción específica y estabilidad escapular útil para movimientos exigentes sin acumular fatiga peligrosa.',
+        howTo: ['Escápulas activas', 'Sube sin impulso', 'Baja en 3 segundos'],
+        feelCues: ['Espalda fuerte', 'Hombros estables', 'Dos repeticiones en reserva'],
+        commonMistakes: ['Ir al fallo', 'Balancearse', 'Colgar pasivo abajo'],
+        stopIf: ['Dolor de codo u hombro', 'Dolor de dedos', 'Pierdes control en la bajada'],
+        alternative: 'Si estás muy fatigado, cambia por activación escapular y hollow body breve.',
+        equipment: 'barra de dominadas'
+      });
+    }
+
     return toExercise({
       name: 'Acondicionamiento de tracción asistida',
       description:
@@ -1088,18 +1331,41 @@ function makeMainExercises(profile: UserProfile, weekNumber: number, sessionInde
 
   return [
     toExercise({
-      name: hasPullupBar ? 'Suspensión asistida en barra' : 'Remo escapular sin equipo',
-      description: hasPullupBar
-        ? 'Sujeta una barra con pies apoyados en el suelo o una silla para descargar peso. Mantén hombros activos y sostén sin llegar al fallo.'
+      name:
+        hasPullupBar && isAdvancedProfile(profile) && !fingerPainContext && !hasLoadRestriction(profile)
+          ? 'Tracción estricta submáxima en barra'
+          : hasPullupBar
+            ? 'Suspensión asistida en barra'
+            : 'Remo escapular sin equipo',
+      description:
+        hasPullupBar && isAdvancedProfile(profile) && !fingerPainContext && !hasLoadRestriction(profile)
+          ? 'Haz repeticiones estrictas o sostén la parte alta de la dominada con escápulas activas. Mantén margen, baja lento y corta antes de perder control.'
+          : hasPullupBar
+            ? 'Sujeta una barra con pies apoyados en el suelo o una silla para descargar peso. Mantén hombros activos y sostén sin llegar al fallo.'
         : 'Inclínate ligeramente, activa escápulas hacia atrás y abajo, y simula una tracción lenta manteniendo abdomen firme.',
       sets: 3,
-      reps: hasPullupBar && !fingerPainContext ? '8 a 12 segundos' : '10 repeticiones lentas',
+      reps:
+        hasPullupBar && isAdvancedProfile(profile) && !fingerPainContext && !hasLoadRestriction(profile)
+          ? '3 a 5 repeticiones o 8 segundos de sostén'
+          : hasPullupBar && !fingerPainContext
+            ? '8 a 12 segundos'
+            : '10 repeticiones lentas',
       rest: '90 segundos',
-      intensity: fingerPainContext ? 'Submáxima, RPE 4/10' : 'Moderada, RPE 5 a 6/10',
+      intensity:
+        hasPullupBar && isAdvancedProfile(profile) && !fingerPainContext && !hasLoadRestriction(profile)
+          ? 'Submáxima, RPE 6 a 7/10'
+          : fingerPainContext
+            ? 'Submáxima, RPE 4/10'
+            : 'Moderada, RPE 5 a 6/10',
       notes:
-        'Evita agarre arqueado máximo y cualquier intento al fallo. Debe sentirse controlado y repetible.',
+        isAdvancedProfile(profile) && !hasLoadRestriction(profile)
+          ? 'El estímulo debe parecer entrenamiento profesional: tensión limpia, margen y progresión, no una regresión genérica.'
+          : 'Evita agarre arqueado máximo y cualquier intento al fallo. Debe sentirse controlado y repetible.',
       objective: 'Construir base de tracción y estabilidad sin cargas máximas de dedos.',
-      howTo: ['Apoya pies', 'Activa escápulas', 'Suelta antes de perder forma'],
+      howTo:
+        hasPullupBar && isAdvancedProfile(profile) && !fingerPainContext && !hasLoadRestriction(profile)
+          ? ['Activa escápulas', 'Sube estricto', 'Baja lento']
+          : ['Apoya pies', 'Activa escápulas', 'Suelta antes de perder forma'],
       feelCues: ['Espalda activa', 'Hombros firmes', 'Dedos sin dolor agudo'],
       commonMistakes: ['Colgar pasivo', 'Apretar al máximo', 'Contener la respiración'],
       stopIf: ['Dolor de dedos sube a 3/10', 'Dolor punzante', 'Hombro se siente inestable'],
@@ -1208,7 +1474,36 @@ function buildFallbackPlan(profile: UserProfile, libraryTraceability?: LibraryTr
     profileId: profile.id,
     objective:
       profile.goalDescription ||
+      profile.projectDescription ||
+      profile.project ||
       'Construir una base segura de técnica, resistencia y fuerza general para escalar mejor.',
+    mesocycleType: `${totalWeeks} semanas de progresión técnica, física y recuperación`,
+    mainObjective:
+      profile.goalDescription ||
+      profile.projectDescription ||
+      'Convertir el perfil del usuario en un bloque de entrenamiento progresivo y seguro.',
+    secondaryObjectives: [
+      'Mejorar calidad técnica sin repetir sesiones genéricas',
+      'Incluir acondicionamiento físico específico para escalada',
+      'Mantener carga submáxima con criterios claros de seguridad'
+    ],
+    athleteSummary: getProfileContextSummary(profile) || `Perfil con nivel ${getProfileLevelLabel(profile)}.`,
+    riskSummary: hasLoadRestriction(profile)
+      ? 'Hay señales de lesión, fatiga o recuperación limitada: se prioriza carga conservadora y margen.'
+      : 'Sin restricción fuerte declarada: se usa progresión submáxima con control técnico.',
+    equipmentSummary: profile.equipment.length
+      ? `Equipo disponible: ${profile.equipment.join(', ')}. No se prescribe equipo fuera de esta lista.`
+      : 'Sin equipo claro declarado: se usan alternativas de casa y técnica sin material.',
+    weeklyFeedbackPrompt:
+      'Al terminar cada semana registra RPE, dolor de dedos, energía, sueño y qué ejercicio se sintió demasiado fácil o demasiado agresivo.',
+    recoveryGuidelines: [
+      'Duerme y come suficiente antes de aumentar intensidad; si el sueño cae, reduce volumen 20%.',
+      'Si aparece dolor punzante o dolor que sube a 3/10, detén la parte intensa y cambia a movilidad suave.'
+    ],
+    safetyRules: [
+      'No entrenes al fallo muscular; deja margen técnico en ejercicios de tracción, dedos y core.',
+      'Respeta descansos completos y baja intensidad si la técnica, respiración o control corporal se deterioran.'
+    ],
     totalWeeks,
     currentWeek: 1,
     startDate: now,
@@ -1224,6 +1519,19 @@ function buildFallbackPlan(profile: UserProfile, libraryTraceability?: LibraryTr
         weekNumber,
         theme: `Semana ${weekNumber}: ${blueprint.theme}`,
         focusAreas: blueprint.focusAreas,
+        microcycle:
+          weekNumber <= 2
+            ? 'Microciclo 1-2: base específica y control'
+            : 'Microciclo 3-4: especificidad, intensidad controlada y consolidación',
+        progression:
+          weekNumber === 1
+            ? 'Semana de entrada: volumen técnico y medición de tolerancia.'
+            : isDownloadWeek(weekNumber)
+              ? 'Semana de descarga: bajar volumen y consolidar aprendizajes.'
+              : 'Progresar una variable principal sin sacrificar técnica ni seguridad.',
+        deloadFocus: isDownloadWeek(weekNumber)
+          ? 'Reducir volumen y salir con sensación de frescura.'
+          : null,
         sessions: Array.from({ length: sessionCount }, (_, sessionIndex) => {
           const rawDay = profile.availableDays[sessionIndex];
           const dayLabel = rawDay
@@ -1231,21 +1539,64 @@ function buildFallbackPlan(profile: UserProfile, libraryTraceability?: LibraryTr
             : DAYS_BY_COUNT[sessionIndex] ?? `Día ${sessionIndex + 1}`;
           const kind = getSessionKind(profile, weekNumber, sessionIndex);
           const location = getSessionLocation(kind);
+          const warmup = makeWarmupExercises(profile, kind, weekNumber);
+          const mainBlock = makeMainExercises(profile, weekNumber, sessionIndex, kind);
+          const cooldown = makeCooldownExercises(kind, weekNumber);
+          const finalBlock = [
+            toExercise({
+              name: 'Registro técnico y ajuste de carga',
+              description:
+                'Cierra la parte de entrenamiento anotando qué ejercicio fue más útil, qué molestia apareció y qué variable ajustarías la próxima vez. Usa esa información para no repetir carga a ciegas.',
+              reps: '3 notas breves',
+              rest: 'Sin descanso',
+              intensity: 'Reflexivo y suave',
+              notes:
+                'Este feedback semanal hace que el plan deje de ser una lista fija y se vuelva entrenamiento adaptable.',
+              objective: 'Convertir la sesión en información útil para ajustar el siguiente microciclo.',
+              howTo: ['Anota RPE', 'Anota dolor 0-10', 'Elige un ajuste'],
+              feelCues: ['Claridad', 'Menos incertidumbre', 'Mejor decisión para la próxima sesión'],
+              commonMistakes: ['No registrar nada', 'Solo anotar si encadenaste', 'Ignorar dolor leve'],
+              stopIf: ['Si hay dolor fuerte, prioriza recuperación y consulta profesional'],
+              alternative: 'Graba una nota de voz de 30 segundos.',
+              equipment: 'sin equipo',
+              riskLevel: 'bajo'
+            })
+          ];
 
           return {
             dayNumber: sessionIndex + 1,
             title: getSessionTitle(kind, dayLabel, weekNumber),
             location,
             estimatedMinutes: Math.min(Math.max(profile.sessionDuration || 75, 45), 120),
-            warmup: makeWarmupExercises(profile, kind, weekNumber),
-            mainBlock: makeMainExercises(profile, weekNumber, sessionIndex, kind),
-            cooldown: makeCooldownExercises(kind, weekNumber),
+            objective: `${blueprint.focusAreas[0]} aplicado a ${getProfileLevelLabel(profile)}.`,
+            why: `Esta sesión existe para avanzar el microciclo de ${blueprint.theme} sin usar equipo no declarado ni repetir una plantilla genérica.`,
+            intensityTarget: isDownloadWeek(weekNumber)
+              ? 'RPE 3 a 4/10, descarga técnica'
+              : 'RPE 5 a 7/10 con 2 repeticiones o movimientos en reserva',
+            warmup,
+            warmupGeneral: warmup.slice(0, 2),
+            warmupSpecific: warmup.slice(-2),
+            mainBlock,
+            finalBlock,
+            cooldown,
+            safetyNotes: [
+              'Baja intensidad si el dolor sube a 3/10 o cambia tu técnica.',
+              'No busques fallo muscular ni agarres máximos; conserva margen.'
+            ],
+            adjustmentRules: [
+              'Si la sesión se siente fácil, aumenta solo una variable la próxima semana.',
+              'Si hay fatiga o sueño malo, reduce una serie por bloque y alarga descansos.'
+            ],
+            successCriteria: [
+              'Terminas con técnica limpia y respiración controlada.',
+              'Puedes registrar RPE, dolor y un ajuste concreto para la siguiente sesión.'
+            ],
             nutritionTip:
               isDownloadWeek(weekNumber)
                 ? 'Prioriza comida normal, agua y sueño; la descarga funciona cuando realmente bajas la carga.'
                 : 'Come algo ligero con carbohidratos 60 a 90 minutos antes y toma agua durante la sesión.',
             source:
-              `Plan de respaldo BilClimb: ${blueprint.theme}, carga submáxima, variación de estímulos y prevención de lesiones.`,
+              `Plan de respaldo BilClimb para ${getProfileContextSummary(profile) || getProfileLevelLabel(profile)}: ${blueprint.theme}, progresión submáxima, acondicionamiento y prevención de lesiones.`,
             completed: false,
             checkIn: null
           };
@@ -1256,7 +1607,12 @@ function buildFallbackPlan(profile: UserProfile, libraryTraceability?: LibraryTr
 }
 
 function shouldUseFastPlanBuilder(profile: UserProfile) {
-  return (profile.planDuration || 4) * (profile.daysPerWeek || 3) > MAX_STRUCTURED_SESSIONS;
+  const totalSessions = (profile.planDuration || 4) * (profile.daysPerWeek || 3);
+  const sessionLimit = hasDetailedOnboardingContext(profile)
+    ? PERSONALIZED_STRUCTURED_SESSION_LIMIT
+    : MAX_STRUCTURED_SESSIONS;
+
+  return totalSessions > sessionLimit;
 }
 
 async function getLibraryTraceabilityForPlan({
