@@ -70,6 +70,13 @@ Despues del primer deploy, actualiza `NEXT_PUBLIC_APP_URL` con el dominio real y
 5. Inicia la suscripcion con un email de prueba.
 6. Al volver a `/billing/success`, verifica que la app cree la cookie de suscripcion.
 
+Errores comunes:
+
+- Si la app dice que Mercado Pago no esta configurado, falta `MERCADO_PAGO_ACCESS_TOKEN` en Vercel o no hiciste redeploy despues de agregarlo.
+- Si Mercado Pago rechaza `USD`, usa `MERCADO_PAGO_CURRENCY=MXN` y ajusta `MERCADO_PAGO_SUBSCRIPTION_AMOUNT`.
+- Si `/billing/success` muestra `pending`, espera unos segundos y usa `Reintentar verificacion`; Mercado Pago puede tardar en marcar la suscripcion como `authorized`.
+- La suscripcion del MVP se guarda como cookie segura en el navegador. Para que se conserve entre dispositivos hay que agregar base de datos o webhooks ligados al usuario de Clerk.
+
 ## 5. Login con Clerk
 
 1. Crea una aplicacion en Clerk o instala Clerk desde Vercel Marketplace.

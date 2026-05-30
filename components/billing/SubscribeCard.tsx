@@ -1,13 +1,77 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { CreditCard, Loader2, ShieldCheck, Sparkles } from 'lucide-react';
+import { loadLocalSession } from '@/lib/session';
+
+type BillingStatus = {
+  active?: boolean;
+  configured?: boolean;
+  required?: boolean;
+  configError?: string | null;
+  billing?: {
+    amount: number;
+    currency: string;
+    sandbox: boolean;
+  } | null;
+  subscription?: {
+    payerEmail?: string;
+    expiresAt?: string;
+  } | null;
+};
+
+function formatMoney(amount: number, currency: string) {
+  try {
+    return new Intl.NumberFormat('es-MX', {
+      currency,
+      style: 'currency'
+    }).format(amount);
+  } catch {
+    return `${amount} ${currency}`;
+  }
+}
 
 export function SubscribeCard({ compact = false }: { compact?: boolean }) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [billingStatus, setBillingStatus] = useState<BillingStatus | null>(null);
+  const [checkingStatus, setCheckingStatus] = useState(true);
+
+  useEffect(() => {
+    const session = loadLocalSession();
+
+    if (session?.email) {
+      setEmail(session.email);
+    }
+
+    async function checkBillingStatus() {
+      try {
+        const response = await fetch('/api/billing/status');
+        const data = (await response.json()) as BillingStatus;
+        setBillingStatus(data);
+      } catch {
+        setBillingStatus(null);
+      } finally {
+        setCheckingStatus(false);
+      }
+    }
+
+    void checkBillingStatus();
+  }, []);
+
+  const priceLabel = useMemo(() => {
+    const billing = billingStatus?.billing;
+
+    if (!billing) {
+      return '$1 USD';
+    }
+
+    return formatMoney(billing.amount, billing.currency);
+  }, [billingStatus]);
+
+  const isBillingConfigured = billingStatus?.configured ?? true;
 
   async function startCheckout() {
     setLoading(true);
@@ -21,7 +85,11 @@ export function SubscribeCard({ compact = false }: { compact?: boolean }) {
         },
         body: JSON.stringify({ email })
       });
-      const data = (await response.json()) as { preapprovalId?: string; url?: string; error?: string };
+      const data = (await response.json()) as {
+        preapprovalId?: string;
+        url?: string;
+        error?: string;
+      };
 
       if (!response.ok || !data.url) {
         throw new Error(data.error ?? 'No pudimos abrir el checkout.');
@@ -45,11 +113,17 @@ export function SubscribeCard({ compact = false }: { compact?: boolean }) {
           <Sparkles aria-hidden="true" size={24} strokeWidth={2.4} />
         </div>
         <p className="mt-5 text-sm font-bold text-brand-mustard">BilClimb.ai Pro</p>
-        <h1 className="mt-2 text-3xl font-bold">Entrena con IA por $1 USD al mes</h1>
+        <h1 className="mt-2 text-3xl font-bold">Entrena con IA por {priceLabel} al mes</h1>
         <p className="mt-3 text-sm leading-6 text-white/68">
           La suscripción cubre el uso de OpenAI para generar planes, responder con Senda/Bill y
           mantener la bitácora inteligente funcionando.
         </p>
+
+        {billingStatus?.billing ? (
+          <div className="mt-4 inline-flex rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold text-white/58">
+            Mercado Pago {billingStatus.billing.sandbox ? 'sandbox' : 'producción'}
+          </div>
+        ) : null}
 
         <div className="mt-5 grid gap-3 text-sm leading-6 text-white/72">
           <div className="flex gap-3">
@@ -79,14 +153,22 @@ export function SubscribeCard({ compact = false }: { compact?: boolean }) {
           </div>
         ) : null}
 
+        {!checkingStatus && !isBillingConfigured ? (
+          <div className="mt-5 rounded-md border border-brand-mustard/30 bg-brand-mustard/10 p-3 text-sm leading-6 text-white/76">
+            {billingStatus?.configError ??
+              'Mercado Pago todavía no está configurado en este entorno.'}{' '}
+            Agrega o revisa <span className="font-bold">MERCADO_PAGO_ACCESS_TOKEN</span> en Vercel y vuelve a desplegar.
+          </div>
+        ) : null}
+
         <button
           type="button"
           onClick={startCheckout}
-          disabled={loading || !email.trim()}
+          disabled={loading || checkingStatus || !isBillingConfigured || !email.trim()}
           className="mt-6 flex w-full items-center justify-center gap-2 rounded-md bg-brand-cyan px-4 py-4 text-base font-bold text-brand-dark transition hover:bg-brand-cyan/90 disabled:cursor-not-allowed disabled:bg-white/12 disabled:text-white/42"
         >
           {loading ? <Loader2 aria-hidden="true" size={18} className="animate-spin" /> : null}
-          Suscribirme por $1/mes
+          Suscribirme por {priceLabel}/mes
         </button>
 
         <Link

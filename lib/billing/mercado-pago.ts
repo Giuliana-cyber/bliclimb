@@ -9,6 +9,16 @@ export type MercadoPagoPreapproval = {
   external_reference?: string | null;
 };
 
+type MercadoPagoErrorPayload = {
+  message?: string;
+  error?: string;
+  cause?: Array<{
+    code?: string;
+    description?: string;
+    message?: string;
+  }>;
+};
+
 function getAccessToken() {
   const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
 
@@ -20,7 +30,18 @@ function getAccessToken() {
 }
 
 function getAppBaseUrl(requestUrl: string) {
-  return process.env.NEXT_PUBLIC_APP_URL ?? new URL(requestUrl).origin;
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  const requestOrigin = new URL(requestUrl).origin;
+
+  if (
+    configuredUrl &&
+    !configuredUrl.includes('localhost') &&
+    !configuredUrl.includes('127.0.0.1')
+  ) {
+    return configuredUrl.replace(/\/$/, '');
+  }
+
+  return requestOrigin;
 }
 
 function getSubscriptionAmount() {
@@ -37,6 +58,31 @@ function getCurrencyId() {
   return process.env.MERCADO_PAGO_CURRENCY ?? 'USD';
 }
 
+export function getBillingDisplayConfig() {
+  return {
+    amount: getSubscriptionAmount(),
+    currency: getCurrencyId(),
+    sandbox: process.env.MERCADO_PAGO_USE_SANDBOX === 'true'
+  };
+}
+
+export function getMercadoPagoCheckoutUrl(subscription: MercadoPagoPreapproval) {
+  if (process.env.MERCADO_PAGO_USE_SANDBOX === 'true') {
+    return subscription.sandbox_init_point ?? subscription.init_point ?? null;
+  }
+
+  return subscription.init_point ?? subscription.sandbox_init_point ?? null;
+}
+
+function getMercadoPagoErrorMessage(data: MercadoPagoErrorPayload) {
+  const causeMessage = data.cause
+    ?.map((item) => item.description ?? item.message ?? item.code)
+    .filter(Boolean)
+    .join(' ');
+
+  return data.message ?? data.error ?? causeMessage ?? 'Mercado Pago no pudo procesar la solicitud.';
+}
+
 async function mercadoPagoRequest<T>(path: string, init?: RequestInit) {
   const response = await fetch(`${MERCADO_PAGO_API_BASE}${path}`, {
     ...init,
@@ -47,10 +93,19 @@ async function mercadoPagoRequest<T>(path: string, init?: RequestInit) {
     }
   });
 
-  const data = (await response.json()) as T & { message?: string; error?: string; cause?: unknown };
+  const responseText = await response.text();
+  let data = {} as T & MercadoPagoErrorPayload;
+
+  try {
+    data = responseText
+      ? (JSON.parse(responseText) as T & MercadoPagoErrorPayload)
+      : ({} as T & MercadoPagoErrorPayload);
+  } catch {
+    data = { message: responseText } as T & MercadoPagoErrorPayload;
+  }
 
   if (!response.ok) {
-    throw new Error(data.message ?? data.error ?? 'Mercado Pago request failed.');
+    throw new Error(getMercadoPagoErrorMessage(data));
   }
 
   return data as T;

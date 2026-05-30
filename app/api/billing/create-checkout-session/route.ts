@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server';
 import { isBillingConfigured } from '@/lib/billing/subscription';
-import { createSubscriptionPreapproval } from '@/lib/billing/mercado-pago';
+import {
+  createSubscriptionPreapproval,
+  getBillingDisplayConfig,
+  getMercadoPagoCheckoutUrl
+} from '@/lib/billing/mercado-pago';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   if (!isBillingConfigured()) {
     return NextResponse.json(
-      { error: 'Mercado Pago billing is not configured. Add MERCADO_PAGO_ACCESS_TOKEN.' },
+      { error: 'Mercado Pago no está configurado. Agrega MERCADO_PAGO_ACCESS_TOKEN en Vercel y haz redeploy.' },
       { status: 500 }
     );
   }
@@ -24,20 +28,22 @@ export async function POST(request: Request) {
       email,
       requestUrl: request.url
     });
-    const url = process.env.MERCADO_PAGO_USE_SANDBOX === 'true'
-      ? subscription.sandbox_init_point
-      : subscription.init_point ?? subscription.sandbox_init_point;
+    const url = getMercadoPagoCheckoutUrl(subscription);
 
     if (!url) {
       return NextResponse.json(
-        { error: 'Mercado Pago did not return a checkout URL.' },
+        { error: 'Mercado Pago creó la suscripción, pero no devolvió un enlace de checkout.' },
         { status: 502 }
       );
     }
 
-    return NextResponse.json({ preapprovalId: subscription.id, url });
+    return NextResponse.json({
+      preapprovalId: subscription.id,
+      url,
+      billing: getBillingDisplayConfig()
+    });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unable to create Mercado Pago subscription.';
+    const message = error instanceof Error ? error.message : 'No pudimos crear la suscripción en Mercado Pago.';
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
