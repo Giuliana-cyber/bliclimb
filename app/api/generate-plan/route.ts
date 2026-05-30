@@ -12,7 +12,7 @@ export const runtime = 'nodejs';
 
 const MAX_PLAN_GENERATION_ATTEMPTS = 2;
 const PLAN_MAX_OUTPUT_TOKENS = 8000;
-const MAX_STRUCTURED_SESSIONS = 8;
+const MAX_STRUCTURED_SESSIONS = 12;
 const DAYS_BY_COUNT = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const DAY_LABELS: Record<string, string> = {
   monday: 'Lunes',
@@ -34,6 +34,39 @@ type ExerciseDraft = Omit<
   intensity?: string | null;
   timerSeconds?: number | null;
 };
+
+type SessionKind =
+  | 'rockTechnique'
+  | 'rockVolume'
+  | 'rockProject'
+  | 'rockRecovery'
+  | 'gymTechnique'
+  | 'gymVolume'
+  | 'gymProject'
+  | 'gymRecovery'
+  | 'homeStrength'
+  | 'homeCore'
+  | 'homeMovement'
+  | 'homeRecovery';
+
+const weekBlueprints = [
+  {
+    theme: 'base técnica y control',
+    focusAreas: ['técnica de pies', 'control corporal', 'volumen submáximo']
+  },
+  {
+    theme: 'volumen y eficiencia',
+    focusAreas: ['resistencia aeróbica', 'descansos activos', 'economía de movimiento']
+  },
+  {
+    theme: 'intensidad controlada y proyecto',
+    focusAreas: ['movimientos clave', 'fuerza submáxima', 'simulación de crux']
+  },
+  {
+    theme: 'descarga y consolidación',
+    focusAreas: ['recuperación', 'movilidad', 'técnica fácil']
+  }
+];
 
 function isUserProfile(value: unknown): value is UserProfile {
   if (!value || typeof value !== 'object') {
@@ -248,12 +281,82 @@ function getSafetyViolations(plan: TrainingPlan, profile: UserProfile) {
   return violations;
 }
 
+function normalizeTextKey(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function getSessionMainSignature(session: TrainingPlan['weeks'][number]['sessions'][number]) {
+  return session.mainBlock.map((exercise) => normalizeTextKey(exercise.name)).sort().join('|');
+}
+
+function getPlanVarietyViolations(plan: TrainingPlan) {
+  const violations: string[] = [];
+  const sessions = plan.weeks.flatMap((week) =>
+    week.sessions.map((session) => ({
+      weekNumber: week.weekNumber,
+      session
+    }))
+  );
+
+  if (sessions.length < 2) {
+    return violations;
+  }
+
+  const signatures = sessions.map(({ session }) => getSessionMainSignature(session));
+  const uniqueSignatures = new Set(signatures).size;
+  const minimumUniqueSessions = Math.min(sessions.length, Math.max(3, Math.ceil(sessions.length * 0.65)));
+
+  if (uniqueSignatures < minimumUniqueSessions) {
+    violations.push(
+      `hay demasiadas sesiones repetidas: ${uniqueSignatures} variantes de bloque principal para ${sessions.length} sesiones`
+    );
+  }
+
+  plan.weeks.forEach((week) => {
+    const weeklySignatures = week.sessions.map(getSessionMainSignature);
+    const repeatedInWeek = weeklySignatures.some(
+      (signature, index) => signature && weeklySignatures.indexOf(signature) !== index
+    );
+
+    if (repeatedInWeek) {
+      violations.push(`Semana ${week.weekNumber}: repite el mismo bloque principal en más de una sesión`);
+    }
+  });
+
+  const mainExerciseCounts = new Map<string, number>();
+
+  sessions.forEach(({ session }) => {
+    const namesInSession = new Set(session.mainBlock.map((exercise) => normalizeTextKey(exercise.name)));
+    namesInSession.forEach((name) => {
+      mainExerciseCounts.set(name, (mainExerciseCounts.get(name) ?? 0) + 1);
+    });
+  });
+
+  const overusedExercises = Array.from(mainExerciseCounts.entries())
+    .filter(([, count]) => count >= Math.max(3, Math.ceil(sessions.length * 0.55)))
+    .map(([name]) => name);
+
+  if (overusedExercises.length) {
+    violations.push(
+      `repite ejercicios principales demasiadas veces: ${overusedExercises.slice(0, 3).join(', ')}`
+    );
+  }
+
+  return violations;
+}
+
 function getPlanValidationViolations(plan: TrainingPlan, profile: UserProfile) {
   return [
     ...getLanguageViolations(plan),
     ...getUnavailableEquipmentViolations(plan, profile),
     ...getDetailViolations(plan),
-    ...getSafetyViolations(plan, profile)
+    ...getSafetyViolations(plan, profile),
+    ...getPlanVarietyViolations(plan)
   ];
 }
 
@@ -268,12 +371,84 @@ function toExercise(exercise: ExerciseDraft): TrainingPlan['weeks'][number]['ses
   };
 }
 
-function makeWarmupExercises(profile: UserProfile) {
+function getWeekBlueprint(weekNumber: number) {
+  return weekBlueprints[(weekNumber - 1) % weekBlueprints.length];
+}
+
+function isDownloadWeek(weekNumber: number) {
+  return weekNumber % 4 === 0;
+}
+
+function getSessionKind(profile: UserProfile, weekNumber: number, sessionIndex: number): SessionKind {
+  const phaseIndex = (weekNumber - 1) % 4;
+  const hasRock = profile.equipment.includes('rock');
+  const hasGym = profile.equipment.includes('gym');
+
+  if (sessionIndex === 0 && hasRock) {
+    return (['rockTechnique', 'rockVolume', 'rockProject', 'rockRecovery'] as const)[phaseIndex];
+  }
+
+  if (sessionIndex === 0 && hasGym) {
+    return (['gymTechnique', 'gymVolume', 'gymProject', 'gymRecovery'] as const)[phaseIndex];
+  }
+
+  if (isDownloadWeek(weekNumber)) {
+    return sessionIndex % 2 === 0 ? 'homeRecovery' : 'homeMovement';
+  }
+
+  if (sessionIndex % 3 === 0) {
+    return 'homeMovement';
+  }
+
+  if (sessionIndex % 3 === 1) {
+    return 'homeStrength';
+  }
+
+  return 'homeCore';
+}
+
+function getSessionLocation(kind: SessionKind) {
+  if (kind.startsWith('rock')) {
+    return 'roca';
+  }
+
+  if (kind.startsWith('gym')) {
+    return 'gym';
+  }
+
+  return 'casa';
+}
+
+function getSessionTitle(kind: SessionKind, dayLabel: string, weekNumber: number) {
+  const labels: Record<SessionKind, string> = {
+    rockTechnique: 'técnica de pies en roca',
+    rockVolume: 'continuidad submáxima en roca',
+    rockProject: 'simulación de proyecto en roca',
+    rockRecovery: 'roca fácil y descarga técnica',
+    gymTechnique: 'técnica y control en muro',
+    gymVolume: 'resistencia en muro',
+    gymProject: 'boulder controlado y proyecto',
+    gymRecovery: 'muro fácil y movilidad',
+    homeStrength: 'fuerza base en casa',
+    homeCore: 'core y tensión corporal',
+    homeMovement: 'técnica sin muro y movilidad',
+    homeRecovery: 'recuperación activa'
+  };
+
+  return `${dayLabel}: ${labels[kind]} · semana ${weekNumber}`;
+}
+
+function makeWarmupExercises(profile: UserProfile, kind: SessionKind, weekNumber: number) {
   const hasBands = profile.equipment.includes('bands');
+  const useBandFingerWarmup = hasBands && !isDownloadWeek(weekNumber);
+  const isClimbingDay = kind.startsWith('rock') || kind.startsWith('gym');
+  const isStrengthDay = kind === 'homeStrength' || kind === 'gymProject' || kind === 'rockProject';
 
   return [
     toExercise({
-      name: 'Movilidad general de hombros y cadera',
+      name: isDownloadWeek(weekNumber)
+        ? 'Movilidad suave de descarga'
+        : 'Movilidad general de hombros y cadera',
       description:
         'Haz círculos controlados de hombros, muñecas, cadera y tobillos. Mantén respiración nasal suave y aumenta el rango poco a poco sin rebotes ni dolor.',
       reps: '6 a 8 repeticiones por dirección',
@@ -294,8 +469,8 @@ function makeWarmupExercises(profile: UserProfile) {
       equipment: 'sin equipo'
     }),
     toExercise({
-      name: hasBands ? 'Aperturas de dedos con banda' : 'Aperturas activas de dedos',
-      description: hasBands
+      name: useBandFingerWarmup ? 'Aperturas de dedos con banda' : 'Aperturas activas de dedos',
+      description: useBandFingerWarmup
         ? 'Coloca una banda ligera alrededor de los dedos y abre la mano de forma lenta. Vuelve al centro controlando la banda sin cerrar con fuerza.'
         : 'Abre y cierra los dedos lentamente, separándolos lo más posible sin tensión. Mantén muñeca neutra y hombros relajados.',
       sets: 2,
@@ -310,48 +485,68 @@ function makeWarmupExercises(profile: UserProfile) {
       commonMistakes: ['Usar banda muy dura', 'Doblar la muñeca', 'Ir al fallo'],
       stopIf: ['Dolor de dedos sube a 3/10', 'Dolor punzante', 'Pérdida de control'],
       alternative: 'Haz aperturas sin banda o masaje suave de antebrazo.',
-      equipment: hasBands ? 'bandas elásticas' : 'sin equipo'
+      equipment: useBandFingerWarmup ? 'bandas elásticas' : 'sin equipo'
     }),
     toExercise({
-      name: 'Activación escapular de pie',
-      description:
-        'De pie, lleva hombros suavemente hacia atrás y abajo, como si guardaras las escápulas en los bolsillos. Mantén costillas bajas y cuello largo.',
+      name: isClimbingDay
+        ? 'Ensayo de pies silenciosos en el suelo'
+        : isStrengthDay
+          ? 'Activación escapular de pie'
+          : 'Respiración con tensión corporal suave',
+      description: isClimbingDay
+        ? 'Camina sobre una línea imaginaria apoyando primero el dedo gordo y luego el resto del pie. Practica mirar el apoyo antes de mover la mano para llegar a la roca o muro con precisión.'
+        : isStrengthDay
+          ? 'De pie, lleva hombros suavemente hacia atrás y abajo, como si guardaras las escápulas en los bolsillos. Mantén costillas bajas y cuello largo.'
+          : 'Acuéstate boca arriba, exhala largo y activa abdomen sin despegar la espalda baja. Mantén cuello relajado y siente control antes de moverte.',
       sets: 2,
-      reps: '8 a 10 repeticiones',
+      reps: isClimbingDay ? '2 minutos' : '8 a 10 repeticiones',
       rest: '30 segundos',
       intensity: 'Suave a moderada',
-      notes:
-        'No arquees la espalda para juntar escápulas. El movimiento debe sentirse estable y limpio.',
-      objective: 'Preparar hombros para tracción y estabilidad en roca o barra.',
-      howTo: ['Pies firmes', 'Costillas abajo', 'Escápulas atrás y abajo'],
-      feelCues: ['Espalda alta activa', 'Cuello relajado', 'Hombros estables'],
-      commonMistakes: ['Encoger hombros', 'Arquear lumbar', 'Apretar mandíbula'],
-      stopIf: ['Dolor anterior de hombro', 'Hormigueo', 'Pérdida de control'],
-      alternative: 'Hazlo acostado boca arriba si de pie cuesta controlar costillas.',
+      notes: isClimbingDay
+        ? 'Este ejercicio cambia el foco del calentamiento: hoy la calidad de pies importa más que hacer fuerza.'
+        : 'No arquees la espalda ni contengas la respiración. El movimiento debe sentirse estable y limpio.',
+      objective: isClimbingDay
+        ? 'Preparar precisión de pies y atención visual antes de escalar.'
+        : 'Preparar hombros, costillas y abdomen para moverse con control.',
+      howTo: isClimbingDay
+        ? ['Mira el apoyo', 'Pisa silencioso', 'Traslada peso lento']
+        : ['Costillas abajo', 'Respira lento', 'Activa sin rigidez'],
+      feelCues: isClimbingDay
+        ? ['Pies precisos', 'Cadera estable', 'Menos prisa']
+        : ['Centro activo', 'Cuello relajado', 'Hombros estables'],
+      commonMistakes: isClimbingDay
+        ? ['Pisar fuerte', 'Mirar tarde', 'Correr el movimiento']
+        : ['Arquear lumbar', 'Encoger hombros', 'Apretar mandíbula'],
+      stopIf: ['Dolor punzante', 'Mareo', 'Pérdida de control'],
+      alternative: 'Haz marcha suave con respiración nasal si necesitas bajar intensidad.',
       equipment: 'sin equipo'
     })
   ];
 }
 
-function makeMainExercises(profile: UserProfile, weekNumber: number, sessionIndex: number) {
+function makeMainExercises(profile: UserProfile, weekNumber: number, sessionIndex: number, kind: SessionKind) {
   const hasRock = profile.equipment.includes('rock');
+  const hasGym = profile.equipment.includes('gym');
   const hasPullupBar = profile.equipment.includes('pullup_bar');
   const hasBands = profile.equipment.includes('bands');
   const fingerPainContext =
     profile.injuries.includes('fingers') || profile.injuryDescription.toLowerCase().includes('dedo');
+  const volumeCue = weekNumber % 4 === 2 ? 'Suma una serie si la técnica se mantiene limpia.' : 'Mantén margen y termina con energía.';
+  const downloadCue = isDownloadWeek(weekNumber)
+    ? 'Semana de descarga: corta el volumen si aparece fatiga o dolor.'
+    : volumeCue;
 
-  if (hasRock && sessionIndex === 0) {
+  if (kind === 'rockTechnique' && hasRock) {
     return [
       toExercise({
-        name: 'Escalada en roca con foco técnico',
+        name: 'Escalada en roca con pies silenciosos',
         description:
-          'Elige rutas dos grados por debajo de tu máximo y escala priorizando pies silenciosos, cadera cerca de la pared y respiración. Descansa antes de perder técnica.',
+          'Elige rutas dos grados por debajo de tu máximo y escala priorizando pies silenciosos, cadera cerca de la pared y respiración. Detente en cada apoyo importante para confirmar que el pie no se mueve.',
         sets: 4,
         reps: '1 ruta o tramo por serie',
         rest: '3 a 5 minutos',
         intensity: 'RPE 5 a 6/10',
-        notes:
-          'La meta no es encadenar al límite; es acumular metros de calidad con movimientos repetibles.',
+        notes: `La meta no es encadenar al límite; es acumular metros de calidad con movimientos repetibles. ${downloadCue}`,
         objective: 'Mejorar eficiencia técnica y resistencia específica sin depender de muro indoor.',
         howTo: ['Escoge rutas cómodas', 'Mira pies antes de mover manos', 'Baja si la técnica se rompe'],
         feelCues: ['Respiración estable', 'Antebrazos cargan poco a poco', 'Pies precisos'],
@@ -361,7 +556,7 @@ function makeMainExercises(profile: UserProfile, weekNumber: number, sessionInde
         equipment: 'roca'
       }),
       toExercise({
-        name: 'Lectura de ruta y descansos',
+        name: 'Lectura de ruta y descansos reales',
         description:
           'Antes de subir, identifica tres posiciones de descanso y dos secciones clave. En la ruta, practica relajar manos y respirar en cada descanso elegido.',
         sets: 3,
@@ -381,6 +576,306 @@ function makeMainExercises(profile: UserProfile, weekNumber: number, sessionInde
     ];
   }
 
+  if (kind === 'rockVolume' && hasRock) {
+    return [
+      toExercise({
+        name: 'Continuidad submáxima en roca',
+        description:
+          'Escala tramos fáciles durante varios minutos sin llegar al bombeo máximo. Baja o descansa cuando la respiración se acelere demasiado o los pies pierdan precisión.',
+        sets: 4,
+        reps: '4 a 6 minutos de escalada fácil',
+        rest: '4 minutos',
+        intensity: 'RPE 5/10',
+        notes: 'Debe sentirse como resistencia controlada, no como un pegue límite. Prioriza ritmo y reposos.',
+        objective: 'Construir base aeróbica específica para rutas largas.',
+        howTo: ['Elige terreno fácil', 'Escala continuo', 'Descansa antes del fallo'],
+        feelCues: ['Bombeo leve', 'Respiración manejable', 'Pies todavía precisos'],
+        commonMistakes: ['Ir demasiado duro', 'No sacudir manos', 'Ignorar pies'],
+        stopIf: ['Dolor de dedos sube', 'No puedes respirar estable', 'Técnica se desordena'],
+        alternative: 'En casa, haz circuito suave de movilidad y core por bloques de 5 minutos.',
+        equipment: 'roca'
+      }),
+      toExercise({
+        name: 'Reposos y sacudidas en posiciones cómodas',
+        description:
+          'Busca posiciones de descanso en roca fácil. Alterna sacudir una mano, respirar largo y recolocar pies antes de seguir.',
+        sets: 5,
+        reps: '20 a 30 segundos por reposo',
+        rest: '1 minuto',
+        intensity: 'Técnica, RPE 4/10',
+        notes: 'Entrena ahorrar energía. Si no encuentras reposo, baja el grado de la ruta.',
+        objective: 'Mejorar recuperación durante la escalada y reducir tensión innecesaria.',
+        howTo: ['Encuentra pie bueno', 'Sacude una mano', 'Exhala antes de moverte'],
+        feelCues: ['Antebrazo descarga', 'Hombros bajan', 'Más calma'],
+        commonMistakes: ['Colgar tenso', 'Moverse sin respirar', 'Elegir terreno duro'],
+        stopIf: ['Miedo alto', 'Fatiga excesiva', 'Dolor punzante'],
+        alternative: 'Practica respiración y sacudidas de manos de pie en casa.',
+        equipment: 'roca'
+      })
+    ];
+  }
+
+  if (kind === 'rockProject' && hasRock) {
+    return [
+      toExercise({
+        name: 'Simulación de crux en roca',
+        description:
+          'Elige una sección corta y difícil pero segura. Trabaja dos o tres movimientos con descansos completos, buscando beta limpia en lugar de volumen alto.',
+        sets: 4,
+        reps: '2 a 3 movimientos clave',
+        rest: '4 a 6 minutos',
+        intensity: fingerPainContext ? 'RPE 5/10 submáximo' : 'RPE 7/10 controlado',
+        notes:
+          'No conviertas la sesión en pegues infinitos. Si la calidad baja, cambia a técnica fácil.',
+        objective: 'Practicar movimientos de proyecto sin acumular fatiga peligrosa.',
+        howTo: ['Aísla el crux', 'Descansa completo', 'Registra la beta'],
+        feelCues: ['Esfuerzo claro', 'Movimientos precisos', 'Recuperación completa'],
+        commonMistakes: ['Repetir cansado', 'Cambiar beta cada pegue', 'Ignorar dolor'],
+        stopIf: ['Dolor de dedos a 3/10', 'Caídas descontroladas', 'Pérdida de técnica'],
+        alternative: 'Haz visualización detallada de la secuencia y movilidad de cadera.',
+        equipment: 'roca'
+      }),
+      toExercise({
+        name: 'Pegues cortos con intención única',
+        description:
+          'En cada intento elige una sola intención: pies, respiración o ritmo. Termina el pegue aunque no encadenes y anota qué cambió.',
+        sets: 3,
+        reps: '1 intento corto',
+        rest: '5 minutos',
+        intensity: 'RPE 6 a 7/10',
+        notes: 'La sesión busca aprendizaje, no agotamiento. Mantén descansos largos y atención al cuerpo.',
+        objective: 'Convertir intentos de proyecto en información útil para la siguiente semana.',
+        howTo: ['Elige una intención', 'Haz un intento', 'Anota una mejora'],
+        feelCues: ['Foco mental', 'Mejor ritmo', 'Fatiga controlada'],
+        commonMistakes: ['Querer corregir todo', 'Descansar poco', 'Entrar frustrado'],
+        stopIf: ['Tensión emocional alta', 'Dolor punzante', 'Fatiga cambia la caída'],
+        alternative: 'Ensaya la secuencia en el suelo con gestos y respiración.',
+        equipment: 'roca'
+      })
+    ];
+  }
+
+  if (kind === 'rockRecovery' && hasRock) {
+    return [
+      toExercise({
+        name: 'Roca fácil de calidad',
+        description:
+          'Escala rutas muy cómodas con la regla de poder hablar mientras subes. Enfócate en fluidez, pies y respiración sin buscar fatiga.',
+        sets: 3,
+        reps: '1 ruta fácil',
+        rest: '3 minutos',
+        intensity: 'RPE 3 a 4/10',
+        notes: 'Esta semana consolida adaptaciones. Si algo se siente pesado, reduce a movilidad.',
+        objective: 'Descargar sin perder contacto técnico con la roca.',
+        howTo: ['Elige muy fácil', 'Respira estable', 'Termina fresco'],
+        feelCues: ['Ligereza', 'Confianza', 'Cero bombeo fuerte'],
+        commonMistakes: ['Subir intensidad', 'Competir con otros', 'Forzar volumen'],
+        stopIf: ['Dolor aumenta', 'Fatiga acumulada', 'Motivación baja por cansancio'],
+        alternative: 'Camina suave y haz movilidad de cadera y hombro en casa.',
+        equipment: 'roca'
+      }),
+      toExercise({
+        name: 'Revisión de bitácora y beta',
+        description:
+          'Después de escalar fácil, escribe tres aprendizajes: movimiento que mejoró, molestia a vigilar y decisión para la próxima semana.',
+        sets: 1,
+        reps: '5 minutos',
+        rest: 'Sin descanso',
+        intensity: 'Mental y suave',
+        notes: 'La recuperación también es ordenar información para entrenar mejor.',
+        objective: 'Usar la semana de descarga para ajustar el siguiente bloque.',
+        howTo: ['Escribe tres puntos', 'Marca molestias', 'Define un ajuste'],
+        feelCues: ['Claridad', 'Menos ansiedad', 'Plan más concreto'],
+        commonMistakes: ['No registrar nada', 'Solo anotar grados', 'Ignorar dolor'],
+        stopIf: ['No aplica físicamente', 'Si hay dolor fuerte, prioriza consulta'],
+        alternative: 'Graba una nota de voz breve si no quieres escribir.',
+        equipment: 'sin equipo'
+      })
+    ];
+  }
+
+  if ((kind === 'gymTechnique' || kind === 'gymVolume' || kind === 'gymProject' || kind === 'gymRecovery') && hasGym) {
+    const recovery = kind === 'gymRecovery';
+    const project = kind === 'gymProject';
+    const volume = kind === 'gymVolume';
+
+    return [
+      toExercise({
+        name: recovery
+          ? 'Muro fácil con técnica limpia'
+          : volume
+            ? 'Circuitos de resistencia en muro'
+            : project
+              ? 'Boulders de coordinación controlada'
+              : 'Técnica de pies en muro',
+        description: recovery
+          ? 'Escala bloques o rutas muy fáciles y baja antes de sentir bombeo. Cada subida debe sentirse más fluida que intensa.'
+          : volume
+            ? 'Elige rutas o travesías fáciles y mantén movimiento continuo por bloques cortos. Descansa antes de llegar al fallo para conservar técnica.'
+            : project
+              ? 'Elige dos boulders retadores pero seguros y trabaja movimientos aislados con descanso completo. No busques volumen alto.'
+              : 'Escala bloques fáciles usando solo la intención de pisar silencioso y mover cadera antes de tirar con brazos.',
+        sets: recovery ? 3 : 4,
+        reps: volume ? '3 a 5 minutos' : project ? '2 a 4 movimientos' : '1 bloque o ruta',
+        rest: project ? '4 minutos' : '2 a 3 minutos',
+        intensity: recovery ? 'RPE 3 a 4/10' : project ? 'RPE 6 a 7/10' : 'RPE 5/10',
+        notes: recovery
+          ? 'Descarga activa: si aparece fatiga, termina la escalada y pasa a movilidad.'
+          : 'No uses agarres dolorosos ni arqueo máximo. Cambia de problema si la técnica se rompe.',
+        objective: recovery
+          ? 'Mantener contacto con el muro sin acumular fatiga.'
+          : volume
+            ? 'Mejorar resistencia específica con margen.'
+            : project
+              ? 'Practicar movimientos difíciles sin exceso de intentos.'
+              : 'Mejorar eficiencia técnica y precisión.',
+        howTo: ['Elige intensidad correcta', 'Define una intención', 'Descansa antes del fallo'],
+        feelCues: ['Control', 'Respiración posible', 'Pies presentes'],
+        commonMistakes: ['Ir al límite', 'Descansar poco', 'Tirar solo con brazos'],
+        stopIf: ['Dolor de dedos sube', 'Hombro molesta', 'Técnica se rompe'],
+        alternative: 'Cambia por movilidad y core en casa si no puedes ir al muro.',
+        equipment: 'gym de escalada'
+      }),
+      toExercise({
+        name: project ? 'Análisis de beta entre intentos' : 'Reposos activos y respiración',
+        description: project
+          ? 'Entre intentos, describe la beta en una frase: pie, mano, cadera y respiración. Vuelve a intentar solo si la idea es clara.'
+          : 'En terreno fácil, practica sacudir una mano y exhalar largo antes del siguiente movimiento. Mantén hombros bajos.',
+        sets: 3,
+        reps: project ? '1 nota por intento' : '30 segundos por reposo',
+        rest: '1 a 2 minutos',
+        intensity: 'Técnica',
+        notes: 'La meta es aprender a gastar menos energía, no añadir cansancio.',
+        objective: 'Mejorar toma de decisiones y recuperación durante la escalada.',
+        howTo: ['Pausa', 'Respira', 'Decide el siguiente movimiento'],
+        feelCues: ['Más calma', 'Antebrazo baja', 'Mejor precisión'],
+        commonMistakes: ['Apurarse', 'No mirar pies', 'Repetir sin intención'],
+        stopIf: ['Fatiga alta', 'Dolor punzante', 'Frustración cambia la técnica'],
+        alternative: 'Haz visualización de ruta desde el piso.',
+        equipment: 'gym de escalada'
+      })
+    ];
+  }
+
+  if (kind === 'homeCore') {
+    return [
+      toExercise({
+        name: 'Plancha frontal con respiración',
+        description:
+          'Apoya antebrazos, aprieta abdomen y glúteos, y mantén una línea larga de cabeza a talones. Respira sin dejar que la cadera se hunda.',
+        sets: 3,
+        reps: weekNumber % 4 === 2 ? '30 a 40 segundos' : '20 a 30 segundos',
+        rest: '60 segundos',
+        intensity: 'Moderada, RPE 5/10',
+        notes: 'Termina cada serie antes de perder la línea. Calidad sobre duración.',
+        objective: 'Mejorar tensión corporal para transferir fuerza entre pies y manos.',
+        howTo: ['Codos bajo hombros', 'Costillas abajo', 'Respira lento'],
+        feelCues: ['Abdomen activo', 'Glúteos firmes', 'Cuello relajado'],
+        commonMistakes: ['Cadera hundida', 'Aguantar aire', 'Mirar al frente'],
+        stopIf: ['Dolor lumbar', 'Temblores descontrolados', 'No puedes respirar'],
+        alternative: 'Haz plancha con rodillas apoyadas.',
+        equipment: 'sin equipo'
+      }),
+      toExercise({
+        name: 'Hollow body hold ajustado',
+        description:
+          'Acuéstate boca arriba, pega costillas hacia abajo y eleva piernas solo hasta donde la espalda baja no se arquee. Mantén brazos al frente si necesitas hacerlo más fácil.',
+        sets: 3,
+        reps: '15 a 25 segundos',
+        rest: '60 segundos',
+        intensity: 'Moderada',
+        notes: 'La espalda baja manda el rango. Si se despega, dobla rodillas.',
+        objective: 'Construir control de core para desplomes, tensión y taloneos.',
+        howTo: ['Exhala', 'Costillas abajo', 'Eleva piernas poco'],
+        feelCues: ['Abdomen profundo', 'Espalda estable', 'Respiración corta pero posible'],
+        commonMistakes: ['Arquear lumbar', 'Subir demasiado piernas', 'Tensar cuello'],
+        stopIf: ['Dolor lumbar', 'Calambre fuerte', 'Pérdida de control'],
+        alternative: 'Haz dead bug lento con rodillas flexionadas.',
+        equipment: 'sin equipo'
+      }),
+      toExercise({
+        name: 'Estocada con rotación controlada',
+        description:
+          'Da un paso largo, baja suave y gira el tronco hacia la pierna del frente sin colapsar rodilla. Regresa lento y alterna lados.',
+        sets: 2,
+        reps: '6 por lado',
+        rest: '45 segundos',
+        intensity: 'Suave a moderada',
+        notes: 'Busca movilidad útil para cadera y estabilidad de pies, no cansarte.',
+        objective: 'Mejorar movilidad de cadera y control de rotación para escalada.',
+        howTo: ['Paso largo', 'Rodilla estable', 'Gira lento'],
+        feelCues: ['Cadera abre', 'Equilibrio activo', 'Tronco estable'],
+        commonMistakes: ['Rodilla cae adentro', 'Girar rápido', 'Perder equilibrio'],
+        stopIf: ['Dolor de rodilla', 'Pinzamiento de cadera', 'Mareo'],
+        alternative: 'Haz rotación torácica en el suelo.',
+        equipment: 'sin equipo'
+      })
+    ];
+  }
+
+  if (kind === 'homeMovement' || kind === 'homeRecovery') {
+    const recovery = kind === 'homeRecovery';
+
+    return [
+      toExercise({
+        name: recovery ? 'Movilidad de hombro y columna torácica' : 'Técnica de pies sin muro',
+        description: recovery
+          ? 'Haz rotaciones torácicas, círculos de hombro y estiramiento suave de pecho. Mantén todo en rango cómodo y sin buscar intensidad.'
+          : 'Marca una línea en el piso o usa una línea imaginaria. Pisa lento con precisión, cambia peso de una pierna a otra y mantén cadera estable.',
+        sets: recovery ? 2 : 4,
+        reps: recovery ? '45 segundos por movimiento' : '2 minutos',
+        rest: '30 a 45 segundos',
+        intensity: recovery ? 'Muy suave' : 'Técnica, RPE 3/10',
+        notes: recovery
+          ? 'La descarga debe dejarte mejor que al inicio. Si te cansas, reduce volumen.'
+          : 'Este bloque parece simple, pero construye atención de pies para escalar mejor cuando vuelvas a roca o muro.',
+        objective: recovery
+          ? 'Recuperar movilidad y bajar tensión acumulada.'
+          : 'Mejorar precisión de pies y transferencia de peso sin necesitar muro.',
+        howTo: recovery
+          ? ['Rango cómodo', 'Respira lento', 'Cero rebotes']
+          : ['Mira el pie', 'Pisa suave', 'Traslada peso'],
+        feelCues: recovery
+          ? ['Menos rigidez', 'Respiración amplia', 'Hombros sueltos']
+          : ['Equilibrio', 'Pies silenciosos', 'Cadera estable'],
+        commonMistakes: recovery
+          ? ['Forzar estiramiento', 'Ir rápido', 'Ignorar dolor']
+          : ['Apurarse', 'Pisar fuerte', 'Mirar al frente todo el tiempo'],
+        stopIf: ['Dolor punzante', 'Mareo', 'Hormigueo'],
+        alternative: 'Camina suave 10 minutos y respira nasal.',
+        equipment: 'sin equipo'
+      }),
+      toExercise({
+        name: recovery ? 'Extensores y antebrazo suave' : 'Visualización de secuencia',
+        description: recovery
+          ? 'Abre y cierra dedos suavemente, masajea antebrazos y mueve muñecas en círculos. Todo debe sentirse como descarga.'
+          : 'Elige una ruta o movimiento que conozcas e imagina pies, manos, respiración y descanso. Repite la secuencia mentalmente con calma.',
+        sets: 2,
+        reps: recovery ? '12 repeticiones suaves' : '3 rondas de 60 segundos',
+        rest: '30 segundos',
+        intensity: 'Muy suave',
+        notes: recovery
+          ? 'No busques fatigar extensores. Solo baja tensión.'
+          : 'La visualización funciona mejor cuando es concreta: pie derecho, mano izquierda, exhala, mueve cadera.',
+        objective: recovery
+          ? 'Promover recuperación de manos y antebrazos.'
+          : 'Entrenar lectura y memoria motriz sin carga física.',
+        howTo: recovery
+          ? ['Muñeca neutra', 'Abre lento', 'Masaje suave']
+          : ['Cierra ojos', 'Nombra pies y manos', 'Respira en descansos'],
+        feelCues: recovery
+          ? ['Manos ligeras', 'Antebrazo descarga', 'Cero dolor']
+          : ['Secuencia clara', 'Menos ansiedad', 'Foco técnico'],
+        commonMistakes: recovery
+          ? ['Apretar fuerte', 'Usar dolor como guía', 'Ir al fallo']
+          : ['Imaginar genérico', 'Saltarse pies', 'Convertirlo en preocupación'],
+        stopIf: ['Dolor sube', 'Tensión aumenta', 'Hormigueo'],
+        alternative: 'Escribe la secuencia en la bitácora.',
+        equipment: hasBands && recovery ? 'bandas elásticas opcionales' : 'sin equipo'
+      })
+    ];
+  }
+
   return [
     toExercise({
       name: hasPullupBar ? 'Suspensión asistida en barra' : 'Remo escapular sin equipo',
@@ -388,7 +883,7 @@ function makeMainExercises(profile: UserProfile, weekNumber: number, sessionInde
         ? 'Sujeta una barra con pies apoyados en el suelo o una silla para descargar peso. Mantén hombros activos y sostén sin llegar al fallo.'
         : 'Inclínate ligeramente, activa escápulas hacia atrás y abajo, y simula una tracción lenta manteniendo abdomen firme.',
       sets: 3,
-      reps: hasPullupBar ? '8 a 12 segundos' : '10 repeticiones lentas',
+      reps: hasPullupBar && !fingerPainContext ? '8 a 12 segundos' : '10 repeticiones lentas',
       rest: '90 segundos',
       intensity: fingerPainContext ? 'Submáxima, RPE 4/10' : 'Moderada, RPE 5 a 6/10',
       notes:
@@ -427,11 +922,30 @@ function makeMainExercises(profile: UserProfile, weekNumber: number, sessionInde
       stopIf: ['Dolor punzante', 'Técnica se rompe', 'Fatiga cambia el movimiento'],
       alternative: 'Reduce repeticiones o cambia por respiración diafragmática.',
       equipment: hasBands ? 'bandas elásticas' : 'sin equipo'
+    }),
+    toExercise({
+      name: 'Sentadilla peso corporal con pausa',
+      description:
+        'Baja a una sentadilla cómoda, pausa un segundo y sube empujando el piso. Mantén pies activos y tronco largo como si prepararas una posición de escalada.',
+      sets: 3,
+      reps: '8 a 10 repeticiones',
+      rest: '60 segundos',
+      intensity: 'Moderada',
+      notes: 'La fuerza de piernas también ayuda a usar mejor los pies y descargar antebrazos.',
+      objective: 'Construir base de piernas y control de cadera para posiciones de escalada.',
+      howTo: ['Pies firmes', 'Baja controlado', 'Pausa y sube'],
+      feelCues: ['Piernas activas', 'Cadera estable', 'Respiración posible'],
+      commonMistakes: ['Rodillas colapsan', 'Apurarse', 'Levantar talones'],
+      stopIf: ['Dolor de rodilla', 'Dolor lumbar', 'Mareo'],
+      alternative: 'Haz sentadilla a una silla.',
+      equipment: 'sin equipo'
     })
   ];
 }
 
-function makeCooldownExercises() {
+function makeCooldownExercises(kind: SessionKind, weekNumber: number) {
+  const isClimbingDay = kind.startsWith('rock') || kind.startsWith('gym');
+
   return [
     toExercise({
       name: 'Respiración y vuelta a la calma',
@@ -451,16 +965,20 @@ function makeCooldownExercises() {
       equipment: 'sin equipo'
     }),
     toExercise({
-      name: 'Movilidad suave de antebrazo y hombro',
-      description:
-        'Haz estiramientos suaves de flexores de muñeca, extensores y pecho. Mantén cada posición cómoda, sin buscar máximo rango ni dolor.',
+      name: isClimbingDay ? 'Descarga suave de antebrazo y hombro' : 'Movilidad suave de cadera y espalda',
+      description: isClimbingDay
+        ? 'Haz estiramientos suaves de flexores de muñeca, extensores y pecho. Mantén cada posición cómoda, sin buscar máximo rango ni dolor.'
+        : 'Haz postura de niño, rotaciones torácicas y respiración lateral de costillas. Mantén cada posición cómoda y sin dolor.',
       reps: '30 segundos por posición',
       rest: '15 segundos',
       intensity: 'Suave',
-      notes:
-        'La sensación debe ser de descarga. Si aparece dolor de dedos u hombro, reduce rango inmediatamente.',
-      objective: 'Cerrar la sesión con movilidad ligera y señales de recuperación.',
-      howTo: ['Muñeca neutra', 'Estira suave', 'Respira lento'],
+      notes: isDownloadWeek(weekNumber)
+        ? 'En descarga, termina con sensación de frescura. No agregues trabajo extra aunque te sientas bien.'
+        : 'La sensación debe ser de descarga. Si aparece dolor, reduce rango inmediatamente.',
+      objective: isClimbingDay
+        ? 'Cerrar la sesión con movilidad ligera de brazos y hombros.'
+        : 'Cerrar la sesión bajando tensión de cadera, espalda y respiración.',
+      howTo: isClimbingDay ? ['Muñeca neutra', 'Estira suave', 'Respira lento'] : ['Rango cómodo', 'Exhala largo', 'Cero rebotes'],
       feelCues: ['Tensión baja', 'Rango cómodo', 'Sin dolor articular'],
       commonMistakes: ['Forzar dedos', 'Rebotar', 'Buscar dolor'],
       stopIf: ['Dolor de dedos sube', 'Hormigueo', 'Dolor punzante'],
@@ -490,39 +1008,34 @@ function buildFallbackPlan(profile: UserProfile, libraryTraceability?: LibraryTr
     librarySources: libraryTraceability?.sourceNames ?? [],
     weeks: Array.from({ length: totalWeeks }, (_, weekIndex) => {
       const weekNumber = weekIndex + 1;
-      const isDownloadWeek = weekNumber % 4 === 0;
+      const blueprint = getWeekBlueprint(weekNumber);
 
       return {
         weekNumber,
-        theme: isDownloadWeek
-          ? `Semana ${weekNumber}: descarga técnica y recuperación`
-          : `Semana ${weekNumber}: técnica en roca y base física`,
-        focusAreas: isDownloadWeek
-          ? ['recuperación', 'técnica suave', 'movilidad']
-          : ['técnica de pies', 'resistencia submáxima', 'prevención de lesiones'],
+        theme: `Semana ${weekNumber}: ${blueprint.theme}`,
+        focusAreas: blueprint.focusAreas,
         sessions: Array.from({ length: sessionCount }, (_, sessionIndex) => {
           const rawDay = profile.availableDays[sessionIndex];
           const dayLabel = rawDay
             ? DAY_LABELS[rawDay] ?? rawDay
             : DAYS_BY_COUNT[sessionIndex] ?? `Día ${sessionIndex + 1}`;
-          const hasRock = profile.equipment.includes('rock');
-          const location = hasRock && sessionIndex === 0 ? 'roca' : 'casa';
+          const kind = getSessionKind(profile, weekNumber, sessionIndex);
+          const location = getSessionLocation(kind);
 
           return {
             dayNumber: sessionIndex + 1,
-            title:
-              location === 'roca'
-                ? `${dayLabel}: técnica y resistencia en roca`
-                : `${dayLabel}: fuerza base y movilidad en casa`,
+            title: getSessionTitle(kind, dayLabel, weekNumber),
             location,
             estimatedMinutes: Math.min(Math.max(profile.sessionDuration || 75, 45), 120),
-            warmup: makeWarmupExercises(profile),
-            mainBlock: makeMainExercises(profile, weekNumber, sessionIndex),
-            cooldown: makeCooldownExercises(),
+            warmup: makeWarmupExercises(profile, kind, weekNumber),
+            mainBlock: makeMainExercises(profile, weekNumber, sessionIndex, kind),
+            cooldown: makeCooldownExercises(kind, weekNumber),
             nutritionTip:
-              'Come algo ligero con carbohidratos 60 a 90 minutos antes y toma agua durante la sesión.',
+              isDownloadWeek(weekNumber)
+                ? 'Prioriza comida normal, agua y sueño; la descarga funciona cuando realmente bajas la carga.'
+                : 'Come algo ligero con carbohidratos 60 a 90 minutos antes y toma agua durante la sesión.',
             source:
-              'Plan de respaldo BilClimb: principios de periodización, carga submáxima y prevención de lesiones.',
+              `Plan de respaldo BilClimb: ${blueprint.theme}, carga submáxima, variación de estímulos y prevención de lesiones.`,
             completed: false,
             checkIn: null
           };

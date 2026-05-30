@@ -103,11 +103,25 @@ REGLAS DE DISEÑO DEL PLAN:
 - Citar la fuente del protocolo cuando sea posible: Hörst, Eva López, Barrows u otra.
 - Incluir variedad. No repetir la misma sesión dos veces en la misma semana.
 - Si el plan es de 8 semanas, incluir semana de descarga cada 3-4 semanas.
+- Si el plan es de 4 semanas: semana 1 = base técnica/control, semana 2 = volumen/eficiencia,
+  semana 3 = intensidad controlada o proyecto, semana 4 = descarga/consolidación.
 - Si el objetivo es un proyecto específico, incluir simulación de proyecto en semanas
   finales.
 - Si el usuario seleccionó varios objetivos, combinarlos con prioridades claras por semana.
 - Si escribió un objetivo con sus propias palabras, tratar ese texto como contexto de mayor
   prioridad que las etiquetas genéricas.
+
+REGLAS DE VARIEDAD Y PROGRESIÓN:
+- Está PROHIBIDO copiar y pegar la misma sesión en varios días.
+- En una misma semana, ninguna sesión puede tener el mismo bloque principal que otra.
+- A lo largo del plan, debe haber al menos 60% de sesiones con bloques principales distintos.
+- Puedes repetir un ejercicio base solo si cambia claramente el objetivo, volumen, intensidad o
+  contexto; si lo repites, explica la progresión en notes.
+- Distribuye estímulos diferentes: técnica, resistencia, fuerza base/core, movilidad/recuperación
+  y proyecto según el objetivo.
+- No pongas "movilidad general + activación escapular + plancha" todos los días. Eso es un
+  calentamiento útil, pero no puede ser todo el plan.
+- Los títulos de sesión deben ser específicos y distintos: evita títulos genéricos repetidos.
 
 EQUIPO DISPONIBLE DEL USUARIO:
 ${getAvailableEquipment(profile) || 'Sin equipo declarado'}
