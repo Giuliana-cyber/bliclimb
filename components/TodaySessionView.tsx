@@ -134,6 +134,17 @@ export function TodaySessionView() {
         </div>
       </div>
 
+      {week.objective || week.progressionFocus || week.loadLevel || session.stimulusType ? (
+        <div className="grid gap-3 sm:grid-cols-4">
+          {week.objective ? <SessionInfo label="Microciclo" value={week.objective} /> : null}
+          {week.progressionFocus ? (
+            <SessionInfo label="Progresión" value={week.progressionFocus} />
+          ) : null}
+          {week.loadLevel ? <SessionInfo label="Carga" value={week.loadLevel} /> : null}
+          {session.stimulusType ? <SessionInfo label="Estímulo" value={session.stimulusType} /> : null}
+        </div>
+      ) : null}
+
       {session.objective || session.why || session.intensityTarget ? (
         <div className="grid gap-3 sm:grid-cols-3">
           {session.objective ? <SessionInfo label="Objetivo" value={session.objective} /> : null}

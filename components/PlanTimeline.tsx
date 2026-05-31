@@ -236,6 +236,23 @@ export function PlanTimeline() {
         </div>
       ) : null}
 
+      {plan.planningRationale || plan.progressionModel || plan.qualityScores ? (
+        <div className="grid gap-3 sm:grid-cols-3">
+          {plan.planningRationale ? (
+            <InfoCard label="Razonamiento" value={plan.planningRationale} />
+          ) : null}
+          {plan.progressionModel ? (
+            <InfoCard label="Progresión" value={plan.progressionModel} />
+          ) : null}
+          {plan.qualityScores ? (
+            <InfoCard
+              label="Calidad"
+              value={`Variación ${plan.qualityScores.variationScore}/100 · Progresión ${plan.qualityScores.progressionScore}/100 · Seguridad ${plan.qualityScores.safetyScore}/100`}
+            />
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="space-y-3">
         {plan.weeks.map((week) => {
           const isOpen = openWeeks.includes(week.weekNumber);
@@ -268,11 +285,25 @@ export function PlanTimeline() {
                   </div>
                   <h2 className="mt-1 truncate text-lg font-bold">{week.theme}</h2>
                   <p className="mt-1 text-sm text-white/52">{week.focusAreas.join(' + ')}</p>
-                  {week.microcycle || week.progression ? (
+                  {week.objective || week.microcycle || week.progression || week.progressionFocus ? (
                     <p className="mt-2 text-xs leading-5 text-white/50">
-                      {[week.microcycle, week.progression].filter(Boolean).join(' · ')}
+                      {[week.objective, week.microcycle, week.progressionFocus, week.progression]
+                        .filter(Boolean)
+                        .join(' · ')}
                     </p>
                   ) : null}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {week.loadLevel ? (
+                      <span className="rounded-md bg-white/8 px-2 py-1 text-xs font-bold text-white/54">
+                        Carga: {week.loadLevel}
+                      </span>
+                    ) : null}
+                    {week.deloadWeek ? (
+                      <span className="rounded-md bg-brand-mustard/14 px-2 py-1 text-xs font-bold text-brand-mustard">
+                        Descarga
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
                 <ChevronDown
                   aria-hidden="true"
@@ -321,6 +352,9 @@ export function PlanTimeline() {
                           <div className="mt-4 grid gap-3 sm:grid-cols-2">
                             <SessionStrategy label="Objetivo" value={getSessionObjective(session)} />
                             <SessionStrategy label="Por qué existe" value={getSessionReason(week, session)} />
+                            {session.stimulusType ? (
+                              <SessionStrategy label="Estímulo" value={session.stimulusType} />
+                            ) : null}
                             <SessionStrategy label="Duración" value={`${session.estimatedMinutes} min`} />
                             <SessionStrategy label="Intensidad" value={getSessionIntensity(session)} />
                             <SessionStrategy label="Equipo" value={getSessionEquipment(session)} />
@@ -452,12 +486,15 @@ function ExerciseSection({
               <p className="mt-2 text-sm leading-6 text-white/66">{exercise.description}</p>
 
               <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-white/46">
+              {exercise.category ? <span>Categoría: {exercise.category}</span> : null}
+              {exercise.prescription ? <span>{exercise.prescription}</span> : null}
               {exercise.sets ? <span>{exercise.sets} series</span> : null}
               {exercise.reps ? <span>{exercise.reps}</span> : null}
               {exercise.duration ? <span>{exercise.duration}</span> : null}
               {exercise.rest ? <span>descanso {exercise.rest}</span> : null}
               {exercise.intensity ? <span>{exercise.intensity}</span> : null}
               {exercise.intensityPercent ? <span>{exercise.intensityPercent}</span> : null}
+              {exercise.rpeTarget ? <span>{exercise.rpeTarget}</span> : null}
             </div>
 
               {exercise.notes ? (

@@ -53,9 +53,11 @@ function toItems(value: string[] | string | null | undefined) {
 function buildGuide(exercise: Exercise) {
   const intensityLabel = exercise.intensityPercent ?? exercise.intensity;
   const dosage = [
+    exercise.prescription ?? null,
     exercise.sets ? `${exercise.sets} series` : null,
     exercise.reps ?? exercise.duration,
     exercise.rest ? `descansa ${exercise.rest}` : null,
+    exercise.rpeTarget ? `RPE: ${exercise.rpeTarget}` : null,
     intensityLabel ? `intensidad: ${intensityLabel}` : null,
     exercise.tempo ? `tempo: ${exercise.tempo}` : null
   ].filter(Boolean);
@@ -104,7 +106,10 @@ function buildGuide(exercise: Exercise) {
     progressions: toItems(exercise.progressions).length
       ? toItems(exercise.progressions)
       : ['Sube solo una variable cuando termines con margen y sin dolor.'],
-    equipment: exercise.equipment ?? 'Equipo indicado por tu plan y tu contexto disponible.'
+    equipment:
+      exercise.requiredEquipment?.length
+        ? exercise.requiredEquipment.join(', ')
+        : exercise.equipment ?? 'Equipo indicado por tu plan y tu contexto disponible.'
   };
 }
 
@@ -159,12 +164,18 @@ export function ExerciseGuide({ exercise, contextLabel }: ExerciseGuideProps) {
             <div className="mt-5 space-y-4">
               <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-6">
                 <GuideMetric label="Series" value={exercise.sets ? String(exercise.sets) : null} />
-                <GuideMetric label="Dosis" value={exercise.reps ?? exercise.duration ?? null} />
+                <GuideMetric label="Dosis" value={exercise.prescription ?? exercise.reps ?? exercise.duration ?? null} />
                 <GuideMetric label="Descanso" value={exercise.rest} />
-                <GuideMetric label="Intensidad" value={exercise.intensityPercent ?? exercise.intensity} />
+                <GuideMetric label="Intensidad" value={exercise.intensityPercent ?? exercise.rpeTarget ?? exercise.intensity} />
                 <GuideMetric label="Riesgo" value={exercise.riskLevel ?? null} />
                 <GuideMetric label="Equipo" value={guide.equipment} />
               </div>
+
+              {exercise.category ? (
+                <div className="rounded-md border border-brand-cyan/18 bg-brand-cyan/8 px-3 py-2 text-xs font-bold text-brand-cyan">
+                  Categoría: {exercise.category}
+                </div>
+              ) : null}
 
               {exercise.videoUrl ? (
                 <a
