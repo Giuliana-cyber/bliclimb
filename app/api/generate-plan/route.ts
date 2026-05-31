@@ -8,6 +8,7 @@ import type { UserProfile } from '@/lib/profile';
 import { TrainingPlanSchema } from '@/lib/ai/training-plan-schema';
 import { extractLibraryTraceability, type LibraryTraceability } from '@/lib/ai/response-sources';
 import { validateProfessionalPlan } from '@/lib/ai/validate-professional-plan';
+import { getLowQualityReasons, scorePlanQuality } from '@/lib/ai/score-plan-quality';
 import { buildPlanSkeleton, type PlanSkeleton } from '@/lib/planning/build-plan-skeleton';
 import type { ProfileAnalysis } from '@/lib/planning/profile-analysis';
 import type { PlanTemplate } from '@/lib/planning/plan-templates';
@@ -682,6 +683,20 @@ function getPlanValidationViolations(plan: TrainingPlan, profile: UserProfile) {
     ...getPersonalizationViolations(plan, profile),
     ...validateProfessionalPlan(plan, profile).violations
   ]));
+}
+
+function withQualityScores(plan: TrainingPlan, profile: UserProfile): TrainingPlan {
+  const qualityScores = scorePlanQuality(plan, profile);
+  return {
+    ...plan,
+    qualityScores
+  };
+}
+
+function getQualityViolations(plan: TrainingPlan, profile: UserProfile) {
+  const scores = plan.qualityScores ?? scorePlanQuality(plan, profile);
+
+  return getLowQualityReasons(scores).map((reason) => `QUALITY_SCORE_LOW: ${reason}`);
 }
 
 function toExercise(exercise: ExerciseDraft): TrainingPlan['weeks'][number]['sessions'][number]['warmup'][number] {
@@ -1879,9 +1894,24 @@ export async function POST(request: Request) {
         profile,
         vectorStoreId
       });
-      const plan = buildFallbackPlan(profile, libraryTraceability, skeleton);
+      const plan = withQualityScores(buildFallbackPlan(profile, libraryTraceability, skeleton), profile);
+      const fastPlanViolations = [
+        ...getPlanValidationViolations(plan, profile),
+        ...getQualityViolations(plan, profile)
+      ];
 
-      return NextResponse.json({ plan, fallback: true });
+      if (!fastPlanViolations.length) {
+        return NextResponse.json({ plan, fallback: true });
+      }
+
+      return NextResponse.json(
+        {
+          error:
+            'No pudimos generar un plan suficientemente seguro. Ajusta perfil o intenta de nuevo.',
+          validationErrors: fastPlanViolations.slice(0, 10)
+        },
+        { status: 422 }
+      );
     }
 
     for (let attempt = 1; attempt <= MAX_PLAN_GENERATION_ATTEMPTS; attempt += 1) {
@@ -1907,8 +1937,14 @@ export async function POST(request: Request) {
         break;
       }
 
-      const plan = normalizePlan(response.output_parsed, profile, libraryTraceability, skeleton);
-      const validationViolations = getPlanValidationViolations(plan, profile);
+      const plan = withQualityScores(
+        normalizePlan(response.output_parsed, profile, libraryTraceability, skeleton),
+        profile
+      );
+      const validationViolations = [
+        ...getPlanValidationViolations(plan, profile),
+        ...getQualityViolations(plan, profile)
+      ];
 
       if (!validationViolations.length) {
         return NextResponse.json({ plan });
@@ -1917,20 +1953,24 @@ export async function POST(request: Request) {
       validationHints = validationViolations.slice(0, 8);
     }
 
-    const fallbackPlan = buildFallbackPlan(profile, lastLibraryTraceability, skeleton);
-    const fallbackViolations = getPlanValidationViolations(fallbackPlan, profile);
+    const fallbackPlan = withQualityScores(buildFallbackPlan(profile, lastLibraryTraceability, skeleton), profile);
+    const fallbackViolations = [
+      ...getPlanValidationViolations(fallbackPlan, profile),
+      ...getQualityViolations(fallbackPlan, profile)
+    ];
 
     if (!fallbackViolations.length) {
       return NextResponse.json({ plan: fallbackPlan, fallback: true });
     }
 
-    return NextResponse.json({
-      plan: fallbackPlan,
-      fallback: true,
-      warning: `El plan de OpenAI no pasó validación completa: ${validationHints
-        .slice(0, 5)
-        .join('; ')}. Se generó un plan seguro de respaldo.`
-    });
+    return NextResponse.json(
+      {
+        error:
+          'No pudimos generar un plan suficientemente seguro. Ajusta perfil o intenta de nuevo.',
+        validationErrors: [...validationHints, ...fallbackViolations].slice(0, 12)
+      },
+      { status: 422 }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to generate plan.';
     return NextResponse.json({ error: message }, { status: 500 });

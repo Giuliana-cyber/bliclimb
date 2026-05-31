@@ -1,8 +1,34 @@
 import type { TrainingPlan } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
 
+export type PlanValidationCode =
+  | 'WEEKS_TOO_SIMILAR'
+  | 'SESSIONS_REPEATED'
+  | 'NO_PROGRESSION'
+  | 'MISSING_GENERAL_WARMUP'
+  | 'MISSING_SPECIFIC_WARMUP'
+  | 'MISSING_MAIN_BLOCK'
+  | 'MISSING_FINAL_BLOCK'
+  | 'MISSING_STOP_IF'
+  | 'MISSING_REGRESSION'
+  | 'MISSING_SUCCESS_CRITERIA'
+  | 'MISSING_ADJUSTMENT_RULES'
+  | 'UNSAFE_FINGER_INTENSITY'
+  | 'FORBIDDEN_EQUIPMENT'
+  | 'CAMPUS_NOT_ALLOWED'
+  | 'HANGBOARD_NOT_ALLOWED'
+  | 'TOO_GENERIC_DESCRIPTION'
+  | 'NOT_SPANISH';
+
+export type PlanValidationError = {
+  code: PlanValidationCode;
+  message: string;
+  path?: string;
+};
+
 type ValidationResult = {
   valid: boolean;
+  errors: PlanValidationError[];
   violations: string[];
 };
 
@@ -14,10 +40,36 @@ const ENGLISH_PATTERNS = [
   'workout',
   'sets of',
   'easy pace',
-  'moderate pace'
+  'moderate pace',
+  'dynamic warm'
 ];
 
-const RISK_EXERCISE_PATTERNS = [
+const GENERIC_PATTERNS = [
+  'escalada continua',
+  'ejercicios de verticalidad',
+  'trabajo en presas pequeñas',
+  'haz técnica',
+  'entrenamiento general',
+  'varios ejercicios',
+  'según tolerancia'
+];
+
+const HIGH_FINGER_LOAD_PATTERNS = [
+  'campus',
+  'hangboard',
+  'fingerboard',
+  'tabla multipresa',
+  'maxhang',
+  'max hangs',
+  'hangs máximos',
+  'hangs maximos',
+  'fallo muscular',
+  'arqueo máximo',
+  'arqueo maximo',
+  'alta intensidad de dedos'
+];
+
+const RISK_PATTERNS = [
   'dedo',
   'dedos',
   'regleta',
@@ -35,20 +87,6 @@ const RISK_EXERCISE_PATTERNS = [
   'barra'
 ];
 
-const HIGH_FINGER_LOAD_PATTERNS = [
-  'campus',
-  'hangboard',
-  'fingerboard',
-  'maxhang',
-  'max hangs',
-  'hangs maximos',
-  'hangs máximos',
-  'fallo muscular',
-  'arqueo maximo',
-  'arqueo máximo',
-  'alta intensidad de dedos'
-];
-
 function normalizeText(value: string) {
   return value
     .toLowerCase()
@@ -58,32 +96,50 @@ function normalizeText(value: string) {
     .trim();
 }
 
-function textIncludesAny(text: string, patterns: string[]) {
+function includesAny(text: string, patterns: string[]) {
   const normalizedText = normalizeText(text);
   return patterns.some((pattern) => normalizedText.includes(normalizeText(pattern)));
 }
 
-function flattenPlanText(plan: TrainingPlan) {
+function pushError(errors: PlanValidationError[], code: PlanValidationCode, message: string, path?: string) {
+  errors.push({ code, message, path });
+}
+
+export function flattenPlanText(plan: TrainingPlan) {
   return [
     plan.objective,
+    plan.planVersion,
     plan.mesocycleType,
+    plan.planningRationale,
     plan.mainObjective,
     plan.athleteSummary,
     plan.riskSummary,
     plan.equipmentSummary,
+    plan.progressionModel,
     plan.weeklyFeedbackPrompt,
     ...(plan.secondaryObjectives ?? []),
     ...(plan.recoveryGuidelines ?? []),
     ...(plan.safetyRules ?? []),
+    ...(plan.microcycles ?? []).flatMap((microcycle) => [
+      microcycle.id,
+      microcycle.objective,
+      microcycle.loadLevel,
+      microcycle.progressionFocus
+    ]),
     ...plan.weeks.flatMap((week) => [
       week.theme,
+      week.objective,
       week.microcycle,
       week.progression,
+      week.progressionFocus,
+      week.loadLevel,
       week.deloadFocus,
       ...week.focusAreas,
       ...week.sessions.flatMap((session) => [
         session.title,
+        session.stimulusType,
         session.location,
+        ...(session.equipment ?? []),
         session.objective,
         session.why,
         session.intensityTarget,
@@ -102,13 +158,17 @@ function flattenPlanText(plan: TrainingPlan) {
         ].flatMap((exercise) => [
           exercise.name,
           exercise.description,
+          exercise.category,
+          ...(exercise.requiredEquipment ?? []),
+          exercise.prescription,
           exercise.reps,
+          exercise.duration,
           exercise.rest,
           exercise.intensity,
+          exercise.intensityPercent,
+          exercise.rpeTarget,
           exercise.notes,
           exercise.objective,
-          exercise.duration,
-          exercise.intensityPercent,
           exercise.tempo,
           exercise.alternative,
           exercise.equipment,
@@ -129,115 +189,118 @@ function flattenPlanText(plan: TrainingPlan) {
 }
 
 function getFingerPainScore(profile: UserProfile) {
-  const extendedProfile = profile as UserProfile & { currentFingerPain?: number | string };
-  const parsedScore = Number(extendedProfile.currentFingerPain ?? 0);
+  const parsedScore = Number(profile.currentFingerPain ?? 0);
 
-  if (Number.isFinite(parsedScore) && parsedScore > 0) {
-    return parsedScore;
-  }
+  if (Number.isFinite(parsedScore) && parsedScore > 0) return parsedScore;
 
   const injuryText = `${profile.injuryDescription} ${profile.injuryNotes}`.toLowerCase();
-
   return profile.injuries.includes('fingers') || injuryText.includes('dedo') ? 1 : 0;
-}
-
-function getUnavailableEquipmentViolations(planText: string, profile: UserProfile) {
-  const violations: string[] = [];
-  const equipment = new Set(profile.equipment);
-  const extendedProfile = profile as UserProfile & {
-    accessToCampusBoard?: boolean;
-    accessToHangboard?: boolean;
-    accessToWeights?: boolean;
-  };
-
-  const hasGym = equipment.has('gym');
-  const hasCampus = equipment.has('campus') || extendedProfile.accessToCampusBoard === true;
-  const hasHangboard = equipment.has('hangboard') || extendedProfile.accessToHangboard === true;
-  const hasWeights = equipment.has('weights') || extendedProfile.accessToWeights === true;
-
-  if (!hasGym && textIncludesAny(planText, ['climbing gym', 'muro indoor', 'boulder indoor', 'gimnasio de escalada'])) {
-    violations.push('usa gym/muro indoor aunque el perfil no tiene gym');
-  }
-
-  if (!hasCampus && textIncludesAny(planText, ['campus board', 'campus'])) {
-    violations.push('usa campus board aunque el perfil no tiene campus');
-  }
-
-  if (!hasHangboard && textIncludesAny(planText, ['hangboard', 'fingerboard', 'tabla multipresa', 'maxhang', 'colgadas en regleta'])) {
-    violations.push('usa hangboard/fingerboard aunque el perfil no tiene hangboard');
-  }
-
-  if (!hasWeights && textIncludesAny(planText, ['mancuernas', 'kettlebell', 'barra con peso', 'pesas', 'gym de pesas'])) {
-    violations.push('usa pesas aunque el perfil no tiene gym de pesas');
-  }
-
-  return violations;
 }
 
 function hasDose(exercise: TrainingPlan['weeks'][number]['sessions'][number]['mainBlock'][number]) {
   return Boolean(
-    exercise.sets ||
+    exercise.prescription ||
+      exercise.sets ||
       exercise.reps ||
       exercise.duration ||
       exercise.timerSeconds ||
       exercise.rest ||
       exercise.intensity ||
-      exercise.intensityPercent
+      exercise.intensityPercent ||
+      exercise.rpeTarget
   );
 }
 
-function getSessionSignature(session: TrainingPlan['weeks'][number]['sessions'][number]) {
-  return session.mainBlock.map((exercise) => normalizeText(exercise.name)).sort().join('|');
+function getExerciseText(exercise: TrainingPlan['weeks'][number]['sessions'][number]['mainBlock'][number]) {
+  return [
+    exercise.name,
+    exercise.description,
+    exercise.category,
+    exercise.objective,
+    exercise.prescription,
+    exercise.equipment,
+    exercise.sourceConcept,
+    ...(exercise.requiredEquipment ?? [])
+  ].join(' ');
 }
 
-export function validateProfessionalPlan(plan: TrainingPlan, profile: UserProfile): ValidationResult {
-  const violations: string[] = [];
-  const planText = flattenPlanText(plan);
+function getSessionSignature(session: TrainingPlan['weeks'][number]['sessions'][number]) {
+  return [
+    session.stimulusType,
+    ...session.mainBlock.map((exercise) => normalizeText(exercise.name)).sort()
+  ]
+    .filter(Boolean)
+    .join('|');
+}
 
+function getWeekSignature(week: TrainingPlan['weeks'][number]) {
+  return week.sessions.map(getSessionSignature).join('||');
+}
+
+function validateLanguage(planText: string, errors: PlanValidationError[]) {
   ENGLISH_PATTERNS.forEach((pattern) => {
-    if (normalizeText(planText).includes(normalizeText(pattern))) {
-      violations.push(`usa texto en inglés: "${pattern}"`);
+    if (includesAny(planText, [pattern])) {
+      pushError(errors, 'NOT_SPANISH', `Texto en inglés detectado: "${pattern}".`);
     }
   });
+}
 
-  if (!plan.mesocycleType || !plan.mainObjective) {
-    violations.push('falta mesocycleType o mainObjective');
+function validateEquipment(plan: TrainingPlan, profile: UserProfile, errors: PlanValidationError[]) {
+  const planText = flattenPlanText(plan);
+  const hasGym = profile.equipment.includes('gym');
+  const hasCampus = profile.equipment.includes('campus') || profile.accessToCampusBoard;
+  const hasHangboard = profile.equipment.includes('hangboard') || profile.accessToHangboard;
+  const hasWeights = profile.equipment.includes('weights') || profile.accessToWeights;
+
+  if (!hasGym && includesAny(planText, ['climbing gym', 'muro indoor', 'boulder indoor', 'gimnasio de escalada'])) {
+    pushError(errors, 'FORBIDDEN_EQUIPMENT', 'Usa gym/muro aunque el perfil no tiene acceso.');
   }
-
-  if (!plan.recoveryGuidelines?.length) {
-    violations.push('falta recoveryGuidelines');
+  if (!hasCampus && includesAny(planText, ['campus board', 'campus'])) {
+    pushError(errors, 'CAMPUS_NOT_ALLOWED', 'Usa campus aunque el perfil no tiene campus permitido.');
   }
-
-  if (!plan.weeklyFeedbackPrompt) {
-    violations.push('falta weeklyFeedbackPrompt');
+  if (!hasHangboard && includesAny(planText, ['hangboard', 'fingerboard', 'tabla multipresa'])) {
+    pushError(errors, 'HANGBOARD_NOT_ALLOWED', 'Usa hangboard aunque el perfil no tiene hangboard permitido.');
   }
+  if (!hasWeights && includesAny(planText, ['mancuernas', 'kettlebell', 'barra con peso', 'pesas', 'gym de pesas'])) {
+    pushError(errors, 'FORBIDDEN_EQUIPMENT', 'Usa pesas aunque el perfil no tiene pesas disponibles.');
+  }
+}
 
-  if (!plan.safetyRules?.length) {
-    violations.push('falta safetyRules');
+function validateStructure(plan: TrainingPlan, errors: PlanValidationError[]) {
+  if (!plan.mesocycleType || !plan.mainObjective || !plan.progressionModel) {
+    pushError(errors, 'NO_PROGRESSION', 'Falta mesociclo, objetivo principal o modelo de progresión.');
   }
 
   plan.weeks.forEach((week) => {
-    if (!week.microcycle && !week.progression) {
-      violations.push(`Semana ${week.weekNumber}: falta microciclo o progresión clara`);
+    const weekPath = `weeks.${week.weekNumber}`;
+
+    if (!week.microcycleId && !week.microcycle) {
+      pushError(errors, 'NO_PROGRESSION', `Semana ${week.weekNumber}: falta microciclo.`, weekPath);
+    }
+    if (!week.progressionFocus && !week.progression) {
+      pushError(errors, 'NO_PROGRESSION', `Semana ${week.weekNumber}: falta foco de progresión.`, weekPath);
     }
 
     week.sessions.forEach((session) => {
-      const label = `Semana ${week.weekNumber}, día ${session.dayNumber}`;
+      const path = `${weekPath}.sessions.${session.dayNumber}`;
 
-      if (!session.warmupGeneral?.length || !session.warmupSpecific?.length) {
-        violations.push(`${label}: falta calentamiento general o específico`);
+      if (!session.warmupGeneral?.length) {
+        pushError(errors, 'MISSING_GENERAL_WARMUP', `Semana ${week.weekNumber}, día ${session.dayNumber}: falta calentamiento general.`, path);
       }
-
-      if (!session.mainBlock.length || !session.finalBlock?.length) {
-        violations.push(`${label}: falta parte principal o parte final`);
+      if (!session.warmupSpecific?.length) {
+        pushError(errors, 'MISSING_SPECIFIC_WARMUP', `Semana ${week.weekNumber}, día ${session.dayNumber}: falta calentamiento específico.`, path);
       }
-
-      if (!session.objective || !session.why || !session.intensityTarget) {
-        violations.push(`${label}: falta objetivo, por qué existe o intensidad objetivo`);
+      if (!session.mainBlock.length) {
+        pushError(errors, 'MISSING_MAIN_BLOCK', `Semana ${week.weekNumber}, día ${session.dayNumber}: falta parte principal.`, path);
       }
-
-      if (!session.safetyNotes?.length || !session.adjustmentRules?.length || !session.successCriteria?.length) {
-        violations.push(`${label}: faltan notas de seguridad, reglas de ajuste o criterios de éxito`);
+      if (!session.finalBlock?.length) {
+        pushError(errors, 'MISSING_FINAL_BLOCK', `Semana ${week.weekNumber}, día ${session.dayNumber}: falta parte final.`, path);
+      }
+      if (!session.successCriteria?.length) {
+        pushError(errors, 'MISSING_SUCCESS_CRITERIA', `Semana ${week.weekNumber}, día ${session.dayNumber}: faltan criterios de éxito.`, path);
+      }
+      if (!session.adjustmentRules?.length) {
+        pushError(errors, 'MISSING_ADJUSTMENT_RULES', `Semana ${week.weekNumber}, día ${session.dayNumber}: faltan reglas de ajuste.`, path);
       }
 
       [
@@ -247,54 +310,93 @@ export function validateProfessionalPlan(plan: TrainingPlan, profile: UserProfil
         ...session.mainBlock,
         ...(session.finalBlock ?? []),
         ...session.cooldown
-      ].forEach((exercise) => {
-        const exerciseLabel = `${label}: "${exercise.name}"`;
-        const exerciseText = [
-          exercise.name,
-          exercise.description,
-          exercise.objective,
-          exercise.equipment,
-          exercise.sourceConcept
-        ].join(' ');
+      ].forEach((exercise, index) => {
+        const exercisePath = `${path}.exercise.${index}`;
+        const description = `${exercise.name} ${exercise.description}`;
 
-        if (!exercise.description || exercise.description.trim().length < 80 || !exercise.howTo?.length) {
-          violations.push(`${exerciseLabel}: faltan instrucciones accionables`);
+        if (!exercise.description || exercise.description.trim().length < 80 || !exercise.howTo?.length || !hasDose(exercise)) {
+          pushError(errors, 'TOO_GENERIC_DESCRIPTION', `${exercise.name}: falta descripción accionable, dosis o howTo.`, exercisePath);
         }
-
-        if (!hasDose(exercise)) {
-          violations.push(`${exerciseLabel}: falta dosis, duración, descanso o intensidad`);
+        if (includesAny(description, GENERIC_PATTERNS)) {
+          pushError(errors, 'TOO_GENERIC_DESCRIPTION', `${exercise.name}: descripción demasiado genérica.`, exercisePath);
         }
-
         if (!exercise.stopIf?.length) {
-          violations.push(`${exerciseLabel}: falta stopIf`);
+          pushError(errors, 'MISSING_STOP_IF', `${exercise.name}: falta stopIf.`, exercisePath);
         }
-
-        if (textIncludesAny(exerciseText, RISK_EXERCISE_PATTERNS) && !exercise.regressions?.length) {
-          violations.push(`${exerciseLabel}: ejercicio de riesgo sin regressions`);
+        if (includesAny(getExerciseText(exercise), RISK_PATTERNS) && !exercise.regressions?.length) {
+          pushError(errors, 'MISSING_REGRESSION', `${exercise.name}: ejercicio de riesgo sin regresión.`, exercisePath);
         }
       });
     });
+  });
+}
 
+function validateVariation(plan: TrainingPlan, errors: PlanValidationError[]) {
+  plan.weeks.forEach((week) => {
     const signatures = week.sessions.map(getSessionSignature);
     const uniqueSignatures = new Set(signatures);
 
     if (week.sessions.length > 1 && uniqueSignatures.size === 1) {
-      violations.push(`Semana ${week.weekNumber}: repite sesiones idénticas`);
+      pushError(errors, 'SESSIONS_REPEATED', `Semana ${week.weekNumber}: sesiones idénticas.`);
     }
+
+    signatures.forEach((signature, index) => {
+      if (index > 0 && signature === signatures[index - 1]) {
+        pushError(errors, 'SESSIONS_REPEATED', `Semana ${week.weekNumber}: repite sesión consecutiva.`);
+      }
+    });
   });
 
-  const allSignatures = plan.weeks.flatMap((week) => week.sessions.map(getSessionSignature));
+  const weekSignatures = plan.weeks.map(getWeekSignature);
+  const uniqueWeeks = new Set(weekSignatures);
 
-  if (allSignatures.length >= 4 && new Set(allSignatures).size < Math.ceil(allSignatures.length * 0.6)) {
-    violations.push('el plan repite demasiadas sesiones entre semanas');
+  if (plan.weeks.length >= 3 && uniqueWeeks.size < Math.ceil(plan.weeks.length * 0.75)) {
+    pushError(errors, 'WEEKS_TOO_SIMILAR', 'Las semanas son demasiado parecidas.');
   }
 
-  if (getFingerPainScore(profile) > 0 && textIncludesAny(planText, HIGH_FINGER_LOAD_PATTERNS)) {
-    violations.push('hay dolor de dedos y el plan incluye campus, hangs máximos, fallo o alta intensidad de dedos');
+  const allSessionSignatures = plan.weeks.flatMap((week) => week.sessions.map(getSessionSignature));
+  if (
+    allSessionSignatures.length >= 4 &&
+    new Set(allSessionSignatures).size < Math.ceil(allSessionSignatures.length * 0.65)
+  ) {
+    pushError(errors, 'SESSIONS_REPEATED', 'El plan repite demasiadas sesiones entre semanas.');
   }
+}
+
+function validateSafety(plan: TrainingPlan, profile: UserProfile, errors: PlanValidationError[]) {
+  const planText = flattenPlanText(plan);
+  const fingerPain = getFingerPainScore(profile);
+  const canUseCampus = profile.accessToCampusBoard && profile.campusExperience !== 'none' && fingerPain === 0;
+  const canUseHangboard = profile.accessToHangboard && profile.fingerTrainingExperience !== 'none';
+
+  if (fingerPain > 0 && includesAny(planText, HIGH_FINGER_LOAD_PATTERNS)) {
+    pushError(errors, 'UNSAFE_FINGER_INTENSITY', 'Hay dolor de dedos y el plan incluye campus, hangboard intenso, fallo o alta intensidad.');
+  }
+  if (!canUseCampus && includesAny(planText, ['campus'])) {
+    pushError(errors, 'CAMPUS_NOT_ALLOWED', 'Campus no permitido por dolor, equipo o experiencia.');
+  }
+  if (!canUseHangboard && includesAny(planText, ['hangboard', 'fingerboard', 'tabla multipresa'])) {
+    pushError(errors, 'HANGBOARD_NOT_ALLOWED', 'Hangboard no permitido por equipo o experiencia.');
+  }
+}
+
+export function validateProfessionalPlan(plan: TrainingPlan, profile: UserProfile): ValidationResult {
+  const errors: PlanValidationError[] = [];
+  const planText = flattenPlanText(plan);
+
+  validateLanguage(planText, errors);
+  validateEquipment(plan, profile, errors);
+  validateStructure(plan, errors);
+  validateVariation(plan, errors);
+  validateSafety(plan, profile, errors);
+
+  const dedupedErrors = Array.from(
+    new Map(errors.map((error) => [`${error.code}:${error.message}:${error.path ?? ''}`, error])).values()
+  );
 
   return {
-    valid: violations.length === 0,
-    violations: Array.from(new Set([...violations, ...getUnavailableEquipmentViolations(planText, profile)]))
+    valid: dedupedErrors.length === 0,
+    errors: dedupedErrors,
+    violations: dedupedErrors.map((error) => `${error.code}: ${error.message}`)
   };
 }
