@@ -1,4 +1,4 @@
-import type { Exercise, Session, TrainingPlan, Week } from '@/lib/plan';
+import type { Exercise, Microcycle, Session, TrainingPlan, Week } from '@/lib/plan';
 
 const exactTranslations: Record<string, string> = {
   'technique and body control': 'Técnica y control corporal',
@@ -115,8 +115,12 @@ function normalizeExerciseLanguage(exercise: Exercise): Exercise {
     intensity: translateTrainingText(exercise.intensity),
     notes: translateTrainingText(exercise.notes),
     objective: translateTrainingText(exercise.objective),
+    category: translateTrainingText(exercise.category),
+    requiredEquipment: translateStringArray(exercise.requiredEquipment),
+    prescription: translateTrainingText(exercise.prescription),
     duration: translateTrainingText(exercise.duration),
     intensityPercent: translateTrainingText(exercise.intensityPercent),
+    rpeTarget: translateTrainingText(exercise.rpeTarget),
     tempo: translateTrainingText(exercise.tempo),
     howTo: translateStringArray(exercise.howTo),
     feelCues: translateStringArray(exercise.feelCues),
@@ -135,6 +139,8 @@ function normalizeSessionLanguage(session: Session): Session {
     ...session,
     title: translateTrainingText(session.title) ?? session.title,
     location: translateTrainingText(session.location) ?? session.location,
+    stimulusType: translateTrainingText(session.stimulusType),
+    equipment: translateStringArray(session.equipment),
     objective: translateTrainingText(session.objective),
     why: translateTrainingText(session.why),
     intensityTarget: translateTrainingText(session.intensityTarget),
@@ -156,11 +162,23 @@ function normalizeWeekLanguage(week: Week): Week {
   return {
     ...week,
     theme: translateTrainingText(week.theme) ?? week.theme,
+    objective: translateTrainingText(week.objective),
     focusAreas: week.focusAreas.map((focus) => translateTrainingText(focus) ?? focus),
     microcycle: translateTrainingText(week.microcycle),
     progression: translateTrainingText(week.progression),
+    progressionFocus: translateTrainingText(week.progressionFocus),
+    loadLevel: translateTrainingText(week.loadLevel),
     deloadFocus: translateTrainingText(week.deloadFocus),
     sessions: week.sessions.map(normalizeSessionLanguage)
+  };
+}
+
+function normalizeMicrocycleLanguage(microcycle: Microcycle): Microcycle {
+  return {
+    ...microcycle,
+    objective: translateTrainingText(microcycle.objective) ?? microcycle.objective,
+    loadLevel: translateTrainingText(microcycle.loadLevel) ?? microcycle.loadLevel,
+    progressionFocus: translateTrainingText(microcycle.progressionFocus) ?? microcycle.progressionFocus
   };
 }
 
@@ -168,12 +186,16 @@ export function normalizePlanLanguage(plan: TrainingPlan): TrainingPlan {
   return {
     ...plan,
     objective: translateTrainingText(plan.objective) ?? plan.objective,
+    planVersion: translateTrainingText(plan.planVersion),
     mesocycleType: translateTrainingText(plan.mesocycleType),
+    microcycles: plan.microcycles?.map(normalizeMicrocycleLanguage) ?? plan.microcycles,
+    planningRationale: translateTrainingText(plan.planningRationale),
     mainObjective: translateTrainingText(plan.mainObjective),
     secondaryObjectives: translateStringArray(plan.secondaryObjectives),
     athleteSummary: translateTrainingText(plan.athleteSummary),
     riskSummary: translateTrainingText(plan.riskSummary),
     equipmentSummary: translateTrainingText(plan.equipmentSummary),
+    progressionModel: translateTrainingText(plan.progressionModel),
     weeklyFeedbackPrompt: translateTrainingText(plan.weeklyFeedbackPrompt),
     recoveryGuidelines: translateStringArray(plan.recoveryGuidelines),
     safetyRules: translateStringArray(plan.safetyRules),

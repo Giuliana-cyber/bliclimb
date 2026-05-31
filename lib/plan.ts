@@ -7,13 +7,17 @@ const PLAN_STORAGE_KEY = 'bilclimb:plan';
 export interface TrainingPlan {
   id: string;
   profileId: string;
+  planVersion?: string | null;
   objective: string;
   mesocycleType?: string | null;
+  microcycles?: Microcycle[] | null;
+  planningRationale?: string | null;
   mainObjective?: string | null;
   secondaryObjectives?: string[] | null;
   athleteSummary?: string | null;
   riskSummary?: string | null;
   equipmentSummary?: string | null;
+  progressionModel?: string | null;
   weeklyFeedbackPrompt?: string | null;
   recoveryGuidelines?: string[] | null;
   safetyRules?: string[] | null;
@@ -25,14 +29,38 @@ export interface TrainingPlan {
   createdAt: string;
   usedFileSearch?: boolean | null;
   librarySources?: string[] | null;
+  qualityScores?: PlanQualityScores | null;
+}
+
+export interface Microcycle {
+  id: string;
+  weeks: number[];
+  objective: string;
+  loadLevel: string;
+  progressionFocus: string;
+  deloadWeek: boolean;
+}
+
+export interface PlanQualityScores {
+  variationScore: number;
+  progressionScore: number;
+  safetyScore: number;
+  specificityScore: number;
+  equipmentFitScore: number;
+  professionalStructureScore: number;
 }
 
 export interface Week {
   weekNumber: number;
+  microcycleId?: string | null;
   theme: string; // "Diagnóstico + base"
+  objective?: string | null;
   focusAreas: string[]; // ["fuerza dedos", "técnica"]
   microcycle?: string | null;
   progression?: string | null;
+  progressionFocus?: string | null;
+  loadLevel?: string | null;
+  deloadWeek?: boolean | null;
   deloadFocus?: string | null;
   sessions: Session[];
 }
@@ -40,8 +68,11 @@ export interface Week {
 export interface Session {
   dayNumber: number; // 1, 2, 3 dentro de la semana
   title: string; // "Hangboard + técnica"
+  stimulusType?: string | null;
   location: string; // "gym" | "casa" | "roca"
+  equipment?: string[] | null;
   estimatedMinutes: number;
+  estimatedDurationMinutes?: number | null;
   objective?: string | null;
   why?: string | null;
   intensityTarget?: string | null;
@@ -63,16 +94,21 @@ export interface Session {
 export interface Exercise {
   name: string;
   description: string;
+  category?: string | null;
+  requiredEquipment?: string[] | null;
+  riskLevel?: 'bajo' | 'medio' | 'alto' | null;
+  objective?: string | null;
+  prescription?: string | null;
   sets: number | null;
   reps: string | null; // "10 seg" | "8 reps" | "4-6 problemas"
+  duration?: string | null;
   rest: string | null; // "3 min" | "1 min"
   intensity: string | null; // "BW" | "+5%" | "2 grados debajo"
+  intensityPercent?: string | null;
+  rpeTarget?: string | null;
+  tempo?: string | null;
   notes: string | null;
   timerSeconds: number | null; // Para activar timer
-  objective?: string | null;
-  duration?: string | null;
-  intensityPercent?: string | null;
-  tempo?: string | null;
   howTo?: string[] | null;
   feelCues?: string[] | null;
   commonMistakes?: string[] | null;
@@ -81,7 +117,6 @@ export interface Exercise {
   progressions?: string[] | null;
   videoUrl?: string | null;
   sourceConcept?: string | null;
-  riskLevel?: 'bajo' | 'medio' | 'alto' | null;
   alternative?: string | null;
   equipment?: string | null;
 }

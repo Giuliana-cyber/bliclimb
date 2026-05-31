@@ -1,4 +1,8 @@
 import type { UserProfile } from '@/lib/profile';
+import type { PlanSkeleton } from '@/lib/planning/build-plan-skeleton';
+import type { CatalogExercise } from '@/lib/planning/exercise-catalog';
+import type { PlanTemplate } from '@/lib/planning/plan-templates';
+import type { ProfileAnalysis } from '@/lib/planning/profile-analysis';
 
 const equipmentLabels: Record<string, string> = {
   gym: 'gym de escalada / muro indoor',
@@ -118,7 +122,27 @@ function getEquipmentRestrictions(profile: UserProfile) {
   return restrictions.map((restriction) => `- ${restriction}`).join('\n');
 }
 
-export function buildPlanGeneratorPrompt(profile: UserProfile) {
+export function buildPlanGeneratorPrompt(
+  profile: UserProfile,
+  planningContext?: {
+    analysis: ProfileAnalysis;
+    selectedTemplate: PlanTemplate;
+    skeleton: PlanSkeleton;
+    allowedExercises: Array<Pick<CatalogExercise, 'id' | 'name' | 'category' | 'requiredEquipment' | 'riskLevel'>>;
+  }
+) {
+  const skeletonSummary = planningContext
+    ? `\nMOTOR DETERMINÍSTICO DE PLANIFICACIÓN:
+- Plantilla seleccionada: ${planningContext.selectedTemplate.name}
+- Mesociclo: ${planningContext.skeleton.mesocycleType}
+- Modelo de progresión: ${planningContext.skeleton.progressionModel}
+- Estímulos por semana: ${planningContext.skeleton.weeks
+        .map((week) => `S${week.weekNumber}: ${week.sessions.map((session) => session.stimulusType).join(', ')}`)
+        .join(' | ')}
+- Ejercicios permitidos: ${planningContext.allowedExercises.map((exercise) => exercise.name).join(', ')}
+- Restricciones críticas: ${planningContext.analysis.criticalRestrictions.join(' | ')}`
+    : '';
+
   return `Eres un entrenador de escalada experimentado. Vas a generar un plan de entrenamiento
 personalizado basado en el perfil del usuario.
 
@@ -150,6 +174,11 @@ REGLAS DE SEGURIDAD ABSOLUTAS:
 - Si no tiene el equipo, no lo inventes. Da una alternativa real con lo disponible.
 
 REGLAS DE DISEÑO DEL PLAN:
+- La estructura del plan NO la decides tú: la app ya eligió análisis, plantilla y skeleton.
+- Respeta el skeleton sin cambiar distribución semanal, estímulo del día, frecuencia, equipo ni ubicación.
+- Tu trabajo es rellenar detalles profesionales dentro de cada bloque usando biblioteca BilClimb y catálogo permitido.
+- Si el skeleton no permite campus, hangboard, muro o pesas, no los menciones ni como alternativa.
+- No repitas sesiones: si un patrón aparece de nuevo, debe tener progresión o propósito distinto.
 - No generes una lista básica de ejercicios. Genera un plan tipo entrenador profesional
   con objetivo del mesociclo, microciclos, progresión, criterios de ajuste y feedback.
 - Usa la estructura de un mesociclo de escalada: semanas 1-2 construyen base específica,
@@ -260,6 +289,8 @@ DISPONIBILIDAD Y RECUPERACIÓN:
 CONTEXTO DE SEGURIDAD Y CAPACIDAD:
 ${getSafetyContext(profile)}
 
+${skeletonSummary}
+
 RESTRICCIONES ESTRICTAS DE EQUIPO:
 ${getEquipmentRestrictions(profile)}
 
@@ -288,14 +319,20 @@ NIVEL DE DETALLE OBLIGATORIO:
 REQUISITOS DE JSON:
 - Responde solamente con JSON estructurado compatible con TrainingPlan.
 - Usa profileId: "${profile.id}".
+- Usa planVersion: "planner-v1".
 - Usa totalWeeks: ${profile.planDuration}.
 - Usa currentWeek: 1.
 - Usa status: "active".
 - Todas las sesiones deben iniciar con completed: false y checkIn: null.
 - startDate y createdAt deben estar en formato ISO.
 - Llena los campos profesionales nuevos. No uses null en mesocycleType, mainObjective,
-  secondaryObjectives, athleteSummary, riskSummary, equipmentSummary, weeklyFeedbackPrompt,
-  recoveryGuidelines ni safetyRules.
+  secondaryObjectives, athleteSummary, riskSummary, equipmentSummary, planningRationale,
+  progressionModel, weeklyFeedbackPrompt, recoveryGuidelines ni safetyRules.
+- Llena microcycles según el skeleton y qualityScores con valores iniciales de 0 a 100; la app
+  los recalculará después.
+- Cada week debe incluir microcycleId, objective, progressionFocus, loadLevel y deloadWeek.
+- Cada session debe incluir stimulusType, equipment y estimatedDurationMinutes.
+- Cada exercise debe incluir category, requiredEquipment, riskLevel, prescription y rpeTarget.
 - Para cada sesión, warmup debe contener la combinación de warmupGeneral + warmupSpecific
   para compatibilidad con la app vieja.
 - finalBlock debe contener parte final/accesoria; cooldown debe contener vuelta a la calma.

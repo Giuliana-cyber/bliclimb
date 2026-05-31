@@ -8,13 +8,16 @@ import type { UserProfile } from '@/lib/profile';
 import { TrainingPlanSchema } from '@/lib/ai/training-plan-schema';
 import { extractLibraryTraceability, type LibraryTraceability } from '@/lib/ai/response-sources';
 import { validateProfessionalPlan } from '@/lib/ai/validate-professional-plan';
+import { buildPlanSkeleton, type PlanSkeleton } from '@/lib/planning/build-plan-skeleton';
+import type { ProfileAnalysis } from '@/lib/planning/profile-analysis';
+import type { PlanTemplate } from '@/lib/planning/plan-templates';
 
 export const runtime = 'nodejs';
 
 const MAX_PLAN_GENERATION_ATTEMPTS = 2;
 const PLAN_MAX_OUTPUT_TOKENS = 14000;
-const MAX_STRUCTURED_SESSIONS = 8;
-const PERSONALIZED_STRUCTURED_SESSION_LIMIT = 16;
+const MAX_STRUCTURED_SESSIONS = 20;
+const PERSONALIZED_STRUCTURED_SESSION_LIMIT = 24;
 const DAYS_BY_COUNT = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const DAY_LABELS: Record<string, string> = {
   monday: 'Lunes',
@@ -206,14 +209,21 @@ function isUserProfile(value: unknown): value is UserProfile {
 function normalizePlan(
   plan: TrainingPlan,
   profile: UserProfile,
-  libraryTraceability?: LibraryTraceability
+  libraryTraceability?: LibraryTraceability,
+  skeleton?: PlanSkeleton
 ): TrainingPlan {
   const now = new Date().toISOString();
+  const skeletonWeeks = skeleton?.weeks ?? [];
 
   return {
     ...plan,
     id: plan.id || crypto.randomUUID(),
     profileId: profile.id,
+    planVersion: skeleton?.planVersion ?? plan.planVersion ?? 'planner-v1',
+    mesocycleType: skeleton?.mesocycleType ?? plan.mesocycleType,
+    microcycles: skeleton?.microcycles ?? plan.microcycles,
+    planningRationale: skeleton?.planningRationale ?? plan.planningRationale,
+    progressionModel: skeleton?.progressionModel ?? plan.progressionModel,
     totalWeeks: profile.planDuration,
     currentWeek: plan.currentWeek || 1,
     status: 'active',
@@ -223,14 +233,43 @@ function normalizePlan(
     librarySources: libraryTraceability?.sourceNames.length
       ? libraryTraceability.sourceNames
       : plan.librarySources,
-    weeks: plan.weeks.map((week) => ({
-      ...week,
-      sessions: week.sessions.map((session) => ({
-        ...session,
-        completed: false,
-        checkIn: null
-      }))
-    }))
+    weeks: plan.weeks.map((week, weekIndex) => {
+      const skeletonWeek = skeletonWeeks[weekIndex];
+
+      return {
+        ...week,
+        microcycleId: skeletonWeek?.microcycleId ?? week.microcycleId,
+        objective: skeletonWeek?.objective ?? week.objective,
+        microcycle: skeletonWeek?.objective ?? week.microcycle,
+        progression: skeletonWeek?.progressionFocus ?? week.progression,
+        progressionFocus: skeletonWeek?.progressionFocus ?? week.progressionFocus,
+        loadLevel: skeletonWeek?.loadLevel ?? week.loadLevel,
+        deloadWeek: skeletonWeek?.deloadWeek ?? week.deloadWeek,
+        sessions: week.sessions.map((session, sessionIndex) => {
+          const skeletonSession = skeletonWeek?.sessions[sessionIndex];
+
+          return {
+            ...session,
+            stimulusType: skeletonSession?.stimulusType ?? session.stimulusType,
+            location: skeletonSession?.location ?? session.location,
+            equipment:
+              skeletonSession?.exerciseCandidates
+                .flatMap((exercise) => exercise.requiredEquipment)
+                .filter(Boolean) ?? session.equipment,
+            estimatedDurationMinutes:
+              skeletonSession?.estimatedDurationMinutes ?? session.estimatedDurationMinutes,
+            objective: skeletonSession?.objective ?? session.objective,
+            why: skeletonSession?.why ?? session.why,
+            intensityTarget: skeletonSession?.intensityTarget ?? session.intensityTarget,
+            safetyNotes: skeletonSession?.safetyNotes ?? session.safetyNotes,
+            adjustmentRules: skeletonSession?.adjustmentRules ?? session.adjustmentRules,
+            successCriteria: skeletonSession?.successCriteria ?? session.successCriteria,
+            completed: false,
+            checkIn: null
+          };
+        })
+      };
+    })
   };
 }
 
@@ -238,10 +277,15 @@ function flattenPlanText(plan: TrainingPlan) {
   return plan.weeks
     .flatMap((week) => [
       week.theme,
+      week.objective,
+      week.progressionFocus,
+      week.loadLevel,
       ...week.focusAreas,
       ...week.sessions.flatMap((session) => [
         session.title,
+        session.stimulusType,
         session.location,
+        ...(session.equipment ?? []),
         session.nutritionTip,
         session.source,
         ...session.warmup.flatMap((exercise) => Object.values(exercise)),
@@ -651,6 +695,14 @@ function toExercise(exercise: ExerciseDraft): TrainingPlan['weeks'][number]['ses
       : 'bajo');
 
   return {
+    category: exercise.category ?? null,
+    requiredEquipment: exercise.requiredEquipment ?? (exercise.equipment ? [exercise.equipment] : []),
+    prescription:
+      exercise.prescription ??
+      ([exercise.sets ? `${exercise.sets} series` : null, exercise.reps ?? exercise.duration, exercise.rest ? `descanso ${exercise.rest}` : null]
+        .filter(Boolean)
+        .join(' · ') ||
+        null),
     sets: exercise.sets ?? null,
     reps: exercise.reps ?? null,
     rest: exercise.rest ?? null,
@@ -658,6 +710,7 @@ function toExercise(exercise: ExerciseDraft): TrainingPlan['weeks'][number]['ses
     timerSeconds: exercise.timerSeconds ?? null,
     duration: exercise.duration ?? exercise.reps ?? null,
     intensityPercent: exercise.intensityPercent ?? null,
+    rpeTarget: exercise.rpeTarget ?? exercise.intensity ?? null,
     tempo: exercise.tempo ?? null,
     regressions: exercise.regressions ?? [exercise.alternative ?? 'Reduce rango, volumen o intensidad manteniendo técnica limpia.'],
     progressions: exercise.progressions ?? ['Aumenta solo una variable cuando termines con técnica limpia y margen.'],
@@ -1469,7 +1522,11 @@ function makeCooldownExercises(kind: SessionKind, weekNumber: number) {
   ];
 }
 
-function buildFallbackPlan(profile: UserProfile, libraryTraceability?: LibraryTraceability): TrainingPlan {
+function buildFallbackPlan(
+  profile: UserProfile,
+  libraryTraceability?: LibraryTraceability,
+  skeleton?: PlanSkeleton
+): TrainingPlan {
   const now = new Date().toISOString();
   const sessionCount = Math.max(1, Math.min(profile.daysPerWeek || 3, 5));
   const totalWeeks = Math.max(1, profile.planDuration || 4);
@@ -1477,12 +1534,15 @@ function buildFallbackPlan(profile: UserProfile, libraryTraceability?: LibraryTr
   return {
     id: crypto.randomUUID(),
     profileId: profile.id,
+    planVersion: skeleton?.planVersion ?? 'planner-v1-fallback',
     objective:
       profile.goalDescription ||
       profile.projectDescription ||
       profile.project ||
       'Construir una base segura de técnica, resistencia y fuerza general para escalar mejor.',
-    mesocycleType: `${totalWeeks} semanas de progresión técnica, física y recuperación`,
+    mesocycleType: skeleton?.mesocycleType ?? `${totalWeeks} semanas de progresión técnica, física y recuperación`,
+    microcycles: skeleton?.microcycles ?? null,
+    planningRationale: skeleton?.planningRationale ?? null,
     mainObjective:
       profile.goalDescription ||
       profile.projectDescription ||
@@ -1499,6 +1559,9 @@ function buildFallbackPlan(profile: UserProfile, libraryTraceability?: LibraryTr
     equipmentSummary: profile.equipment.length
       ? `Equipo disponible: ${profile.equipment.join(', ')}. No se prescribe equipo fuera de esta lista.`
       : 'Sin equipo claro declarado: se usan alternativas de casa y técnica sin material.',
+    progressionModel:
+      skeleton?.progressionModel ??
+      'Base técnica → volumen controlado → especificidad moderada → descarga y consolidación.',
     weeklyFeedbackPrompt:
       'Al terminar cada semana registra RPE, dolor de dedos, energía, sueño y qué ejercicio se sintió demasiado fácil o demasiado agresivo.',
     recoveryGuidelines: [
@@ -1516,24 +1579,33 @@ function buildFallbackPlan(profile: UserProfile, libraryTraceability?: LibraryTr
     createdAt: now,
     usedFileSearch: libraryTraceability?.usedFileSearch ?? false,
     librarySources: libraryTraceability?.sourceNames ?? [],
+    qualityScores: null,
     weeks: Array.from({ length: totalWeeks }, (_, weekIndex) => {
       const weekNumber = weekIndex + 1;
       const blueprint = getWeekBlueprint(weekNumber);
+      const skeletonWeek = skeleton?.weeks[weekIndex];
 
       return {
         weekNumber,
+        microcycleId: skeletonWeek?.microcycleId ?? null,
         theme: `Semana ${weekNumber}: ${blueprint.theme}`,
+        objective: skeletonWeek?.objective ?? blueprint.theme,
         focusAreas: blueprint.focusAreas,
         microcycle:
+          skeletonWeek?.objective ??
           weekNumber <= 2
             ? 'Microciclo 1-2: base específica y control'
             : 'Microciclo 3-4: especificidad, intensidad controlada y consolidación',
         progression:
+          skeletonWeek?.progressionFocus ??
           weekNumber === 1
             ? 'Semana de entrada: volumen técnico y medición de tolerancia.'
             : isDownloadWeek(weekNumber)
               ? 'Semana de descarga: bajar volumen y consolidar aprendizajes.'
               : 'Progresar una variable principal sin sacrificar técnica ni seguridad.',
+        progressionFocus: skeletonWeek?.progressionFocus ?? null,
+        loadLevel: skeletonWeek?.loadLevel ?? (isDownloadWeek(weekNumber) ? 'descarga' : 'base'),
+        deloadWeek: skeletonWeek?.deloadWeek ?? isDownloadWeek(weekNumber),
         deloadFocus: isDownloadWeek(weekNumber)
           ? 'Reducir volumen y salir con sensación de frescura.'
           : null,
@@ -1544,6 +1616,7 @@ function buildFallbackPlan(profile: UserProfile, libraryTraceability?: LibraryTr
             : DAYS_BY_COUNT[sessionIndex] ?? `Día ${sessionIndex + 1}`;
           const kind = getSessionKind(profile, weekNumber, sessionIndex);
           const location = getSessionLocation(kind);
+          const skeletonSession = skeletonWeek?.sessions[sessionIndex];
           const warmup = makeWarmupExercises(profile, kind, weekNumber);
           const mainBlock = makeMainExercises(profile, weekNumber, sessionIndex, kind);
           const cooldown = makeCooldownExercises(kind, weekNumber);
@@ -1571,13 +1644,22 @@ function buildFallbackPlan(profile: UserProfile, libraryTraceability?: LibraryTr
           return {
             dayNumber: sessionIndex + 1,
             title: getSessionTitle(kind, dayLabel, weekNumber),
-            location,
+            stimulusType: skeletonSession?.stimulusType ?? kind,
+            location: skeletonSession?.location ?? location,
+            equipment:
+              skeletonSession?.exerciseCandidates
+                .flatMap((exercise) => exercise.requiredEquipment)
+                .filter(Boolean) ?? null,
             estimatedMinutes: Math.min(Math.max(profile.sessionDuration || 75, 45), 120),
-            objective: `${blueprint.focusAreas[0]} aplicado a ${getProfileLevelLabel(profile)}.`,
-            why: `Esta sesión existe para avanzar el microciclo de ${blueprint.theme} sin usar equipo no declarado ni repetir una plantilla genérica.`,
-            intensityTarget: isDownloadWeek(weekNumber)
+            estimatedDurationMinutes:
+              skeletonSession?.estimatedDurationMinutes ?? Math.min(Math.max(profile.sessionDuration || 75, 45), 120),
+            objective: skeletonSession?.objective ?? `${blueprint.focusAreas[0]} aplicado a ${getProfileLevelLabel(profile)}.`,
+            why:
+              skeletonSession?.why ??
+              `Esta sesión existe para avanzar el microciclo de ${blueprint.theme} sin usar equipo no declarado ni repetir una plantilla genérica.`,
+            intensityTarget: skeletonSession?.intensityTarget ?? (isDownloadWeek(weekNumber)
               ? 'RPE 3 a 4/10, descarga técnica'
-              : 'RPE 5 a 7/10 con 2 repeticiones o movimientos en reserva',
+              : 'RPE 5 a 7/10 con 2 repeticiones o movimientos en reserva'),
             warmup,
             warmupGeneral: warmup.slice(0, 2),
             warmupSpecific: warmup.slice(-2),
@@ -1667,11 +1749,17 @@ async function getLibraryTraceabilityForPlan({
 async function generatePlanWithResponses({
   client,
   profile,
+  analysis,
+  selectedTemplate,
+  skeleton,
   vectorStoreId,
   validationHints
 }: {
   client: OpenAI;
   profile: UserProfile;
+  analysis: ProfileAnalysis;
+  selectedTemplate: PlanTemplate;
+  skeleton: PlanSkeleton;
   vectorStoreId: string;
   validationHints: string[];
 }) {
@@ -1681,6 +1769,15 @@ async function generatePlanWithResponses({
         .join('\n')}`
     : '';
 
+  const allowedExercises = Array.from(
+    new Map(
+      skeleton.weeks
+        .flatMap((week) => week.sessions)
+        .flatMap((session) => session.exerciseCandidates)
+        .map((exercise) => [exercise.id, exercise])
+    ).values()
+  );
+
   return client.responses.parse({
     model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
     max_output_tokens: PLAN_MAX_OUTPUT_TOKENS,
@@ -1688,11 +1785,37 @@ async function generatePlanWithResponses({
       {
         role: 'system',
         content:
-          'Eres BilClimb.ai. Genera planes de entrenamiento seguros, personalizados, basados en evidencia y estructurados para escaladores. Antes de generar el JSON, usa file_search para consultar la biblioteca de BilClimb. Responde todos los campos de texto en español mexicano y respeta estrictamente el equipo disponible del usuario.'
+          'Eres BilClimb.ai. Usa file_search para consultar la biblioteca, pero NO improvises la estructura. La app ya construyó un skeleton profesional; tu trabajo es rellenar detalles seguros dentro de ese skeleton.'
       },
       {
         role: 'user',
-        content: `${buildPlanGeneratorPrompt(profile)}
+        content: `${buildPlanGeneratorPrompt(profile, { analysis, selectedTemplate, skeleton, allowedExercises })}
+
+ARQUITECTURA OBLIGATORIA:
+- Profile → profileAnalysis → planTemplate → planSkeleton → File Search → relleno de detalles → validación.
+- Respeta el skeleton al 100%.
+- No cambies frecuencia, semanas, número de sesiones, ubicación, stimulusType ni restricciones.
+- No generes ejercicios fuera del catálogo salvo una variante MÁS segura del mismo patrón.
+- Usa candidateExerciseIds de cada sesión para construir warmupGeneral, warmupSpecific, mainBlock, finalBlock y cooldown.
+- Cada sesión debe explicar por qué existe.
+- Cada ejercicio debe tener dosis exacta, descanso, intensidad, howTo, stopIf, regressions y progressions.
+- Si usas un concepto de biblioteca, escribe sourceConcept corto. No inventes fuentes.
+- Todo en español mexicano claro.
+
+PROFILE_ANALYSIS:
+${JSON.stringify(analysis, null, 2)}
+
+SELECTED_TEMPLATE:
+${JSON.stringify(selectedTemplate, null, 2)}
+
+PLAN_SKELETON:
+${JSON.stringify(skeleton, null, 2)}
+
+ALLOWED_EXERCISES:
+${JSON.stringify(allowedExercises, null, 2)}
+
+FORBIDDEN_EXERCISES:
+${JSON.stringify(skeleton.forbiddenExercises, null, 2)}
 
 REGLA DE TAMAÑO:
 - Genera un JSON completo pero compacto.
@@ -1744,6 +1867,7 @@ export async function POST(request: Request) {
 
   const profile = body.profile;
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const { analysis, selectedTemplate, skeleton } = buildPlanSkeleton(profile);
 
   try {
     let validationHints: string[] = [];
@@ -1755,7 +1879,7 @@ export async function POST(request: Request) {
         profile,
         vectorStoreId
       });
-      const plan = buildFallbackPlan(profile, libraryTraceability);
+      const plan = buildFallbackPlan(profile, libraryTraceability, skeleton);
 
       return NextResponse.json({ plan, fallback: true });
     }
@@ -1764,6 +1888,9 @@ export async function POST(request: Request) {
       const response = await generatePlanWithResponses({
         client,
         profile,
+        analysis,
+        selectedTemplate,
+        skeleton,
         vectorStoreId,
         validationHints
       });
@@ -1780,7 +1907,7 @@ export async function POST(request: Request) {
         break;
       }
 
-      const plan = normalizePlan(response.output_parsed, profile, libraryTraceability);
+      const plan = normalizePlan(response.output_parsed, profile, libraryTraceability, skeleton);
       const validationViolations = getPlanValidationViolations(plan, profile);
 
       if (!validationViolations.length) {
@@ -1790,7 +1917,7 @@ export async function POST(request: Request) {
       validationHints = validationViolations.slice(0, 8);
     }
 
-    const fallbackPlan = buildFallbackPlan(profile, lastLibraryTraceability);
+    const fallbackPlan = buildFallbackPlan(profile, lastLibraryTraceability, skeleton);
     const fallbackViolations = getPlanValidationViolations(fallbackPlan, profile);
 
     if (!fallbackViolations.length) {
