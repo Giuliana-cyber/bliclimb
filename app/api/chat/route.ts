@@ -6,6 +6,7 @@ import type { UserProfile } from '@/lib/profile';
 import { requireSubscriptionAccess } from '@/lib/billing/subscription';
 import { buildCoachSystemPrompt } from '@/lib/prompts/coach-system';
 import { extractLibraryTraceability } from '@/lib/ai/response-sources';
+import { CHAT_MAX_OUTPUT_TOKENS } from '@/lib/ai/token-budget';
 
 export const runtime = 'nodejs';
 
@@ -81,6 +82,7 @@ export async function POST(request: Request) {
       try {
         const response = await client.responses.create({
           model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
+          max_output_tokens: CHAT_MAX_OUTPUT_TOKENS,
           input: [
             {
               role: 'system',
