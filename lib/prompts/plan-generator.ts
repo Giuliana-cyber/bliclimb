@@ -131,17 +131,58 @@ export function buildPlanGeneratorPrompt(
     allowedExercises: Array<Pick<CatalogExercise, 'id' | 'name' | 'category' | 'requiredEquipment' | 'riskLevel'>>;
   }
 ) {
-  const skeletonSummary = planningContext
-    ? `\nMOTOR DETERMINÍSTICO DE PLANIFICACIÓN:
-- Plantilla seleccionada: ${planningContext.selectedTemplate.name}
+  if (planningContext) {
+    const totalSessions = planningContext.skeleton.weeks.reduce(
+      (total, week) => total + week.sessions.length,
+      0
+    );
+    const totalCandidates = planningContext.skeleton.weeks.reduce(
+      (total, week) =>
+        total + week.sessions.reduce((sessionTotal, session) => sessionTotal + session.exerciseCandidates.length, 0),
+      0
+    );
+
+    return `Eres BilClimb.ai, entrenador profesional de escalada.
+
+OBJETIVO
+- Rellena detalles de entrenamiento dentro del skeleton que ya construyó la app.
+- No cambies semanas, frecuencia, stimulusType, ubicación, equipo ni restricciones.
+- No improvises estructura ni ejercicios fuera de candidatos salvo variante más segura del mismo patrón.
+
+IDIOMA
+- Todo en español mexicano claro.
+- Cero inglés en títulos, notas, ubicaciones, intensidades o ejercicios.
+- Frases cortas y accionables; no escribas ensayo.
+
+CONTEXTO COMPACTO
+- Nivel: ${levelLabels[profile.level] ?? profile.level}
+- Objetivo principal: ${planningContext.analysis.mainGoal}
+- Objetivo libre: ${profile.goalDescription || profile.projectDescription || profile.project || 'no especificado'}
+- Equipo disponible: ${planningContext.analysis.equipmentAvailable.join(', ') || 'sin equipo'}
+- Días/semana: ${planningContext.analysis.daysPerWeek}
+- Duración máxima: ${planningContext.analysis.maxSessionDuration} min
+- Riesgo dedos/hombro/codo: ${planningContext.analysis.fingerRisk}/${planningContext.analysis.shoulderRisk}/${planningContext.analysis.elbowRisk}
+- Agresividad permitida: ${planningContext.analysis.allowedAggressiveness}
+- Plantilla: ${planningContext.selectedTemplate.name}
 - Mesociclo: ${planningContext.skeleton.mesocycleType}
-- Modelo de progresión: ${planningContext.skeleton.progressionModel}
-- Estímulos por semana: ${planningContext.skeleton.weeks
-        .map((week) => `S${week.weekNumber}: ${week.sessions.map((session) => session.stimulusType).join(', ')}`)
-        .join(' | ')}
-- Ejercicios permitidos: ${planningContext.allowedExercises.map((exercise) => exercise.name).join(', ')}
-- Restricciones críticas: ${planningContext.analysis.criticalRestrictions.join(' | ')}`
-    : '';
+- Sesiones: ${totalSessions}
+- Candidatos enviados: ${totalCandidates} (catálogo filtrado, no completo)
+
+REGLAS APLICABLES
+${planningContext.analysis.criticalRestrictions.map((restriction) => `- ${restriction}`).join('\n')}
+${planningContext.skeleton.safetyRules.slice(0, 8).map((rule) => `- ${rule}`).join('\n')}
+
+REGLAS DE SALIDA
+- Cada sesión debe tener por qué existe, criterios de éxito, reglas de ajuste y notas de seguridad.
+- Cada ejercicio debe tener dosis exacta, descanso o duración, intensidad/RPE, howTo, stopIf, regressions y progressions.
+- Dedos/hombros/codos/tracción requieren stopIf y regresión específica.
+- Si hay dolor, reduce intensidad y evita fallo, campus, hangs máximos, arqueo máximo y cargas pesadas.
+- Si falta equipo, adapta solo con equipo disponible.
+- Usa sourceConcept breve si aplicas un principio de biblioteca. No inventes fuentes.
+- Máximo 3 bullets por howTo, feelCues, commonMistakes, stopIf, regressions y progressions.`;
+  }
+
+  const skeletonSummary = '';
 
   return `Eres un entrenador de escalada experimentado. Vas a generar un plan de entrenamiento
 personalizado basado en el perfil del usuario.

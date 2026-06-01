@@ -5,18 +5,26 @@ import { requireSubscriptionAccess } from '@/lib/billing/subscription';
 import { buildPlanGeneratorPrompt } from '@/lib/prompts/plan-generator';
 import type { TrainingPlan } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
-import { TrainingPlanSchema } from '@/lib/ai/training-plan-schema';
+import { WeekSchema } from '@/lib/ai/training-plan-schema';
 import { extractLibraryTraceability, type LibraryTraceability } from '@/lib/ai/response-sources';
 import { validateProfessionalPlan } from '@/lib/ai/validate-professional-plan';
 import { getLowQualityReasons, scorePlanQuality } from '@/lib/ai/score-plan-quality';
-import { buildPlanSkeleton, type PlanSkeleton } from '@/lib/planning/build-plan-skeleton';
+import {
+  buildPlanSkeleton,
+  type PlanSkeleton,
+  type SkeletonExerciseCandidate,
+  type WeekSkeleton
+} from '@/lib/planning/build-plan-skeleton';
+import {
+  PLAN_SESSION_MAX_OUTPUT_TOKENS,
+  PLAN_SKELETON_MAX_OUTPUT_TOKENS
+} from '@/lib/ai/token-budget';
 import type { ProfileAnalysis } from '@/lib/planning/profile-analysis';
 import type { PlanTemplate } from '@/lib/planning/plan-templates';
 
 export const runtime = 'nodejs';
 
 const MAX_PLAN_GENERATION_ATTEMPTS = 2;
-const PLAN_MAX_OUTPUT_TOKENS = 14000;
 const MAX_STRUCTURED_SESSIONS = 20;
 const PERSONALIZED_STRUCTURED_SESSION_LIMIT = 24;
 const DAYS_BY_COUNT = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -1717,6 +1725,125 @@ function shouldUseFastPlanBuilder(profile: UserProfile) {
   return totalSessions > sessionLimit;
 }
 
+function mergeLibraryTraceability(
+  ...items: Array<LibraryTraceability | undefined>
+): LibraryTraceability {
+  const sourceNames = items.flatMap((item) => item?.sourceNames ?? []);
+
+  return {
+    usedFileSearch: items.some((item) => item?.usedFileSearch),
+    sourceNames: Array.from(new Set(sourceNames))
+  };
+}
+
+function limitText(value: string, maxLength = 180) {
+  return value.length > maxLength ? `${value.slice(0, maxLength - 1)}…` : value;
+}
+
+function compactCandidate(exercise: SkeletonExerciseCandidate) {
+  return {
+    id: exercise.id,
+    name: exercise.name,
+    category: exercise.category,
+    equipment: exercise.requiredEquipment,
+    risk: exercise.riskLevel,
+    objective: limitText(exercise.objective, 140),
+    dose: exercise.defaultDose,
+    rest: exercise.defaultRest,
+    howTo: exercise.howTo.slice(0, 2),
+    stopIf: exercise.stopIf.slice(0, 2),
+    regressions: exercise.regressions.slice(0, 2),
+    sourceConcept: limitText(exercise.sourceConcept, 140)
+  };
+}
+
+function compactWeekSkeleton(week: WeekSkeleton) {
+  return {
+    weekNumber: week.weekNumber,
+    microcycleId: week.microcycleId,
+    objective: week.objective,
+    progressionFocus: week.progressionFocus,
+    loadLevel: week.loadLevel,
+    deloadWeek: week.deloadWeek,
+    sessions: week.sessions.map((session) => ({
+      dayNumber: session.dayNumber,
+      dayLabel: session.dayLabel,
+      title: session.title,
+      stimulusType: session.stimulusType,
+      objective: session.objective,
+      why: session.why,
+      location: session.location,
+      estimatedDurationMinutes: session.estimatedDurationMinutes,
+      intensityTarget: session.intensityTarget,
+      requiredBlocks: session.requiredBlocks,
+      candidateExerciseIds: session.candidateExerciseIds,
+      exerciseCandidates: session.exerciseCandidates.map(compactCandidate),
+      restrictions: session.restrictions,
+      successCriteria: session.successCriteria,
+      adjustmentRules: session.adjustmentRules,
+      safetyNotes: session.safetyNotes
+    }))
+  };
+}
+
+function buildPlanShell({
+  profile,
+  analysis,
+  selectedTemplate,
+  skeleton,
+  libraryTraceability,
+  weeks
+}: {
+  profile: UserProfile;
+  analysis: ProfileAnalysis;
+  selectedTemplate: PlanTemplate;
+  skeleton: PlanSkeleton;
+  libraryTraceability?: LibraryTraceability;
+  weeks: TrainingPlan['weeks'];
+}): TrainingPlan {
+  const now = new Date().toISOString();
+  const explicitObjective =
+    profile.goalDescription || profile.projectDescription || profile.project || selectedTemplate.name;
+
+  return {
+    id: crypto.randomUUID(),
+    profileId: profile.id,
+    planVersion: skeleton.planVersion,
+    objective: explicitObjective,
+    mesocycleType: skeleton.mesocycleType,
+    microcycles: skeleton.microcycles,
+    planningRationale: skeleton.planningRationale,
+    mainObjective: `Desarrollar ${analysis.mainGoal} con una progresión segura de ${weeks.length} semanas adaptada al perfil y equipo disponible.`,
+    secondaryObjectives: [
+      analysis.secondaryGoal ? `Apoyar objetivo secundario: ${analysis.secondaryGoal}.` : 'Mejorar técnica y control corporal.',
+      'Incluir acondicionamiento físico específico sin usar equipo no disponible.',
+      'Ajustar carga según dolor, energía, sueño y feedback semanal.'
+    ],
+    athleteSummary: getProfileContextSummary(profile) || `Perfil ${getProfileLevelLabel(profile)} con ${analysis.daysPerWeek} días por semana.`,
+    riskSummary: `Riesgo dedos/hombro/codo: ${analysis.fingerRisk}/${analysis.shoulderRisk}/${analysis.elbowRisk}. Agresividad permitida: ${analysis.allowedAggressiveness}.`,
+    equipmentSummary: analysis.equipmentAvailable.length
+      ? `Equipo disponible usado por el plan: ${analysis.equipmentAvailable.join(', ')}.`
+      : 'Plan armado sin asumir equipo adicional.',
+    progressionModel: skeleton.progressionModel,
+    weeklyFeedbackPrompt:
+      'Al cerrar cada semana registra RPE, dolor de dedos, sueño, energía, qué progresó y qué debe ajustarse.',
+    recoveryGuidelines: [
+      'Si sueño o energía bajan, reduce una serie por bloque y alarga descansos.',
+      'Si dolor sube a 3/10 o aparece dolor punzante, cambia a movilidad y registra el episodio.'
+    ],
+    safetyRules: skeleton.safetyRules,
+    totalWeeks: profile.planDuration,
+    currentWeek: 1,
+    startDate: now,
+    weeks,
+    status: 'active',
+    createdAt: now,
+    usedFileSearch: libraryTraceability?.usedFileSearch ?? false,
+    librarySources: libraryTraceability?.sourceNames ?? [],
+    qualityScores: null
+  };
+}
+
 async function getLibraryTraceabilityForPlan({
   client,
   profile,
@@ -1728,7 +1855,7 @@ async function getLibraryTraceabilityForPlan({
 }) {
   const response = await client.responses.create({
     model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
-    max_output_tokens: 700,
+    max_output_tokens: Math.min(700, PLAN_SKELETON_MAX_OUTPUT_TOKENS),
     input: [
       {
         role: 'system',
@@ -1761,12 +1888,13 @@ async function getLibraryTraceabilityForPlan({
   return extractLibraryTraceability(response);
 }
 
-async function generatePlanWithResponses({
+async function generateWeekWithResponses({
   client,
   profile,
   analysis,
   selectedTemplate,
   skeleton,
+  week,
   vectorStoreId,
   validationHints
 }: {
@@ -1775,6 +1903,7 @@ async function generatePlanWithResponses({
   analysis: ProfileAnalysis;
   selectedTemplate: PlanTemplate;
   skeleton: PlanSkeleton;
+  week: WeekSkeleton;
   vectorStoreId: string;
   validationHints: string[];
 }) {
@@ -1783,59 +1912,31 @@ async function generatePlanWithResponses({
         .map((hint) => `- ${hint}`)
         .join('\n')}`
     : '';
-
-  const allowedExercises = Array.from(
-    new Map(
-      skeleton.weeks
-        .flatMap((week) => week.sessions)
-        .flatMap((session) => session.exerciseCandidates)
-        .map((exercise) => [exercise.id, exercise])
-    ).values()
-  );
+  const allowedExercises = week.sessions.flatMap((session) => session.exerciseCandidates);
 
   return client.responses.parse({
     model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
-    max_output_tokens: PLAN_MAX_OUTPUT_TOKENS,
+    max_output_tokens: PLAN_SESSION_MAX_OUTPUT_TOKENS,
     input: [
       {
         role: 'system',
         content:
-          'Eres BilClimb.ai. Usa file_search para consultar la biblioteca, pero NO improvises la estructura. La app ya construyó un skeleton profesional; tu trabajo es rellenar detalles seguros dentro de ese skeleton.'
+          'Eres BilClimb.ai. Usa file_search como apoyo, pero respeta el skeleton profesional. Rellena SOLO una semana del plan con detalles seguros y compactos.'
       },
       {
         role: 'user',
         content: `${buildPlanGeneratorPrompt(profile, { analysis, selectedTemplate, skeleton, allowedExercises })}
 
-ARQUITECTURA OBLIGATORIA:
-- Profile → profileAnalysis → planTemplate → planSkeleton → File Search → relleno de detalles → validación.
-- Respeta el skeleton al 100%.
-- No cambies frecuencia, semanas, número de sesiones, ubicación, stimulusType ni restricciones.
-- No generes ejercicios fuera del catálogo salvo una variante MÁS segura del mismo patrón.
-- Usa candidateExerciseIds de cada sesión para construir warmupGeneral, warmupSpecific, mainBlock, finalBlock y cooldown.
-- Cada sesión debe explicar por qué existe.
-- Cada ejercicio debe tener dosis exacta, descanso, intensidad, howTo, stopIf, regressions y progressions.
-- Si usas un concepto de biblioteca, escribe sourceConcept corto. No inventes fuentes.
-- Todo en español mexicano claro.
-
-PROFILE_ANALYSIS:
-${JSON.stringify(analysis, null, 2)}
-
-SELECTED_TEMPLATE:
-${JSON.stringify(selectedTemplate, null, 2)}
-
-PLAN_SKELETON:
-${JSON.stringify(skeleton, null, 2)}
-
-ALLOWED_EXERCISES:
-${JSON.stringify(allowedExercises, null, 2)}
+SEMANA_A_RELLENAR:
+${JSON.stringify(compactWeekSkeleton(week), null, 2)}
 
 FORBIDDEN_EXERCISES:
-${JSON.stringify(skeleton.forbiddenExercises, null, 2)}
+${JSON.stringify(skeleton.forbiddenExercises.slice(0, 24), null, 2)}
 
-REGLA DE TAMAÑO:
-- Genera un JSON completo pero compacto.
-- Mantén cada descripción en 1 o 2 frases accionables.
-- Mantén cada array visual con máximo 3 bullets.
+SALIDA:
+- Devuelve SOLO la semana ${week.weekNumber} como JSON compatible con WeekSchema.
+- Mantén títulos, ubicación, stimulusType, dayNumber y duración del skeleton.
+- Usa 3 ejercicios de calentamiento total, 3-4 en mainBlock, 1-2 en finalBlock y 2 en cooldown.
 - No agregues explicaciones fuera del JSON.${correctionPrompt}`
       }
     ],
@@ -1846,7 +1947,7 @@ REGLA DE TAMAÑO:
       }
     ],
     text: {
-      format: zodTextFormat(TrainingPlanSchema, 'training_plan')
+      format: zodTextFormat(WeekSchema, 'training_plan_week')
     }
   });
 }
@@ -1886,15 +1987,14 @@ export async function POST(request: Request) {
 
   try {
     let validationHints: string[] = [];
-    let lastLibraryTraceability: LibraryTraceability | undefined;
+    let lastLibraryTraceability: LibraryTraceability | undefined = await getLibraryTraceabilityForPlan({
+      client,
+      profile,
+      vectorStoreId
+    });
 
     if (shouldUseFastPlanBuilder(profile)) {
-      const libraryTraceability = await getLibraryTraceabilityForPlan({
-        client,
-        profile,
-        vectorStoreId
-      });
-      const plan = withQualityScores(buildFallbackPlan(profile, libraryTraceability, skeleton), profile);
+      const plan = withQualityScores(buildFallbackPlan(profile, lastLibraryTraceability, skeleton), profile);
       const fastPlanViolations = [
         ...getPlanValidationViolations(plan, profile),
         ...getQualityViolations(plan, profile)
@@ -1915,30 +2015,57 @@ export async function POST(request: Request) {
     }
 
     for (let attempt = 1; attempt <= MAX_PLAN_GENERATION_ATTEMPTS; attempt += 1) {
-      const response = await generatePlanWithResponses({
-        client,
-        profile,
-        analysis,
-        selectedTemplate,
-        skeleton,
-        vectorStoreId,
-        validationHints
-      });
+      const generatedWeeks: TrainingPlan['weeks'] = [];
+      let attemptTraceability: LibraryTraceability | undefined = lastLibraryTraceability;
+      let weekParseFailed = false;
 
-      const libraryTraceability = extractLibraryTraceability(response);
-      lastLibraryTraceability = libraryTraceability.usedFileSearch
-        ? libraryTraceability
-        : lastLibraryTraceability;
+      for (const week of skeleton.weeks) {
+        const response = await generateWeekWithResponses({
+          client,
+          profile,
+          analysis,
+          selectedTemplate,
+          skeleton,
+          week,
+          vectorStoreId,
+          validationHints
+        });
 
-      if (!response.output_parsed) {
-        validationHints = [
-          'OpenAI no devolvió un plan estructurado compatible con el schema; genera un JSON más compacto y completo.'
-        ];
-        break;
+        attemptTraceability = mergeLibraryTraceability(
+          attemptTraceability,
+          extractLibraryTraceability(response)
+        );
+
+        if (!response.output_parsed) {
+          weekParseFailed = true;
+          validationHints = [
+            `Semana ${week.weekNumber}: OpenAI no devolvió una semana estructurada compatible con el schema; genera JSON más compacto y completo.`
+          ];
+          break;
+        }
+
+        generatedWeeks.push(response.output_parsed);
       }
 
+      if (weekParseFailed) {
+        continue;
+      }
+
+      lastLibraryTraceability = attemptTraceability;
       const plan = withQualityScores(
-        normalizePlan(response.output_parsed, profile, libraryTraceability, skeleton),
+        normalizePlan(
+          buildPlanShell({
+            profile,
+            analysis,
+            selectedTemplate,
+            skeleton,
+            libraryTraceability: attemptTraceability,
+            weeks: generatedWeeks
+          }),
+          profile,
+          attemptTraceability,
+          skeleton
+        ),
         profile
       );
       const validationViolations = [
