@@ -16,6 +16,11 @@ import {
   type WeekSkeleton
 } from '@/lib/planning/build-plan-skeleton';
 import {
+  OPENAI_RATE_LIMIT_MESSAGE,
+  isOpenAIRateLimitError,
+  withOpenAIRetry
+} from '@/lib/ai/openai-retry';
+import {
   PLAN_SESSION_MAX_OUTPUT_TOKENS,
   PLAN_SKELETON_MAX_OUTPUT_TOKENS
 } from '@/lib/ai/token-budget';
@@ -1853,7 +1858,7 @@ async function getLibraryTraceabilityForPlan({
   profile: UserProfile;
   vectorStoreId: string;
 }) {
-  const response = await client.responses.create({
+  const response = await withOpenAIRetry(() => client.responses.create({
     model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
     max_output_tokens: Math.min(700, PLAN_SKELETON_MAX_OUTPUT_TOKENS),
     input: [
@@ -1883,7 +1888,7 @@ async function getLibraryTraceabilityForPlan({
         vector_store_ids: [vectorStoreId]
       }
     ]
-  });
+  }));
 
   return extractLibraryTraceability(response);
 }
@@ -1914,7 +1919,7 @@ async function generateWeekWithResponses({
     : '';
   const allowedExercises = week.sessions.flatMap((session) => session.exerciseCandidates);
 
-  return client.responses.parse({
+  return withOpenAIRetry(() => client.responses.parse({
     model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
     max_output_tokens: PLAN_SESSION_MAX_OUTPUT_TOKENS,
     input: [
@@ -1949,7 +1954,7 @@ SALIDA:
     text: {
       format: zodTextFormat(WeekSchema, 'training_plan_week')
     }
-  });
+  }));
 }
 
 export async function POST(request: Request) {
@@ -2099,6 +2104,13 @@ export async function POST(request: Request) {
       { status: 422 }
     );
   } catch (error) {
+    if (isOpenAIRateLimitError(error)) {
+      return NextResponse.json(
+        { error: OPENAI_RATE_LIMIT_MESSAGE, code: 'openai_rate_limited' },
+        { status: 429 }
+      );
+    }
+
     const message = error instanceof Error ? error.message : 'Unable to generate plan.';
     return NextResponse.json({ error: message }, { status: 500 });
   }

@@ -30,6 +30,22 @@ const generationSteps = [
   }
 ];
 
+const RATE_LIMIT_UI_MESSAGE =
+  'Llegamos al límite temporal de generación. Espera unos segundos y reintenta.';
+
+function getFriendlyGenerationError(message: string) {
+  const normalized = message.toLowerCase();
+  const isTechnicalRateLimit =
+    normalized.includes('429') ||
+    normalized.includes('rate limit') ||
+    normalized.includes('tokens per min') ||
+    normalized.includes('requested') ||
+    normalized.includes('organization') ||
+    normalized.includes('platform.openai.com');
+
+  return isTechnicalRateLimit ? RATE_LIMIT_UI_MESSAGE : message;
+}
+
 export default function GeneratingPlanPage() {
   const router = useRouter();
   const hasStartedRef = useRef(false);
@@ -74,7 +90,11 @@ export default function GeneratingPlanPage() {
         }
 
         if (!response.ok || !data.plan) {
-          throw new Error(data.error ?? 'No pudimos generar tu plan.');
+          const message =
+            data.code === 'openai_rate_limited'
+              ? RATE_LIMIT_UI_MESSAGE
+              : getFriendlyGenerationError(data.error ?? 'No pudimos generar tu plan.');
+          throw new Error(message);
         }
 
         saveTrainingPlan(data.plan);
@@ -86,8 +106,16 @@ export default function GeneratingPlanPage() {
           router.push('/plan');
         }, 1200);
       } catch (caughtError) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error(caughtError);
+        }
+
         setStatus('error');
-        setError(caughtError instanceof Error ? caughtError.message : 'No pudimos generar tu plan.');
+        setError(
+          caughtError instanceof Error
+            ? getFriendlyGenerationError(caughtError.message)
+            : 'No pudimos generar tu plan.'
+        );
       }
     }
 
