@@ -1,4 +1,5 @@
 import type { UserProfile } from '@/lib/profile';
+import { MAX_EXERCISE_CANDIDATES_PER_SESSION } from '@/lib/ai/token-budget';
 import { analyzeProfile, type ProfileAnalysis } from '@/lib/planning/profile-analysis';
 import { EXERCISE_CATALOG, type CatalogExercise } from '@/lib/planning/exercise-catalog';
 import { selectPlanTemplate, type PlanTemplate } from '@/lib/planning/plan-templates';
@@ -77,6 +78,7 @@ const DAY_LABELS: Record<string, string> = {
 };
 
 const FALLBACK_DAY_LABELS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+export const PLAN_SKELETON_CANDIDATE_LIMIT = MAX_EXERCISE_CANDIDATES_PER_SESSION;
 
 function hasEquipment(exercise: CatalogExercise, analysis: ProfileAnalysis) {
   return exercise.requiredEquipment.every((equipment) => {
@@ -179,7 +181,25 @@ function getCandidateExercises(stimulusType: StimulusType, analysis: ProfileAnal
       ) && isExerciseAllowed(exercise, analysis)
   );
 
-  return Array.from(new Map([...universalWarmup, ...direct, ...support].map((exercise) => [exercise.id, exercise])).values());
+  const candidates = Array.from(
+    new Map([...universalWarmup, ...direct, ...support].map((exercise) => [exercise.id, exercise])).values()
+  );
+
+  return candidates
+    .sort((first, second) => {
+      const firstDirect = first.stimulusTypes.includes(stimulusType) ? 0 : 1;
+      const secondDirect = second.stimulusTypes.includes(stimulusType) ? 0 : 1;
+      const riskOrder: Record<CatalogExercise['riskLevel'], number> = { bajo: 0, medio: 1, alto: 2 };
+      const equipmentOrder = first.requiredEquipment.length - second.requiredEquipment.length;
+
+      return (
+        firstDirect - secondDirect ||
+        riskOrder[first.riskLevel] - riskOrder[second.riskLevel] ||
+        equipmentOrder ||
+        first.name.localeCompare(second.name, 'es')
+      );
+    })
+    .slice(0, PLAN_SKELETON_CANDIDATE_LIMIT);
 }
 
 function toCandidate(exercise: CatalogExercise): SkeletonExerciseCandidate {

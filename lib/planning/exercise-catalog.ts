@@ -464,3 +464,7 @@ export function getExerciseById(id: string) {
 export function getExercisesForStimulus(stimulusType: StimulusType) {
   return EXERCISE_CATALOG.filter((exercise) => exercise.stimulusTypes.includes(stimulusType));
 }
+
+export function getExerciseCatalogSize() {
+  return EXERCISE_CATALOG.length;
+}
