@@ -19,6 +19,7 @@ import {
   validatePlanSafety,
   type SafetyViolation
 } from '@/lib/ai/plan-safety';
+import { extractLibraryTraceability, type LibraryTraceability } from '@/lib/ai/response-sources';
 import type { TrainingPlan, Week, Session, Exercise } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
 
@@ -198,7 +199,8 @@ function toExercise(fast: FastExercise): Exercise {
 function buildPlan(
   metadata: FastPlanMetadata,
   fastWeeks: FastWeek[],
-  profile: UserProfile
+  profile: UserProfile,
+  traceability: LibraryTraceability = { usedFileSearch: false, sourceNames: [] }
 ): TrainingPlan {
   const now = new Date().toISOString();
   const sortedWeeks = [...fastWeeks].sort((a, b) => a.weekNumber - b.weekNumber);
@@ -265,27 +267,132 @@ function buildPlan(
     weeks,
     status: 'active',
     createdAt: now,
-    usedFileSearch: false,
-    librarySources: null,
+    // SOLO marcamos la badge cuando OpenAI realmente citó chunks del vector store.
+    // Si usedFileSearch=true pero sourceNames vacío → el modelo no usó la biblioteca de verdad.
+    usedFileSearch: traceability.usedFileSearch && traceability.sourceNames.length > 0,
+    librarySources: traceability.sourceNames.length > 0 ? traceability.sourceNames : null,
     qualityScores: null
   };
 }
 
-async function generateMetadata(
+const GROUNDING_PROMPT = `Eres un asistente que consulta una biblioteca de fuentes profesionales de entrenamiento de escalada (Eva López, Eric Hörst, Power Company, Lattice, Climb Strong, investigación RED-S, etc).
+
+Tu trabajo: para el perfil de escalador dado, extraer de la biblioteca los principios, protocolos y prescripciones aplicables al diseño de su mesociclo.
+
+Responde:
+- En bullets concisos. No prosa larga.
+- Cita ejercicios y protocolos específicos cuando aparezcan en las fuentes (ej. "Eva López — Maximum Hangs en 10 segundos al límite").
+- Si la fuente discute precauciones (dedos, RED-S, menores, lesiones), inclúyelas EXPLÍCITAS.
+- Si la biblioteca no tiene información relevante para una pregunta específica, dilo. NO inventes.
+
+Devuelve un brief de máximo 12 bullets.`;
+
+function extractResponsesText(response: unknown): string {
+  // Soporta tanto el getter conveniente output_text como el array output[].
+  const value = response as { output_text?: string; output?: Array<unknown> };
+  if (typeof value.output_text === 'string' && value.output_text.trim().length > 0) {
+    return value.output_text;
+  }
+  if (!Array.isArray(value.output)) return '';
+  const chunks: string[] = [];
+  for (const item of value.output) {
+    const node = item as {
+      type?: string;
+      content?: Array<{ type?: string; text?: string }>;
+    };
+    if (node.type === 'message' && Array.isArray(node.content)) {
+      for (const part of node.content) {
+        if (part.type === 'output_text' && typeof part.text === 'string') {
+          chunks.push(part.text);
+        }
+      }
+    }
+  }
+  return chunks.join('\n');
+}
+
+async function groundFromLibrary(
   client: OpenAI,
   model: string,
   profile: UserProfile
+): Promise<{ context: string; traceability: LibraryTraceability }> {
+  const empty: LibraryTraceability = { usedFileSearch: false, sourceNames: [] };
+  const vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID;
+
+  if (!vectorStoreId) {
+    return { context: '', traceability: empty };
+  }
+
+  try {
+    const response = await client.responses.create({
+      model,
+      max_output_tokens: 900,
+      input: [
+        { role: 'system', content: GROUNDING_PROMPT },
+        {
+          role: 'user',
+          content: `Para este escalador, extrae de la biblioteca los principios y protocolos relevantes para diseñar su plan. Cita las fuentes.
+
+Perfil:
+${profileToPrompt(profile)}`
+        }
+      ],
+      tools: [
+        {
+          type: 'file_search',
+          vector_store_ids: [vectorStoreId]
+        }
+      ]
+    });
+
+    const context = extractResponsesText(response);
+    const traceability = extractLibraryTraceability(response);
+
+    return { context, traceability };
+  } catch (error) {
+    // Silenciamos errores de RAG para no romper la generación si File Search falla.
+    console.warn(
+      JSON.stringify({
+        kind: 'plan_grounding_failed',
+        message: error instanceof Error ? error.message : 'unknown'
+      })
+    );
+    return { context: '', traceability: empty };
+  }
+}
+
+type ChatMessage =
+  | { role: 'system'; content: string }
+  | { role: 'user'; content: string };
+
+async function generateMetadata(
+  client: OpenAI,
+  model: string,
+  profile: UserProfile,
+  groundingContext: string
 ): Promise<FastPlanMetadata> {
+  const messages: ChatMessage[] = [{ role: 'system', content: METADATA_PROMPT }];
+
+  if (groundingContext) {
+    messages.push({
+      role: 'system',
+      content: `BIBLIOTECA — principios y protocolos relevantes para este atleta (extraídos de fuentes reales del vector store, citados con [fuente]):
+
+${groundingContext}
+
+Usa estos principios cuando definas mesociclo, semanas, áreas de foco, recoveryGuidelines y safetyRules. Si una recomendación contradice algo de la biblioteca, prioriza la biblioteca.`
+    });
+  }
+
+  messages.push({
+    role: 'user',
+    content: `Diseña la estructura meta de un plan de ${profile.planDuration} semanas para este escalador con ${profile.daysPerWeek} sesiones por semana.\n\nPerfil:\n${profileToPrompt(profile)}`
+  });
+
   const completion = await client.chat.completions.parse({
     model,
     response_format: zodResponseFormat(FastPlanMetadataSchema, 'metadata'),
-    messages: [
-      { role: 'system', content: METADATA_PROMPT },
-      {
-        role: 'user',
-        content: `Diseña la estructura meta de un plan de ${profile.planDuration} semanas para este escalador con ${profile.daysPerWeek} sesiones por semana.\n\nPerfil:\n${profileToPrompt(profile)}`
-      }
-    ]
+    messages
   });
 
   const metadata = completion.choices[0]?.message.parsed;
@@ -404,7 +511,16 @@ export async function POST(request: Request) {
   const model = process.env.OPENAI_PLAN_MODEL ?? 'gpt-4o';
 
   try {
-    const metadata = await generateMetadata(client, model, profile);
+    // 1. Grounding desde la biblioteca (File Search vía Responses API).
+    //    Solo se hace UNA vez por plan, no por semana, para no inflar latencia.
+    const { context: groundingContext, traceability } = await groundFromLibrary(
+      client,
+      model,
+      profile
+    );
+
+    // 2. Metadata estructurada (con el grounding como contexto adicional).
+    const metadata = await generateMetadata(client, model, profile, groundingContext);
 
     // Si la metadata trajo menos o más semanas, ajustamos a planDuration
     const themes = metadata.weekThemes
@@ -423,11 +539,11 @@ export async function POST(request: Request) {
       });
     }
 
-    // Generar todas las semanas EN PARALELO (primer intento)
+    // 3. Generar todas las semanas EN PARALELO (sin RAG — la velocidad importa).
     let fastWeeks = await Promise.all(
       themes.map((theme) => generateWeek(client, model, profile, theme))
     );
-    let plan = buildPlan(metadata, fastWeeks, profile);
+    let plan = buildPlan(metadata, fastWeeks, profile, traceability);
 
     // Validación de seguridad enforceable server-side
     let safety = validatePlanSafety(plan, profile);
@@ -453,7 +569,7 @@ export async function POST(request: Request) {
       );
 
       fastWeeks = regenerated;
-      plan = buildPlan(metadata, fastWeeks, profile);
+      plan = buildPlan(metadata, fastWeeks, profile, traceability);
       safety = validatePlanSafety(plan, profile);
 
       if (!safety.ok) {
