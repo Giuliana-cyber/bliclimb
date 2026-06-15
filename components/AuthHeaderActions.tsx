@@ -31,14 +31,14 @@ export function AuthHeaderActions() {
 
   return (
     <div className="flex items-center gap-2">
-      <button
-        type="button"
+      <Link
+        href="/settings"
         className="grid size-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/76 transition hover:border-brand-cyan/60 hover:text-brand-cyan"
         aria-label="Abrir ajustes"
         title="Ajustes"
       >
         <Settings aria-hidden="true" size={19} strokeWidth={2.2} />
-      </button>
+      </Link>
       <Link
         href="/subscribe"
         className="grid size-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/76 transition hover:border-brand-cyan/60 hover:text-brand-cyan"

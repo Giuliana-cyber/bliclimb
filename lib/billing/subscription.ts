@@ -3,8 +3,10 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export const SUBSCRIPTION_COOKIE_NAME = 'bilclimb_subscription';
+export const FREE_PLAN_COOKIE_NAME = 'bilclimb_free_plan_used';
 
 const MONTH_IN_SECONDS = 60 * 60 * 24 * 32;
+const FIVE_YEARS_SECONDS = 60 * 60 * 24 * 365 * 5;
 
 export type SubscriptionCookiePayload = {
   subscriptionId: string;
@@ -107,6 +109,48 @@ export function requireSubscriptionAccess() {
     },
     { status: 402 }
   );
+}
+
+/**
+ * Gate específico para la generación de plan:
+ * - Si el usuario YA usó su primer plan gratis (cookie set) y NO tiene suscripción → 402.
+ * - Si no tiene suscripción y no ha usado su plan gratis → permitido (gratis la primera vez).
+ * - Si tiene suscripción → permitido siempre.
+ *
+ * Después de generar exitosamente, llama markFreePlanUsed() para setear la cookie.
+ */
+export function requirePlanGenerationAccess() {
+  const cookieStore = cookies();
+  const hasFreePlanUsed = cookieStore.get(FREE_PLAN_COOKIE_NAME)?.value === '1';
+  const subscription = parseSubscriptionCookie(cookieStore.get(SUBSCRIPTION_COOKIE_NAME)?.value);
+  const hasActiveSubscription = Boolean(subscription);
+
+  if (hasActiveSubscription) {
+    return null;
+  }
+
+  if (!hasFreePlanUsed) {
+    return null;
+  }
+
+  return NextResponse.json(
+    {
+      code: 'subscription_required',
+      error:
+        'Ya usaste tu plan gratis. Suscríbete por $1/mes para regenerar y seguir entrenando con IA.'
+    },
+    { status: 402 }
+  );
+}
+
+export function markFreePlanUsed() {
+  cookies().set(FREE_PLAN_COOKIE_NAME, '1', {
+    httpOnly: true,
+    maxAge: FIVE_YEARS_SECONDS,
+    path: '/',
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production'
+  });
 }
 
 export const subscriptionCookieOptions = {

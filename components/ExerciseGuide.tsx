@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   Activity,
@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import type { Exercise } from '@/lib/plan';
 import { buildExerciseQuestion } from '@/components/ExerciseHelpLink';
+import { loadProfile } from '@/lib/profile';
 
 type ExerciseGuideProps = {
   exercise: Exercise;
@@ -115,9 +116,19 @@ function buildGuide(exercise: Exercise) {
 
 export function ExerciseGuide({ exercise, contextLabel }: ExerciseGuideProps) {
   const [open, setOpen] = useState(false);
+  const [character, setCharacter] = useState<'bill' | 'senda'>('bill');
+
+  useEffect(() => {
+    const profile = loadProfile();
+    if (profile?.character === 'senda' || profile?.character === 'bill') {
+      setCharacter(profile.character);
+    }
+  }, []);
+
+  const characterName = character === 'senda' ? 'Senda' : 'Bill';
   const params = new URLSearchParams({
-    character: 'senda',
-    ask: buildExerciseQuestion(exercise, contextLabel)
+    character,
+    ask: buildExerciseQuestion(exercise, contextLabel, character)
   });
   const guide = buildGuide(exercise);
 
@@ -211,7 +222,7 @@ export function ExerciseGuide({ exercise, contextLabel }: ExerciseGuideProps) {
                 onClick={() => setOpen(false)}
               >
                 <MessageCircleQuestion aria-hidden="true" size={17} />
-                Preguntar a Senda
+                Preguntar a {characterName}
               </Link>
             </div>
           </div>

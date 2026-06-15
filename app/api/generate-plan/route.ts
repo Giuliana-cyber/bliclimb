@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
 import { zodResponseFormat } from 'openai/helpers/zod';
-import { requireSubscriptionAccess } from '@/lib/billing/subscription';
+import { markFreePlanUsed, requirePlanGenerationAccess } from '@/lib/billing/subscription';
 import {
   FastPlanMetadataSchema,
   FastWeekSchema,
@@ -9,7 +9,11 @@ import {
   type FastWeek,
   type FastExercise
 } from '@/lib/ai/fast-plan-schema';
-import { PRO_STYLE_RULES, PRO_STYLE_EXAMPLES } from '@/lib/prompts/pro-style';
+import {
+  PRO_STYLE_RULES,
+  PRO_STYLE_EXAMPLES,
+  EQUIPMENT_ADAPTATION_RULES
+} from '@/lib/prompts/pro-style';
 import type { TrainingPlan, Week, Session, Exercise } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
 
@@ -100,6 +104,8 @@ REGLAS DE ESTRUCTURA META:
 const WEEK_PROMPT = `Eres un coach de escalada profesional del calibre de Lattice Training, Eric Hörst y Power Company. Generas UNA SEMANA de entrenamiento serio. NO inventas fluff genérico de gym.
 
 ${PRO_STYLE_RULES}
+
+${EQUIPMENT_ADAPTATION_RULES}
 
 ${PRO_STYLE_EXAMPLES}
 
@@ -297,6 +303,11 @@ async function generateWeek(
   profile: UserProfile,
   weekMeta: FastPlanMetadata['weekThemes'][number]
 ): Promise<FastWeek> {
+  const equipment = profile.equipment?.length ? profile.equipment : ['home'];
+  const equipmentLines = equipment
+    .map((item) => `- ${item}`)
+    .join('\n');
+
   const completion = await client.chat.completions.parse({
     model,
     max_tokens: 8000,
@@ -307,15 +318,21 @@ async function generateWeek(
         role: 'user',
         content: `Genera la SEMANA ${weekMeta.weekNumber} del plan completo.
 
-Tema de la semana: ${weekMeta.theme}
-Objetivo: ${weekMeta.objective}
-Áreas de foco: ${weekMeta.focusAreas.join(', ')}
-Nivel de carga: ${weekMeta.loadLevel}
-Es semana de descarga: ${weekMeta.deloadWeek ? 'sí' : 'no'}
+EQUIPO DISPONIBLE DEL ATLETA (única lista permitida):
+${equipmentLines}
 
-Debe tener exactamente ${profile.daysPerWeek} sesiones (campo "sessions" con ${profile.daysPerWeek} elementos), una por cada día disponible.
+⚠️ REGLA INVIOLABLE: cualquier ejercicio que requiera equipo FUERA de esta lista está PROHIBIDO. No incluyas hangboard, campus, muro, TRX, pesas, etc si no aparecen arriba. Aplica las reglas de adaptación de equipo del system prompt.
 
-Perfil del escalador:
+Contexto de la semana:
+- Tema: ${weekMeta.theme}
+- Objetivo: ${weekMeta.objective}
+- Áreas de foco: ${weekMeta.focusAreas.join(', ')}
+- Carga: ${weekMeta.loadLevel}
+- Descarga: ${weekMeta.deloadWeek ? 'sí' : 'no'}
+
+Debe tener EXACTAMENTE ${profile.daysPerWeek} sesiones (campo "sessions" con ${profile.daysPerWeek} elementos), una por cada día disponible.
+
+Perfil completo:
 ${profileToPrompt(profile)}
 
 Devuelve la semana con weekNumber=${weekMeta.weekNumber}.`
@@ -331,7 +348,7 @@ Devuelve la semana con weekNumber=${weekMeta.weekNumber}.`
 }
 
 export async function POST(request: Request) {
-  const subscriptionError = requireSubscriptionAccess();
+  const subscriptionError = requirePlanGenerationAccess();
   if (subscriptionError) return subscriptionError;
 
   if (!process.env.OPENAI_API_KEY) {
@@ -381,6 +398,7 @@ export async function POST(request: Request) {
     );
 
     const plan = buildPlan(metadata, fastWeeks, profile);
+    markFreePlanUsed();
     return NextResponse.json({ plan });
   } catch (caughtError) {
     const message =

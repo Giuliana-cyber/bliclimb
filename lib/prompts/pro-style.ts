@@ -70,36 +70,56 @@ NOTAS PERSONALES (cuando aplique):
 Agrega una "NOTA:" corta en notes explicando POR QUÉ existe el ejercicio.
 Ejemplo: "NOTA: este ejercicio enseña a generar momentum con la pierna cuando el pie está en posición incómoda."`;
 
-export const PRO_STYLE_EXAMPLES = `EJEMPLO REAL DE PARTE PRINCIPAL (estilo objetivo):
+export const PRO_STYLE_EXAMPLES = `EJEMPLO SOLO DE ESTILO Y FORMATO (NO COPIAR EJERCICIOS LITERALES):
 
-Día 1 — Mesociclo de carga (escalador intermedio-avanzado)
+Los ejemplos abajo muestran TONO, ESTRUCTURA, NIVEL DE DETALLE.
+Asumen que el atleta tiene hangboard + muro de boulder. NO copies estos ejercicios si el atleta NO tiene ese equipo. Selecciona ejercicios coherentes con el equipo declarado en el perfil.
 
-Parte principal:
-
-1. Suspensiones submáximas
-- description: "Suspéndete 10seg en regleta de 22mm en agarre semi-arqueo al 60-70% de tu peso corporal. Mantén los pies en el suelo y regula la intensidad con las puntas (más o menos peso). Repite 4 veces, después cambia a agarre extensión y luego arqueo completo."
-- sets: 12 (4 semi-arqueo + 4 extensión + 4 arqueo completo)
-- reps: "10 seg"
-- rest: "50 seg entre suspensiones"
-- intensity: "60-70% BW"
-- notes: "RECUERDA HACER ESTO 2-3 VECES AL DÍA todos los días (incluso de descanso), dejando 6h entre realizaciones. Solo te tomará 22 min totales."
+Patrón de ejercicio (formato objetivo):
+- name: "Suspensiones submáximas en regleta 22mm — semi-arqueo"
+- description: "Suspéndete 10seg en regleta de 22mm en agarre semi-arqueo al 60-70% de tu peso corporal. Regula intensidad con las puntas de los pies. Repite 4 veces y rota por los 3 tipos de agarre."
+- sets: 12 · reps: "10 seg" · rest: "50 seg" · intensity: "60-70% BW"
+- notes: "RECUERDA RETRACCIÓN ESCAPULAR PARA PROTEGER HOMBROS."
 - equipment: "hangboard regleta 22mm"
 
-2. Bloque trabajado (proyecto 80-90%)
-- description: "Busca 4 bloques cortos (4-6 mov) que estén entre 80-90% de tu capacidad max. Dedica 15 min por bloque. Trabaja movimientos aislados primero, luego intenta encadenar."
-- sets: 4
-- reps: "15 min por bloque"
-- rest: "Descanso suficiente entre intentos"
+Patrón de prescripción de bloque (si hay muro):
+- name: "Bloque trabajado — proyecto 80-90%"
+- description: "Busca 4 bloques cortos (4-6 mov) entre 80-90% de tu capacidad max. Dedica 15 min por bloque trabajando movimientos aislados antes de encadenar."
 - intensity: "80-90% capacidad max"
-- notes: "¡LA IDEA NO ES TRABAJAR BAJO FATIGA. ES IMPORTANTE QUE DESCANSES BIEN ENTRE INTENTOS!"
-- equipment: "muro de boulder"
+- notes: "¡LA IDEA NO ES TRABAJAR BAJO FATIGA. DESCANSA BIEN ENTRE INTENTOS!"
 
-3. Resistencia corta
-- description: "3 secuencias de 15-20 mov al 80% de intensidad. Cada secuencia prioriza un tipo de agarre diferente: primera pinzas, segunda regletas, tercera romos. Le das 3 pegues a cada secuencia."
-- sets: 3
-- reps: "3x15-20 mov"
-- rest: "2 min entre pegue, 5 min entre secuencias"
-- intensity: "80%"
-- equipment: "muro de boulder o ruta"
+OBSERVA EL ESTILO: nombres técnicos, prescripciones exactas, notas en MAYÚSCULAS para cues críticos. Pero los EJERCICIOS específicos los eliges TÚ según el equipo real del atleta.`;
 
-OBSERVA: nombres técnicos, prescripciones exactas, descripciones que parecen escritas por alguien que sabe escalar, notas con MAYÚSCULAS para alertas críticas.`;
+export const EQUIPMENT_ADAPTATION_RULES = `MAPEO ESTRICTO DE EQUIPO → EJERCICIOS PERMITIDOS:
+
+Si el atleta NO TIENE algo, esos ejercicios están PROHIBIDOS. Sin excepciones.
+
+- hangboard / fingerboard: necesario para "suspensiones máximas/submáximas", "max hangs", "repeaters", "open/closed crimp work" en tabla.
+  Sin hangboard → SUSTITUYE por: trabajo de dedos en muro con regletas si hay muro; sin muro, NO hagas fuerza de dedos directa, usa solo extensores y aperturas con banda.
+
+- campus board: necesario para "rebotes campus", "campus moves", "dominadas desiguales en campus".
+  Sin campus → SUSTITUYE por: tracciones estrictas con peso corporal si hay barra; trabajo de potencia en muro fácil con doble dyno controlado si hay muro; sin nada de eso, NO hagas potencia tipo campus.
+
+- muro de boulder / gym de escalada: necesario para "bloque trabajado", "circuito de bloques", "resistencia corta en muro", "secuencias", "bloque libre", "4x4", "contraste de estilos".
+  Sin muro indoor → SUSTITUYE por: sesiones de roca si hay acceso ("rock"); si solo hay home/casa, el plan se centra en acondicionamiento, técnica de pies en suelo, movilidad, antagonistas y fuerza general SIN simular escalada.
+
+- barra de dominadas (pullup_bar): necesario para "dominadas estrictas", "abdominales en suspensión", "frenchies", "negativas".
+  Sin barra → SUSTITUYE por: filas invertidas en mesa, planchas, core en suelo.
+
+- bandas elásticas (bands): para activación, extensores, rotación externa, antagonistas.
+  Sin bandas → SUSTITUYE por: ejercicios isométricos sin equipo, calistenia.
+
+- TRX / anillas: para "tijera TRX", "rows TRX", "fortalecimiento tríceps TRX".
+  Sin TRX → SUSTITUYE por: ejercicios análogos con peso corporal o bandas.
+
+- gym de pesas (weights): para mancuernas, barbell, fortalecimiento de extensores con peso.
+  Sin pesas → SUSTITUYE por: ejercicios con peso corporal o bandas.
+
+- solo roca (rock): el plan se basa en sesiones de roca + acondicionamiento en casa entre sesiones.
+
+- casa sin equipo (home): SOLO peso corporal, técnica seca, movilidad, yoga, core, antagonistas.
+
+REGLA DE ORO:
+Antes de incluir un ejercicio, pregúntate: "¿puede este atleta hacerlo HOY con lo que tiene?". Si la respuesta es NO, ese ejercicio NO va.
+
+Si el equipo es muy limitado (ej. solo casa o solo bandas), el plan NO es menos serio — simplemente cambia el foco a técnica de pies, movilidad, antagonistas, core, propiocepción, fuerza general útil para escalar. Sigue siendo plan de coach pro, solo adaptado al contexto.`;
