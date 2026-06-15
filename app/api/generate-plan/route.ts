@@ -14,6 +14,11 @@ import {
   PRO_STYLE_EXAMPLES,
   EQUIPMENT_ADAPTATION_RULES
 } from '@/lib/prompts/pro-style';
+import {
+  buildSafetyRetryMessage,
+  validatePlanSafety,
+  type SafetyViolation
+} from '@/lib/ai/plan-safety';
 import type { TrainingPlan, Week, Session, Exercise } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
 
@@ -166,21 +171,14 @@ function toExercise(fast: FastExercise): Exercise {
     requiredEquipment: fast.equipment ? [fast.equipment] : null,
     riskLevel: null,
     objective: null,
-    prescription:
-      [
-        fast.sets ? `${fast.sets} series` : null,
-        fast.reps,
-        fast.rest ? `descanso ${fast.rest}` : null
-      ]
-        .filter(Boolean)
-        .join(' · ') || null,
+    prescription: null,
     sets: fast.sets,
     reps: fast.reps,
-    duration: fast.reps,
+    duration: null,
     rest: fast.rest,
     intensity: fast.intensity,
     intensityPercent: null,
-    rpeTarget: fast.intensity,
+    rpeTarget: null,
     tempo: null,
     notes: fast.notes,
     timerSeconds: null,
@@ -301,22 +299,19 @@ async function generateWeek(
   client: OpenAI,
   model: string,
   profile: UserProfile,
-  weekMeta: FastPlanMetadata['weekThemes'][number]
+  weekMeta: FastPlanMetadata['weekThemes'][number],
+  retryCorrection: string | null = null
 ): Promise<FastWeek> {
   const equipment = profile.equipment?.length ? profile.equipment : ['home'];
   const equipmentLines = equipment
     .map((item) => `- ${item}`)
     .join('\n');
 
-  const completion = await client.chat.completions.parse({
-    model,
-    max_tokens: 8000,
-    response_format: zodResponseFormat(FastWeekSchema, 'week'),
-    messages: [
-      { role: 'system', content: WEEK_PROMPT },
-      {
-        role: 'user',
-        content: `Genera la SEMANA ${weekMeta.weekNumber} del plan completo.
+  const messages = [
+    { role: 'system' as const, content: WEEK_PROMPT },
+    {
+      role: 'user' as const,
+      content: `Genera la SEMANA ${weekMeta.weekNumber} del plan completo.
 
 EQUIPO DISPONIBLE DEL ATLETA (única lista permitida):
 ${equipmentLines}
@@ -336,8 +331,18 @@ Perfil completo:
 ${profileToPrompt(profile)}
 
 Devuelve la semana con weekNumber=${weekMeta.weekNumber}.`
-      }
-    ]
+    }
+  ];
+
+  if (retryCorrection) {
+    messages.push({ role: 'user' as const, content: retryCorrection });
+  }
+
+  const completion = await client.chat.completions.parse({
+    model,
+    max_tokens: 8000,
+    response_format: zodResponseFormat(FastWeekSchema, 'week'),
+    messages
   });
 
   const week = completion.choices[0]?.message.parsed;
@@ -345,6 +350,32 @@ Devuelve la semana con weekNumber=${weekMeta.weekNumber}.`
     throw new Error(`OpenAI no devolvió la semana ${weekMeta.weekNumber}.`);
   }
   return week;
+}
+
+function logSafetyViolations(
+  attempt: 'first' | 'retry',
+  profile: UserProfile,
+  violations: SafetyViolation[]
+) {
+  // Stub de observability — un Sentry/Logtail aterriza aquí en el futuro.
+  // Lo escribimos como JSON estructurado para que sea parseable.
+  console.warn(
+    JSON.stringify({
+      kind: 'plan_safety_violation',
+      attempt,
+      profile: {
+        id: profile.id,
+        age: profile.age,
+        climbingTime: profile.climbingTime,
+        currentFingerPain: profile.currentFingerPain
+      },
+      violations: violations.map((v) => ({
+        rule: v.rule,
+        reason: v.reason,
+        trigger: v.triggerExercise
+      }))
+    })
+  );
 }
 
 export async function POST(request: Request) {
@@ -392,12 +423,57 @@ export async function POST(request: Request) {
       });
     }
 
-    // Generar todas las semanas EN PARALELO
-    const fastWeeks = await Promise.all(
+    // Generar todas las semanas EN PARALELO (primer intento)
+    let fastWeeks = await Promise.all(
       themes.map((theme) => generateWeek(client, model, profile, theme))
     );
+    let plan = buildPlan(metadata, fastWeeks, profile);
 
-    const plan = buildPlan(metadata, fastWeeks, profile);
+    // Validación de seguridad enforceable server-side
+    let safety = validatePlanSafety(plan, profile);
+
+    if (!safety.ok) {
+      logSafetyViolations('first', profile, safety.violations);
+
+      // Reintento: regeneramos SOLO las semanas que tienen el problema, con feedback correctivo.
+      const correction = buildSafetyRetryMessage(safety.violations);
+      const offendingWeekNumbers = new Set(
+        safety.violations
+          .map((v) => v.triggerExercise?.week)
+          .filter((w): w is number => typeof w === 'number')
+      );
+
+      const regenerated = await Promise.all(
+        themes.map(async (theme) => {
+          if (offendingWeekNumbers.size === 0 || offendingWeekNumbers.has(theme.weekNumber)) {
+            return generateWeek(client, model, profile, theme, correction);
+          }
+          return fastWeeks.find((w) => w.weekNumber === theme.weekNumber)!;
+        })
+      );
+
+      fastWeeks = regenerated;
+      plan = buildPlan(metadata, fastWeeks, profile);
+      safety = validatePlanSafety(plan, profile);
+
+      if (!safety.ok) {
+        // Segundo fallo → no devolvemos plan inseguro al usuario.
+        logSafetyViolations('retry', profile, safety.violations);
+        return NextResponse.json(
+          {
+            code: 'plan_unsafe_after_retry',
+            error:
+              'Generamos el plan pero contiene ejercicios que no son seguros para tu perfil. Estamos revisando esto — vuelve a intentarlo en un momento o ajusta tu perfil (lesiones, edad, tiempo escalando).',
+            violations: safety.violations.map((v) => ({
+              rule: v.rule,
+              reason: v.reason
+            }))
+          },
+          { status: 422 }
+        );
+      }
+    }
+
     markFreePlanUsed();
     return NextResponse.json({ plan });
   } catch (caughtError) {
