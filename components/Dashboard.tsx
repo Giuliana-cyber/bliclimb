@@ -9,7 +9,6 @@ import {
   BarChart3,
   ClipboardList,
   Flame,
-  MessageCircle,
   PencilLine,
   Sparkles,
   TimerReset
@@ -27,6 +26,7 @@ import { Button } from '@/components/ui/Button';
 import { Stat } from '@/components/ui/Stat';
 import { Banner } from '@/components/ui/Banner';
 import { MountainBackdrop } from '@/components/ui/MountainBackdrop';
+import { CharacterAvatar } from '@/components/ui/CharacterAvatar';
 
 function formatRelativeDate(value: string) {
   const date = new Date(value);
@@ -204,9 +204,12 @@ export function Dashboard() {
 
       <Link href="/chat" className="block">
         <Card className="flex items-center gap-4 transition hover:border-brand-cyan/40">
-          <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-brand-cyan/14 text-brand-cyan">
-            <MessageCircle aria-hidden="true" size={22} strokeWidth={2.3} />
-          </div>
+          <CharacterAvatar
+            character={profile?.character === 'senda' ? 'senda' : 'bill'}
+            variant="avatar"
+            size="lg"
+            className="shrink-0"
+          />
           <div className="min-w-0 flex-1">
             <p className="font-bold leading-snug">¿Dudas? Habla con {characterName}</p>
             <p className="mt-1 text-sm text-white/58">

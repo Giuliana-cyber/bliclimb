@@ -10,11 +10,10 @@ import {
   ListChecks,
   SendHorizonal,
   Target,
-  UserRound,
   type LucideIcon
 } from 'lucide-react';
-import { Card } from '@/components/ui/Card';
 import { Banner } from '@/components/ui/Banner';
+import { CharacterAvatar } from '@/components/ui/CharacterAvatar';
 import { loadCheckIns } from '@/lib/checkin';
 import { loadTrainingPlan } from '@/lib/plan';
 import { loadProfile, saveProfile } from '@/lib/profile';
@@ -234,23 +233,28 @@ export function ChatInterface() {
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       className="flex min-h-[calc(100vh-9rem)] flex-col space-y-5"
     >
-      <header className="space-y-1.5">
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-cyan">Coach</p>
-        <h1 className="text-3xl font-extrabold leading-tight">Habla con {characterName}</h1>
-        <p className="text-sm leading-6 text-white/64">
-          Usa tu perfil, plan y check-ins más recientes como contexto.
-        </p>
+      <header className="flex items-start gap-4">
+        <CharacterAvatar character={character} variant="avatar" size="xl" />
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-cyan">Coach</p>
+          <h1 className="text-3xl font-extrabold leading-tight">Habla con {characterName}</h1>
+          <p className="text-sm leading-6 text-white/64">
+            Usa tu perfil, plan y check-ins más recientes como contexto.
+          </p>
+        </div>
       </header>
 
       <div className="grid grid-cols-2 gap-2">
         <CharacterButton
           active={character === 'bill'}
+          character="bill"
           label="Bill"
           description="Directo y práctico"
           onClick={() => selectCharacter('bill')}
         />
         <CharacterButton
           active={character === 'senda'}
+          character="senda"
           label="Senda"
           description="Técnica y reflexiva"
           onClick={() => selectCharacter('senda')}
@@ -261,32 +265,42 @@ export function ChatInterface() {
         {messages.map((message, index) => (
           <div
             key={`${message.role}-${index}`}
-            className={[
-              'max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-soft',
-              message.role === 'user'
-                ? 'ml-auto whitespace-pre-wrap bg-gradient-cyan text-brand-dark'
-                : 'mr-auto border border-white/8 bg-brand-elevated/60 text-white/82'
-            ].join(' ')}
+            className={`flex items-end gap-2 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             {message.role === 'assistant' ? (
-              <FormattedCoachMessage content={message.content} />
-            ) : (
-              message.content
-            )}
-            {message.role === 'assistant' && message.metadata?.usedFileSearch ? (
-              <LibraryTraceBadge
-                sourceNames={message.metadata.sourceNames}
-                showSources={showDevelopmentSources}
-              />
+              <CharacterAvatar character={character} variant="avatar" size="sm" className="shrink-0" />
             ) : null}
+            <div
+              className={[
+                'max-w-[82%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-soft',
+                message.role === 'user'
+                  ? 'whitespace-pre-wrap bg-gradient-cyan text-brand-dark'
+                  : 'border border-white/8 bg-brand-elevated/60 text-white/82'
+              ].join(' ')}
+            >
+              {message.role === 'assistant' ? (
+                <FormattedCoachMessage content={message.content} />
+              ) : (
+                message.content
+              )}
+              {message.role === 'assistant' && message.metadata?.usedFileSearch ? (
+                <LibraryTraceBadge
+                  sourceNames={message.metadata.sourceNames}
+                  showSources={showDevelopmentSources}
+                />
+              ) : null}
+            </div>
           </div>
         ))}
         {loading ? (
-          <div className="mr-auto inline-flex items-center gap-2 rounded-2xl border border-white/8 bg-brand-elevated/60 px-4 py-3 text-sm text-white/60">
-            <span className="size-1.5 animate-pulse rounded-full bg-brand-cyan" />
-            <span className="size-1.5 animate-pulse rounded-full bg-brand-cyan [animation-delay:120ms]" />
-            <span className="size-1.5 animate-pulse rounded-full bg-brand-cyan [animation-delay:240ms]" />
-            <span className="ml-1">Pensando con tu contexto…</span>
+          <div className="flex items-end gap-2">
+            <CharacterAvatar character={character} variant="avatar" size="sm" className="shrink-0" />
+            <div className="inline-flex items-center gap-2 rounded-2xl border border-white/8 bg-brand-elevated/60 px-4 py-3 text-sm text-white/60">
+              <span className="size-1.5 animate-pulse rounded-full bg-brand-cyan" />
+              <span className="size-1.5 animate-pulse rounded-full bg-brand-cyan [animation-delay:120ms]" />
+              <span className="size-1.5 animate-pulse rounded-full bg-brand-cyan [animation-delay:240ms]" />
+              <span className="ml-1">Pensando con tu contexto…</span>
+            </div>
           </div>
         ) : null}
         <div ref={messagesEndRef} />
@@ -323,11 +337,13 @@ export function ChatInterface() {
 
 function CharacterButton({
   active,
+  character,
   label,
   description,
   onClick
 }: {
   active: boolean;
+  character: 'bill' | 'senda';
   label: string;
   description: string;
   onClick: () => void;
@@ -343,18 +359,9 @@ function CharacterButton({
           : 'border-white/10 bg-white/[0.03] text-white/70 hover:border-white/22 hover:bg-white/[0.05]'
       ].join(' ')}
     >
-      <span
-        className={[
-          'grid size-10 shrink-0 place-items-center rounded-xl',
-          active ? 'bg-gradient-cyan text-brand-dark shadow-glow' : 'bg-white/8 text-white/60'
-        ].join(' ')}
-      >
-        <UserRound aria-hidden="true" size={19} strokeWidth={2.3} />
-      </span>
+      <CharacterAvatar character={character} variant="avatar" size="md" className="shrink-0" />
       <span className="min-w-0">
-        <span className={`block text-sm font-extrabold ${active ? 'text-white' : 'text-white'}`}>
-          {label}
-        </span>
+        <span className="block text-sm font-extrabold text-white">{label}</span>
         <span className="block text-xs text-white/52">{description}</span>
       </span>
     </button>

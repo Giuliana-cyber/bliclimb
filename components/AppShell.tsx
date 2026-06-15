@@ -14,6 +14,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { AuthGate } from '@/components/AuthGate';
 import { AuthHeaderActions } from '@/components/AuthHeaderActions';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import { SubscribeCard } from '@/components/billing/SubscribeCard';
 
 type NavItem = {
@@ -86,7 +87,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-brand-dark/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 w-full max-w-3xl items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2" aria-label="BilClimb.ai inicio">
-            <BrandMark />
+            <BrandLogo size={28} />
             <span className="text-base font-extrabold tracking-tight text-white">
               BilClimb<span className="text-brand-cyan">.ai</span>
             </span>
@@ -143,22 +144,3 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function BrandMark() {
-  return (
-    <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
-      <defs>
-        <linearGradient id="brandmark" x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0%" stopColor="#00d4aa" />
-          <stop offset="100%" stopColor="#5ee9c5" />
-        </linearGradient>
-      </defs>
-      <rect x="1" y="1" width="24" height="24" rx="7" fill="url(#brandmark)" />
-      <path
-        d="M6 19 L11 9 L14.5 15 L18 12 L20 19 Z"
-        fill="#0a0c14"
-        stroke="#0a0c14"
-        strokeWidth="0.5"
-      />
-    </svg>
-  );
-}

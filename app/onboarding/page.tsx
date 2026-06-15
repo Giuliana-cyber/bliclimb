@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { saveProfile, type UserProfile } from '@/lib/profile';
 import { Card } from '@/components/ui/Card';
+import { CharacterAvatar } from '@/components/ui/CharacterAvatar';
 
 type DurationChoice = '' | '4' | '8' | '12' | 'starter';
 
@@ -514,18 +515,16 @@ export default function OnboardingPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             <CharacterCard
               active={form.character === 'bill'}
-              icon={Dumbbell}
+              character="bill"
               name="Bill"
               description="Entrenamiento general, fuerza, periodización."
-              tone="cyan"
               onClick={() => setForm((current) => ({ ...current, character: 'bill' }))}
             />
             <CharacterCard
               active={form.character === 'senda'}
-              icon={Mountain}
+              character="senda"
               name="Senda"
               description="Entrenamiento general + especialista en escalada femenina."
-              tone="mustard"
               onClick={() => setForm((current) => ({ ...current, character: 'senda' }))}
             />
           </div>
@@ -1087,34 +1086,30 @@ export default function OnboardingPage() {
 
 function CharacterCard({
   active,
-  icon: Icon,
+  character,
   name,
   description,
-  tone,
   onClick
 }: {
   active: boolean;
-  icon: typeof Mountain;
+  character: 'bill' | 'senda';
   name: string;
   description: string;
-  tone: 'cyan' | 'mustard';
   onClick: () => void;
 }) {
-  const iconClasses =
-    tone === 'cyan' ? 'bg-brand-cyan/14 text-brand-cyan' : 'bg-brand-mustard/14 text-brand-mustard';
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        'rounded-2xl border p-5 text-left transition-all duration-200 active:scale-[0.99]',
+        'relative overflow-hidden rounded-2xl border p-5 text-left transition-all duration-200 active:scale-[0.99]',
         active
           ? 'border-brand-cyan/60 bg-brand-cyan/[0.08] shadow-glow'
           : 'border-white/10 bg-white/[0.03] hover:border-white/22 hover:bg-white/[0.05]'
       )}
     >
-      <div className={cn('mb-5 grid h-24 place-items-center rounded-xl', iconClasses)}>
-        <Icon aria-hidden="true" size={40} strokeWidth={2.1} />
+      <div className="mb-4 grid h-44 place-items-end overflow-hidden rounded-xl bg-gradient-to-br from-white/[0.06] to-white/[0.02]">
+        <CharacterAvatar character={character} variant="full" className="h-44 w-auto mx-auto" />
       </div>
       <h3 className="text-xl font-extrabold">{name}</h3>
       <p className="mt-2 text-sm leading-6 text-white/70">{description}</p>

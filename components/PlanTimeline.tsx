@@ -180,32 +180,7 @@ export function PlanTimeline() {
         <Stat label="Estado" value={formatPlanStatus(plan.status)} tone="cyan" />
       </div>
 
-      {plan.athleteSummary || plan.riskSummary || plan.recoveryGuidelines?.length ? (
-        <div className="grid gap-2.5 sm:grid-cols-3">
-          {plan.athleteSummary ? <InfoCard label="Atleta" value={plan.athleteSummary} /> : null}
-          {plan.riskSummary ? <InfoCard label="Riesgo" value={plan.riskSummary} /> : null}
-          {plan.recoveryGuidelines?.length ? (
-            <InfoCard label="Recuperación" value={plan.recoveryGuidelines.join(' ')} />
-          ) : null}
-        </div>
-      ) : null}
-
-      {plan.planningRationale || plan.progressionModel || plan.qualityScores ? (
-        <div className="grid gap-2.5 sm:grid-cols-3">
-          {plan.planningRationale ? (
-            <InfoCard label="Razonamiento" value={plan.planningRationale} />
-          ) : null}
-          {plan.progressionModel ? (
-            <InfoCard label="Progresión" value={plan.progressionModel} />
-          ) : null}
-          {plan.qualityScores ? (
-            <InfoCard
-              label="Calidad"
-              value={`Variación ${plan.qualityScores.variationScore}/100 · Progresión ${plan.qualityScores.progressionScore}/100 · Seguridad ${plan.qualityScores.safetyScore}/100`}
-            />
-          ) : null}
-        </div>
-      ) : null}
+      <PlanDetailsAccordion plan={plan} />
 
       <div className="space-y-3">
         {plan.weeks.map((week) => {
@@ -428,6 +403,73 @@ export function PlanTimeline() {
         </Button>
       </div>
     </motion.section>
+  );
+}
+
+function PlanDetailsAccordion({ plan }: { plan: TrainingPlan }) {
+  const [open, setOpen] = useState(false);
+  const hasAny = Boolean(
+    plan.athleteSummary ||
+      plan.riskSummary ||
+      plan.recoveryGuidelines?.length ||
+      plan.progressionModel ||
+      plan.planningRationale ||
+      plan.qualityScores
+  );
+
+  if (!hasAny) return null;
+
+  return (
+    <Card className="!p-0">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-center justify-between gap-3 px-5 py-3.5 text-left transition hover:bg-white/[0.02]"
+        aria-expanded={open}
+      >
+        <span className="text-sm font-extrabold text-white/85">
+          Detalles del plan{' '}
+          <span className="text-white/45">— atleta, riesgo, progresión</span>
+        </span>
+        <ChevronDown
+          size={18}
+          className={cn('text-white/60 transition', open && 'rotate-180 text-brand-cyan')}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {open ? (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-2.5 border-t border-white/[0.06] p-5 sm:grid sm:grid-cols-2 sm:space-y-0 sm:gap-2.5">
+              {plan.athleteSummary ? (
+                <InfoCard label="Atleta" value={plan.athleteSummary} />
+              ) : null}
+              {plan.riskSummary ? <InfoCard label="Riesgo" value={plan.riskSummary} /> : null}
+              {plan.recoveryGuidelines?.length ? (
+                <InfoCard label="Recuperación" value={plan.recoveryGuidelines.join(' · ')} />
+              ) : null}
+              {plan.progressionModel ? (
+                <InfoCard label="Progresión" value={plan.progressionModel} />
+              ) : null}
+              {plan.planningRationale ? (
+                <InfoCard label="Razonamiento" value={plan.planningRationale} />
+              ) : null}
+              {plan.qualityScores ? (
+                <InfoCard
+                  label="Calidad"
+                  value={`Variación ${plan.qualityScores.variationScore}/100 · Progresión ${plan.qualityScores.progressionScore}/100 · Seguridad ${plan.qualityScores.safetyScore}/100`}
+                />
+              ) : null}
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </Card>
   );
 }
 
