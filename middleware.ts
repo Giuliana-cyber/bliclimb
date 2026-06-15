@@ -1,48 +1,57 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import { NextResponse, type NextFetchEvent, type NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
+import { updateSession } from '@/lib/supabase/middleware';
 
-const clerkEnabled = Boolean(
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY
-);
+const PROTECTED_PREFIXES = [
+  '/onboarding',
+  '/generating-plan',
+  '/plan',
+  '/session',
+  '/chat',
+  '/progress',
+  '/profile',
+  '/checkin',
+  '/api/chat',
+  '/api/generate-plan'
+];
 
-const isProtectedRoute = createRouteMatcher([
-  '/',
-  '/onboarding(.*)',
-  '/generating-plan(.*)',
-  '/plan(.*)',
-  '/session(.*)',
-  '/chat(.*)',
-  '/progress(.*)',
-  '/profile(.*)',
-  '/checkin(.*)',
-  '/api/chat(.*)',
-  '/api/generate-plan(.*)'
-]);
+const AUTH_PAGES = ['/sign-in', '/sign-up'];
 
-const clerkAuthMiddleware = clerkMiddleware(async (auth, request) => {
-  if (isProtectedRoute(request)) {
-    await auth.protect();
+function isProtectedPath(pathname: string) {
+  if (pathname === '/') {
+    return true;
   }
-});
+  return PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
 
-export function middleware(request: NextRequest, event: NextFetchEvent) {
+export async function middleware(request: NextRequest) {
   if (process.env.NODE_ENV === 'development' && request.nextUrl.hostname === '127.0.0.1') {
     const url = request.nextUrl.clone();
     url.hostname = 'localhost';
     return NextResponse.redirect(url);
   }
 
-  if (clerkEnabled) {
-    return clerkAuthMiddleware(request, event);
+  const { response, user } = await updateSession(request);
+  const { pathname } = request.nextUrl;
+
+  if (!user && isProtectedPath(pathname)) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/sign-in';
+    redirectUrl.searchParams.set('next', pathname);
+    return NextResponse.redirect(redirectUrl);
   }
 
-  return NextResponse.next();
+  if (user && AUTH_PAGES.includes(pathname)) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/';
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  return response;
 }
 
 export const config = {
   matcher: [
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    '/(api|trpc)(.*)',
-    '/__clerk/(.*)'
+    '/(api|trpc)(.*)'
   ]
 };

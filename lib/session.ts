@@ -192,3 +192,33 @@ export function clearLocalSession() {
   window.localStorage.removeItem(LOCAL_SESSION_STORAGE_KEY);
   clearSessionCookie();
 }
+
+type SupabaseLikeUser = {
+  id: string;
+  email?: string | null;
+  user_metadata?: { name?: string | null; full_name?: string | null } | null;
+};
+
+export function syncSupabaseSession(user: SupabaseLikeUser | null) {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  if (!user) {
+    clearLocalSession();
+    return null;
+  }
+
+  const name =
+    user.user_metadata?.full_name ||
+    user.user_metadata?.name ||
+    (user.email ? user.email.split('@')[0] : null) ||
+    'climber';
+
+  return createExternalSession({
+    provider: 'supabase',
+    providerUserId: user.id,
+    email: user.email,
+    name
+  });
+}

@@ -1,62 +1,83 @@
 'use client';
 
-import Link from 'next/link';
-import { AlertTriangle } from 'lucide-react';
-import { ClerkAuthGate } from '@/components/ClerkAuthGate';
-import { LocalAuthGate } from '@/components/LocalAuthGate';
+import { useEffect, useState } from 'react';
+import { ShieldCheck } from 'lucide-react';
+import type { User } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/client';
+import { syncSupabaseSession } from '@/lib/session';
+import { migrateLocalToSupabase } from '@/lib/db/migrate';
 
-const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
-const allowLocalAuth = process.env.NODE_ENV !== 'production';
+type Status = 'loading' | 'authenticated' | 'anonymous';
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
-  if (clerkEnabled) {
-    return <ClerkAuthGate>{children}</ClerkAuthGate>;
-  }
+  const [status, setStatus] = useState<Status>('loading');
+  const [user, setUser] = useState<User | null>(null);
 
-  if (!allowLocalAuth) {
-    return <MissingClerkConfig />;
-  }
+  useEffect(() => {
+    const supabase = createClient();
+    let cancelled = false;
 
-  return <LocalAuthGate>{children}</LocalAuthGate>;
-}
+    async function handleAuthUser(nextUser: User | null) {
+      if (cancelled) return;
+      setUser(nextUser);
+      setStatus(nextUser ? 'authenticated' : 'anonymous');
+      syncSupabaseSession(nextUser);
 
-function MissingClerkConfig() {
-  return (
-    <section className="mx-auto flex min-h-[70vh] max-w-xl flex-col justify-center">
-      <div className="rounded-lg border border-brand-mustard/34 bg-brand-mustard/10 p-6 shadow-glow">
-        <div className="flex items-start gap-4">
-          <div className="grid size-12 shrink-0 place-items-center rounded-md bg-brand-mustard text-brand-dark">
-            <AlertTriangle aria-hidden="true" size={24} strokeWidth={2.4} />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-brand-mustard">Clerk no está activo</p>
-            <h1 className="mt-2 text-3xl font-bold leading-tight text-white">
-              Falta configurar el login real
-            </h1>
-            <p className="mt-3 text-sm leading-6 text-white/70">
-              Este deploy no recibió las variables de Clerk durante el build. Agrega
-              <span className="font-bold"> NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY</span> y
-              <span className="font-bold"> CLERK_SECRET_KEY</span> en Vercel para Production y haz
-              redeploy.
-            </p>
-          </div>
-        </div>
+      if (nextUser) {
+        try {
+          await migrateLocalToSupabase(supabase, nextUser.id);
+        } catch (error) {
+          console.error('migration error', error);
+        }
+      }
+    }
 
-        <div className="mt-6 rounded-md border border-white/10 bg-brand-dark/54 p-4 text-sm leading-6 text-white/68">
-          Prueba rápida después del redeploy:
-          <span className="mt-2 block font-mono text-xs text-brand-cyan">
-            /api/auth/status
-          </span>
-          Debe devolver <span className="font-bold text-white">clerkConfigured: true</span>.
-        </div>
+    supabase.auth.getUser().then(({ data }) => handleAuthUser(data.user));
 
-        <Link
-          href="/sign-in"
-          className="mt-6 inline-flex w-full items-center justify-center rounded-md border border-white/12 px-4 py-3 text-sm font-bold text-white/78 transition hover:bg-white/[0.05]"
-        >
-          Revisar página de inicio de sesión
-        </Link>
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) =>
+      handleAuthUser(session?.user ?? null)
+    );
+
+    return () => {
+      cancelled = true;
+      subscription.subscription.unsubscribe();
+    };
+  }, []);
+
+  if (status === 'loading') {
+    return (
+      <div className="grid min-h-[50vh] place-items-center text-sm font-semibold text-white/54">
+        Abriendo tu cuenta...
       </div>
-    </section>
-  );
+    );
+  }
+
+  if (status === 'anonymous' || !user) {
+    return (
+      <section className="mx-auto flex min-h-[70vh] max-w-xl flex-col justify-center">
+        <div className="rounded-2xl border border-brand-cyan/24 bg-white/[0.04] p-6 shadow-glow">
+          <div className="flex items-start gap-4">
+            <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-brand-cyan text-brand-dark">
+              <ShieldCheck aria-hidden="true" size={24} strokeWidth={2.4} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-brand-cyan">BilClimb.ai</p>
+              <h1 className="mt-2 text-3xl font-bold leading-tight">Inicia sesión</h1>
+              <p className="mt-3 text-sm leading-6 text-white/68">
+                Necesitas estar logueada para usar BilClimb.
+              </p>
+            </div>
+          </div>
+          <a
+            href="/sign-in"
+            className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-brand-cyan px-4 py-3 text-sm font-bold text-brand-dark hover:bg-brand-cyan/90"
+          >
+            Entrar
+          </a>
+        </div>
+      </section>
+    );
+  }
+
+  return <>{children}</>;
 }
