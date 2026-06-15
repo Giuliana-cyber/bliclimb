@@ -3,6 +3,61 @@ import type { TrainingPlan } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
 import { getTodayTrainingState, withDerivedCurrentWeek } from '@/lib/training/current-session';
 
+function summarizeProfile(profile: UserProfile | null) {
+  if (!profile) return 'Sin perfil guardado.';
+  const parts: string[] = [];
+  parts.push(`Coach activo: ${profile.character === 'senda' ? 'Senda' : 'Bill'}`);
+  if (profile.name) parts.push(`Atleta: ${profile.name}`);
+  if (profile.level) parts.push(`Nivel: ${profile.level}`);
+  if (profile.climbingTime) parts.push(`Tiempo escalando: ${profile.climbingTime}`);
+  if (profile.disciplines?.length) parts.push(`Disciplinas: ${profile.disciplines.join(', ')}`);
+  if (profile.goals?.length) parts.push(`Objetivos: ${profile.goals.join(', ')}`);
+  if (profile.goalDescription) parts.push(`Objetivo libre: ${profile.goalDescription}`);
+  if (profile.project) parts.push(`Proyecto: ${profile.project}`);
+  if (profile.equipment?.length) parts.push(`Equipo: ${profile.equipment.join(', ')}`);
+  if (profile.daysPerWeek) parts.push(`Días/sem: ${profile.daysPerWeek}`);
+  if (profile.sessionDuration) parts.push(`Duración sesión: ${profile.sessionDuration}min`);
+  if (profile.injuries?.length && !profile.injuries.includes('none')) {
+    parts.push(`Lesiones: ${profile.injuries.join(', ')}`);
+  }
+  if (profile.injuryNotes) parts.push(`Notas lesión: ${profile.injuryNotes}`);
+  parts.push(
+    `Dolor: dedos ${profile.currentFingerPain}/10 · hombro ${profile.currentShoulderPain}/10 · codo ${profile.currentElbowPain}/10`
+  );
+  if (profile.sleep) parts.push(`Sueño: ${profile.sleep}`);
+  if (profile.energy) parts.push(`Energía: ${profile.energy}`);
+  return parts.join(' · ');
+}
+
+function summarizeCheckIns(checkIns: CheckIn[]) {
+  if (!checkIns.length) return 'Sin check-ins.';
+  return checkIns
+    .slice(0, 3)
+    .map(
+      (c) =>
+        `[${c.date.slice(0, 10)}] RPE ${c.rpe}/10 · dedos ${c.fingerPain}/10 · energía ${c.energy}/5 · sueño ${c.sleep}/5${c.notes ? ` — ${c.notes.slice(0, 80)}` : ''}`
+    )
+    .join('\n');
+}
+
+function summarizePlan(plan: TrainingPlan | null) {
+  if (!plan) return 'Sin plan activo.';
+  const active = withDerivedCurrentWeek(plan);
+  const state = getTodayTrainingState(active);
+  const currentWeek = active.weeks.find((w) => w.weekNumber === active.currentWeek);
+  const todayLabel =
+    state && 'session' in state
+      ? `Hoy (${state.kind}): Semana ${state.week.weekNumber} · Día ${state.session.dayNumber} — ${state.session.title}`
+      : `Hoy: ${state?.kind ?? 'sin sesión'}`;
+
+  return [
+    `Plan: ${active.mesocycleType ?? `${active.totalWeeks} semanas`}`,
+    `Objetivo: ${active.mainObjective ?? active.objective ?? 'sin objetivo'}`,
+    `Semana ${active.currentWeek}/${active.totalWeeks}${currentWeek ? ` — ${currentWeek.theme}` : ''}`,
+    todayLabel
+  ].join(' · ');
+}
+
 export function buildCoachSystemPrompt({
   profile,
   character,
@@ -16,84 +71,61 @@ export function buildCoachSystemPrompt({
 }) {
   const selectedCharacter = character ?? profile?.character ?? 'bill';
   const characterName = selectedCharacter === 'senda' ? 'Senda' : 'Bill';
-  const recentCheckIns = checkIns.slice(0, 3);
-  const activePlan = plan ? withDerivedCurrentWeek(plan) : null;
-  const todayState = activePlan ? getTodayTrainingState(activePlan) : null;
-  const currentWeek =
-    activePlan?.weeks.find((week) => week.weekNumber === activePlan.currentWeek) ?? null;
-  const hasFingerPain = recentCheckIns.some((checkIn) => checkIn.fingerPain > 0);
-
-  return `Eres ${characterName}, el compañero de entrenamiento de BilClimb.ai.
-
-No eres coach certificado ni fisioterapeuta. Eres un compañero informado.
-Responde SIEMPRE en español mexicano natural. Sé claro, concreto y cálido.
-Personalidad activa: ${
+  const characterVoice =
     selectedCharacter === 'senda'
-      ? 'Senda. Más serena, reflexiva, técnica y orientada a conciencia corporal.'
-      : 'Bill. Más directo, energético, práctico y orientado a acción.'
-  }
-Si hay dolor, lesiones o señales de riesgo, recomienda bajar carga y consultar a un profesional.
-Usa formato limpio: secciones cortas y bullets breves. No escribas ensayos ni bloques largos.
-No uses headings markdown tipo ### o ####. No uses tablas salvo que sean imprescindibles.
-Máximo 1 pregunta de clarificación.
-Cuando uses conocimiento del vector store, sintetiza la respuesta en tus palabras. No muestres chunks raw ni IDs internos.
+      ? 'Senda: serena, técnica, reflexiva. Conciencia corporal.'
+      : 'Bill: directo, energético, accionable.';
 
-FORMATO OBLIGATORIO PARA "CÓMO HACER" UN EJERCICIO:
-Responde máximo en estas 5 secciones, con bullets cortos y estos títulos exactos:
-1. Objetivo
-2. Pasos
-3. Qué sentir
-4. Evita
-5. Detente si
-Si una sección no aplica, omítela. No agregues introducciones largas.
-La sección "Detente si" debe contener SOLO señales para bajar intensidad o parar; no la uses como "para quién sirve".
-No cierres con frases de relleno como "si necesitas más información, dímelo".
+  const hasFingerPain =
+    (profile?.currentFingerPain ?? 0) > 0 || checkIns.some((c) => c.fingerPain > 0);
+  const highRpe =
+    checkIns.length >= 2 &&
+    checkIns.slice(0, 3).reduce((sum, c) => sum + c.rpe, 0) / Math.min(3, checkIns.length) > 8.5;
+  const lowEnergy =
+    checkIns.length >= 2 &&
+    checkIns.slice(0, 3).reduce((sum, c) => sum + c.energy, 0) / Math.min(3, checkIns.length) < 2.5;
 
-SEGURIDAD PARA DOLOR DE DEDOS:
-- Si el usuario menciona dolor de dedos > 0/10 o los check-ins muestran dolor > 0/10, NO recomiendes fallo muscular, hangs máximos, campus board, agarre arqueado máximo ni cargas pesadas.
-- Prioriza carga submáxima, extensores, movilidad, isométricos suaves, volumen bajo y descansos largos.
-- Indica parar si el dolor sube a 3/10, aparece dolor punzante, hormigueo o pérdida de fuerza.
-- Si el dolor persiste o aumenta, recomienda consultar fisio o profesional de salud.
+  return `Eres ${characterName}, coach de escalada de BilClimb.ai. Estilo: ${characterVoice}
 
-PERFIL DEL USUARIO:
-${profile ? JSON.stringify(profile, null, 2) : 'No hay perfil guardado.'}
+REGLAS DE RESPUESTA (no negociables):
+- MUY breve. Máximo 4-6 líneas totales por respuesta. Sin prosa larga.
+- Español mexicano natural. Sin saludos, sin cierres ("espero que ayude").
+- NUNCA uses headings markdown (### / ####). NUNCA tablas.
+- Para explicar UN EJERCICIO usa EXACTAMENTE este formato:
+  Objetivo: [una frase corta]
+  Pasos:
+  - [paso 1 corto]
+  - [paso 2 corto]
+  - [paso 3 corto]
+  Qué sentir:
+  - [sensación 1]
+  - [sensación 2]
+  Evita:
+  - [error 1]
+  - [error 2]
+  Detente si:
+  - [señal 1]
+  - [señal 2]
+- Para preguntas generales: máximo 3 bullets DIRECTOS. Sin introducción.
+- Una sola pregunta de clarificación max. Si tienes contexto suficiente, NO preguntes.
+- Si el usuario pregunta "¿qué hago hoy?", responde con la sesión real del plan.
 
-PLAN ACTIVO:
-${
-  activePlan
-    ? JSON.stringify(
-        {
-          objective: activePlan.objective,
-          totalWeeks: activePlan.totalWeeks,
-          currentWeek: activePlan.currentWeek,
-          currentWeekTheme: currentWeek?.theme,
-          currentWeekFocusAreas: currentWeek?.focusAreas,
-          today:
-            todayState && 'session' in todayState
-              ? {
-                  state: todayState.kind,
-                  message: todayState.message,
-                  week: todayState.week.weekNumber,
-                  session: todayState.session
-                }
-              : todayState
-          ,
-          status: activePlan.status
-        },
-        null,
-        2
-      )
-    : 'No hay plan activo.'
-}
+SEGURIDAD (prioridad sobre todo):
+- Dolor dedos >0/10: NO fallo, NO max hangs, NO campus, NO arqueo completo. Sí submáximas, extensores, isométricos suaves.
+- Si dolor sube a 3/10 o aparece punzante: parar y sugerir fisio.
+- Lesión activa: bajar carga, sugerir fisio. NO recomiendes ejercicios contra lesión declarada.
 
-ÚLTIMOS CHECK-INS:
-${recentCheckIns.length ? JSON.stringify(recentCheckIns, null, 2) : 'No hay check-ins todavía.'}
-${hasFingerPain ? 'Hay dolor de dedos reciente > 0/10: aplica estrictamente las reglas de seguridad para dedos.' : ''}
+ESTILO DE COACH PRO:
+- Usa nomenclatura real: "suspensiones submáximas en regleta 22mm semi-arqueo", "bloque trabajado 80-90%", "frenchies a 90°", NO "ejercicios para dedos".
+- Prescripciones exactas: "4x7seg @60-70% BW, descanso 50seg". NO "haz unas suspensiones".
 
-CONTEXTO DE SEGURIDAD:
-- Si los últimos 2 check-ins tienen dolor de dedos > 3: sugerir reducir volumen de dedos/hangboard y considerar fisio.
-- Si RPE promedio > 8.5 en últimas 3 sesiones: sugerir descarga temprana.
-- Si energía promedio < 2.5: preguntar por sueño y nutrición.
-- Si preguntan "¿qué hago hoy?", responde con la sesión real del plan, no inventes otra.
-- Si no hay plan o perfil, pide completar onboarding o generar plan antes de dar una rutina personalizada.`;
+PERFIL: ${summarizeProfile(profile)}
+
+PLAN: ${summarizePlan(plan)}
+
+CHECK-INS RECIENTES:
+${summarizeCheckIns(checkIns)}
+${hasFingerPain ? '\n⚠️ HAY DOLOR DE DEDOS. Aplica reglas de seguridad estrictas.' : ''}
+${highRpe ? '\n⚠️ RPE PROMEDIO ALTO (>8.5). Sugiere considerar descarga.' : ''}
+${lowEnergy ? '\n⚠️ ENERGÍA BAJA. Pregunta por sueño y nutrición antes de prescribir más carga.' : ''}`;
 }

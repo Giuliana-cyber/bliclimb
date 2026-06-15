@@ -1,16 +1,29 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
 
 export async function GET() {
-  const hasPublishableKey = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
-  const hasSecretKey = Boolean(process.env.CLERK_SECRET_KEY);
+  const hasSupabaseEnv = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+
+  if (!hasSupabaseEnv) {
+    return NextResponse.json({
+      supabaseConfigured: false,
+      authenticated: false
+    });
+  }
+
+  const supabase = createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
 
   return NextResponse.json({
-    clerkConfigured: hasPublishableKey && hasSecretKey,
-    hasPublishableKey,
-    hasSecretKey,
-    signInUrl: process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL ?? '/sign-in',
-    signUpUrl: process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL ?? '/sign-up'
+    supabaseConfigured: true,
+    authenticated: Boolean(user),
+    userId: user?.id ?? null,
+    email: user?.email ?? null
   });
 }

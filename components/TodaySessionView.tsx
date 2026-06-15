@@ -2,11 +2,22 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, Clock3, MapPin } from 'lucide-react';
+import { motion } from 'framer-motion';
+import {
+  CheckCircle2,
+  ChevronLeft,
+  Clock3,
+  Flame,
+  MapPin,
+  Sparkles
+} from 'lucide-react';
 import { ExerciseBlock } from '@/components/ExerciseBlock';
+import { Card } from '@/components/ui/Card';
+import { Banner } from '@/components/ui/Banner';
+import { Button } from '@/components/ui/Button';
+import { MountainBackdrop } from '@/components/ui/MountainBackdrop';
 import { loadTrainingPlan } from '@/lib/plan';
-import type { Exercise } from '@/lib/plan';
-import type { Session } from '@/lib/plan';
+import type { Exercise, Session } from '@/lib/plan';
 import {
   getExerciseProgressKey,
   loadSessionProgress,
@@ -43,10 +54,7 @@ export function TodaySessionView() {
   }, []);
 
   const totalExercises = useMemo(() => {
-    if (!sessionContext) {
-      return 0;
-    }
-
+    if (!sessionContext) return 0;
     return getSessionSections(sessionContext.session).reduce(
       (total, section) => total + section.exercises.length,
       0
@@ -68,15 +76,11 @@ export function TodaySessionView() {
   const allExercisesComplete = totalExercises > 0 && completedCount >= totalExercises;
 
   function toggleExercise(key: string) {
-    if (!sessionContext) {
-      return;
-    }
-
+    if (!sessionContext) return;
     setCompletedExercises((current) => {
       const next = current.includes(key)
         ? current.filter((item) => item !== key)
         : [...current, key];
-
       saveSessionProgress(sessionContext.sessionId, next);
       return next;
     });
@@ -85,22 +89,25 @@ export function TodaySessionView() {
   if (!sessionContext) {
     return (
       <section className="space-y-6">
-        <Link href="/plan" className="inline-flex items-center gap-2 text-sm font-semibold text-white/62">
+        <Link
+          href="/plan"
+          className="inline-flex items-center gap-2 text-sm font-bold text-white/62 hover:text-white"
+        >
           <ChevronLeft aria-hidden="true" size={17} />
           Volver al plan
         </Link>
-        <div className="rounded-lg border border-white/10 bg-white/[0.04] p-6">
-          <h1 className="text-2xl font-bold">No hay sesión para mostrar</h1>
-          <p className="mt-3 text-sm leading-6 text-white/68">
-            Genera un plan para que BilClimb pueda mostrarte la sesión correspondiente.
-          </p>
-          <Link
-            href="/onboarding"
-            className="mt-6 inline-flex w-full items-center justify-center rounded-md bg-brand-cyan px-4 py-3 text-sm font-bold text-brand-dark"
-          >
-            Crear mi plan
-          </Link>
-        </div>
+        <Card variant="hero" className="relative overflow-hidden">
+          <MountainBackdrop />
+          <div className="relative">
+            <h1 className="text-2xl font-extrabold">No hay sesión para mostrar</h1>
+            <p className="mt-3 text-sm leading-6 text-white/70">
+              Genera un plan para que BilClimb pueda mostrarte la sesión correspondiente.
+            </p>
+            <Button href="/onboarding" size="lg" className="mt-5 w-full">
+              Crear mi plan
+            </Button>
+          </div>
+        </Card>
       </section>
     );
   }
@@ -108,67 +115,80 @@ export function TodaySessionView() {
   const { week, session } = sessionContext;
 
   return (
-    <section className="space-y-6">
-      <Link href="/plan" className="inline-flex items-center gap-2 text-sm font-semibold text-white/62">
+    <motion.section
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className="space-y-6"
+    >
+      <Link
+        href="/plan"
+        className="inline-flex items-center gap-2 text-sm font-bold text-white/62 hover:text-white"
+      >
         <ChevronLeft aria-hidden="true" size={17} />
         Volver al plan
       </Link>
 
-      <div>
-        <p className="text-sm font-semibold text-brand-mustard">
-          Día {session.dayNumber} · Semana {week.weekNumber}
-        </p>
-        <h1 className="mt-2 text-3xl font-bold uppercase leading-tight">{session.title}</h1>
-        <div className="mt-4 flex flex-wrap gap-3 text-sm text-white/62">
-          <span className="inline-flex items-center gap-1">
-            <Clock3 aria-hidden="true" size={16} />
-            ~{session.estimatedMinutes} min
-          </span>
-          <span className="inline-flex items-center gap-1 text-brand-cyan">
-            Restante: ~{remainingMinutes} min
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <MapPin aria-hidden="true" size={16} />
-            {session.location}
-          </span>
-        </div>
-      </div>
+      <Card variant="hero" className="relative overflow-hidden">
+        <MountainBackdrop />
+        <div className="relative">
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand-cyan/30 bg-brand-cyan/[0.08] px-3 py-1 text-xs font-bold uppercase tracking-[0.10em] text-brand-cyan">
+            <Flame size={13} />
+            Día {session.dayNumber} · Semana {week.weekNumber}
+          </div>
+          <h1 className="mt-3 text-[1.8rem] font-extrabold leading-tight">{session.title}</h1>
 
-      {week.objective || week.progressionFocus || week.loadLevel || session.stimulusType ? (
-        <div className="grid gap-3 sm:grid-cols-4">
+          <div className="mt-4 flex flex-wrap gap-3 text-sm">
+            <MetaChip icon={Clock3} text={`~${session.estimatedMinutes} min`} />
+            <MetaChip
+              icon={Sparkles}
+              text={`Restante ~${remainingMinutes} min`}
+              tone="cyan"
+            />
+            <MetaChip icon={MapPin} text={session.location} />
+          </div>
+
+          {(week.objective || session.objective || session.why) ? (
+            <p className="mt-4 text-sm leading-6 text-white/72">
+              {session.objective || week.objective}
+              {session.why ? ` · ${session.why}` : ''}
+            </p>
+          ) : null}
+        </div>
+      </Card>
+
+      <Card>
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm font-bold text-white">Progreso de sesión</p>
+          <p className="text-sm font-extrabold text-brand-cyan">
+            {completedCount}<span className="text-white/40">/{totalExercises}</span>
+          </p>
+        </div>
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+          <motion.div
+            className="h-full rounded-full bg-gradient-cyan shadow-glow"
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+          />
+        </div>
+      </Card>
+
+      {(week.objective || week.progressionFocus || week.loadLevel || session.stimulusType) ? (
+        <div className="grid gap-2.5 sm:grid-cols-2">
           {week.objective ? <SessionInfo label="Microciclo" value={week.objective} /> : null}
           {week.progressionFocus ? (
             <SessionInfo label="Progresión" value={week.progressionFocus} />
           ) : null}
           {week.loadLevel ? <SessionInfo label="Carga" value={week.loadLevel} /> : null}
-          {session.stimulusType ? <SessionInfo label="Estímulo" value={session.stimulusType} /> : null}
-        </div>
-      ) : null}
-
-      {session.objective || session.why || session.intensityTarget ? (
-        <div className="grid gap-3 sm:grid-cols-3">
-          {session.objective ? <SessionInfo label="Objetivo" value={session.objective} /> : null}
-          {session.why ? <SessionInfo label="Por qué" value={session.why} /> : null}
+          {session.stimulusType ? (
+            <SessionInfo label="Estímulo" value={session.stimulusType} />
+          ) : null}
           {session.intensityTarget ? (
             <SessionInfo label="Intensidad" value={session.intensityTarget} />
           ) : null}
         </div>
       ) : null}
-
-      <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-sm font-semibold text-white/74">Progreso de sesión</p>
-          <p className="text-sm font-bold text-brand-cyan">
-            {completedCount}/{totalExercises}
-          </p>
-        </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-          <div
-            className="h-full rounded-full bg-brand-cyan transition-[width]"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
 
       {getSessionSections(session).map((section) => (
         <ExerciseChecklist
@@ -188,41 +208,60 @@ export function TodaySessionView() {
         successCriteria={session.successCriteria}
       />
 
-      <div className="rounded-lg border border-brand-mustard/24 bg-brand-mustard/10 p-4">
-        <p className="text-sm font-bold text-brand-mustard">Nutrición post</p>
-        <p className="mt-2 text-sm leading-6 text-white/74">{session.nutritionTip}</p>
-      </div>
+      {session.nutritionTip ? (
+        <Banner tone="mustard" icon={Sparkles} title="Nutrición post" description={session.nutritionTip} />
+      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
         {allExercisesComplete ? (
-          <Link
+          <Button
             href={`/checkin?week=${week.weekNumber}&day=${session.dayNumber}&sessionId=${encodeURIComponent(sessionContext.sessionId)}`}
-            className="flex w-full items-center justify-center rounded-md bg-brand-cyan px-4 py-4 text-base font-bold text-brand-dark transition hover:bg-brand-cyan/90"
+            size="lg"
+            icon={<CheckCircle2 size={18} />}
+            className="w-full"
           >
-            Finalizar sesión y hacer check-in
-          </Link>
+            Finalizar y check-in
+          </Button>
         ) : (
-          <button
-            type="button"
-            disabled
-            className="flex w-full cursor-not-allowed items-center justify-center rounded-md bg-white/10 px-4 py-4 text-base font-bold text-white/38"
-          >
+          <Button disabled size="lg" className="w-full">
             Completa ejercicios para finalizar
-          </button>
+          </Button>
         )}
-        <Link
-          href="/plan"
-          className="flex w-full items-center justify-center rounded-md border border-white/12 px-4 py-4 text-base font-bold text-white/76 transition hover:bg-white/[0.05]"
-        >
+        <Button variant="secondary" href="/plan" size="lg" className="w-full">
           Volver al plan
-        </Link>
+        </Button>
       </div>
-    </section>
+    </motion.section>
+  );
+}
+
+function MetaChip({
+  icon: Icon,
+  text,
+  tone = 'neutral'
+}: {
+  icon: typeof Clock3;
+  text: string;
+  tone?: 'neutral' | 'cyan';
+}) {
+  const classes =
+    tone === 'cyan'
+      ? 'border-brand-cyan/30 bg-brand-cyan/[0.08] text-brand-cyan'
+      : 'border-white/10 bg-white/[0.04] text-white/76';
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold ${classes}`}
+    >
+      <Icon aria-hidden="true" size={13} />
+      {text}
+    </span>
   );
 }
 
 function getSessionSections(session: Session) {
-  const hasProfessionalWarmup = Boolean(session.warmupGeneral?.length || session.warmupSpecific?.length);
+  const hasProfessionalWarmup = Boolean(
+    session.warmupGeneral?.length || session.warmupSpecific?.length
+  );
 
   return [
     {
@@ -260,9 +299,11 @@ function getSessionSections(session: Session) {
 
 function SessionInfo({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-      <p className="text-xs font-bold uppercase tracking-[0.08em] text-brand-cyan">{label}</p>
-      <p className="mt-2 text-sm leading-6 text-white/72">{value}</p>
+    <div className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
+      <p className="text-[0.65rem] font-bold uppercase tracking-[0.10em] text-brand-cyan">
+        {label}
+      </p>
+      <p className="mt-1.5 text-sm leading-6 text-white/80">{value}</p>
     </div>
   );
 }
@@ -277,28 +318,25 @@ function SessionRuleCards({
   successCriteria?: string[] | null;
 }) {
   const cards = [
-    { title: 'Seguridad', items: safetyNotes },
-    { title: 'Ajusta si', items: adjustmentRules },
-    { title: 'Bien hecho si', items: successCriteria }
+    { title: 'Seguridad', items: safetyNotes, tone: 'danger' as const },
+    { title: 'Ajusta si', items: adjustmentRules, tone: 'mustard' as const },
+    { title: 'Bien hecho si', items: successCriteria, tone: 'cyan' as const }
   ].filter((card) => card.items?.length);
 
-  if (!cards.length) {
-    return null;
-  }
+  if (!cards.length) return null;
 
   return (
     <div className="grid gap-3 sm:grid-cols-3">
       {cards.map((card) => (
-        <section key={card.title} className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-          <h2 className="text-sm font-bold text-brand-cyan">{card.title}</h2>
-          <ul className="mt-3 space-y-2">
+        <Banner key={card.title} tone={card.tone} title={card.title}>
+          <ul className="mt-2 space-y-1.5">
             {card.items?.map((item) => (
-              <li key={item} className="text-sm leading-6 text-white/66">
-                {item}
+              <li key={item} className="text-sm leading-6 text-white/72">
+                · {item}
               </li>
             ))}
           </ul>
-        </section>
+        </Banner>
       ))}
     </div>
   );
@@ -321,16 +359,16 @@ function ExerciseChecklist({
 }) {
   return (
     <section>
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-bold uppercase">{title}</h2>
-        <span className="text-sm font-semibold text-white/46">{minutesLabel}</span>
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <h2 className="text-base font-extrabold uppercase tracking-[0.06em]">{title}</h2>
+        <span className="text-xs font-bold uppercase tracking-[0.08em] text-white/45">
+          {minutesLabel}
+        </span>
       </div>
-
       <div className="space-y-3">
         {exercises.map((exercise, index) => {
           const key = getExerciseProgressKey(section, index);
           const complete = completedExercises.includes(key);
-
           return (
             <ExerciseBlock
               key={key}
