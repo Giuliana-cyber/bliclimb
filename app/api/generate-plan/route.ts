@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
 import { zodResponseFormat } from 'openai/helpers/zod';
 import { markFreePlanUsed, requirePlanGenerationAccess } from '@/lib/billing/subscription';
+import { enforceRateLimit } from '@/lib/rate-limit';
 import {
   FastPlanMetadataSchema,
   FastWeekSchema,
@@ -486,6 +487,21 @@ function logSafetyViolations(
 }
 
 export async function POST(request: Request) {
+  const limit = await enforceRateLimit('plan');
+  if (!limit.ok) {
+    return NextResponse.json(
+      {
+        code: 'rate_limited',
+        error: limit.userMessage,
+        resetSeconds: limit.resetSeconds
+      },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(limit.resetSeconds) }
+      }
+    );
+  }
+
   const subscriptionError = requirePlanGenerationAccess();
   if (subscriptionError) return subscriptionError;
 

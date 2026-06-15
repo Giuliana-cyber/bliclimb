@@ -181,7 +181,7 @@ export default function SettingsPage() {
             </h3>
             <p className="mt-2 text-sm leading-6 text-white/72">
               BilClimb mezcla principios de coaches de escalada referentes (Lattice Training,
-              Eric Hörst, Power Company, Climb Strong, Catalyst, Hooper's Beta) con un motor
+              Eric Hörst, Power Company, Climb Strong, Catalyst, Hooper&apos;s Beta) con un motor
               de IA. La idea: que cualquier escalador pueda tener un plan estructurado,
               técnico y adaptado a su contexto, sin pagar $100+/mes a un coach humano.
             </p>
@@ -202,7 +202,7 @@ export default function SettingsPage() {
               <span className="font-bold text-white">Coaches referentes:</span> los planes se
               inspiran en la metodología de Lattice Training, TrainingForClimbing (Eric
               Hörst), Power Company Climbing, Climb Strong (Steve Bechtel), Catalyst
-              Climbing, Hooper's Beta, The Climbing Doctor, Dave MacLeod y más.
+              Climbing, Hooper&apos;s Beta, The Climbing Doctor, Dave MacLeod y más.
             </li>
             <li>
               <span className="font-bold text-white">Motor de IA:</span> hoy usamos GPT-4o
