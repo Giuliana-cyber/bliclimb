@@ -1,8 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { Check, LogOut, Save } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Check, LogOut, Save, Sparkles } from 'lucide-react';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Banner } from '@/components/ui/Banner';
 import {
   loadProfile,
   loadProfileNeedsRegeneration,
@@ -11,11 +14,9 @@ import {
   type UserProfile
 } from '@/lib/profile';
 import { clearLocalSession, loadLocalSession, type LocalSession } from '@/lib/session';
+import { createClient } from '@/lib/supabase/client';
 
-type Option = {
-  label: string;
-  value: string;
-};
+type Option = { label: string; value: string };
 
 const characterOptions: Option[] = [
   { label: 'Bill', value: 'bill' },
@@ -197,19 +198,13 @@ const durationOptions = [
   { label: '12 semanas', value: 12 }
 ];
 
-function classNames(...classes: Array<string | false | null | undefined>) {
+function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ');
 }
 
 function toggleValue(values: string[], value: string, exclusiveValues: string[] = []) {
-  if (values.includes(value)) {
-    return values.filter((item) => item !== value);
-  }
-
-  if (exclusiveValues.includes(value)) {
-    return [value];
-  }
-
+  if (values.includes(value)) return values.filter((item) => item !== value);
+  if (exclusiveValues.includes(value)) return [value];
   return [...values.filter((item) => !exclusiveValues.includes(item)), value];
 }
 
@@ -234,10 +229,7 @@ export function ProfileEditor() {
   }, []);
 
   const significantChange = useMemo(() => {
-    if (!initialProfile || !profile) {
-      return false;
-    }
-
+    if (!initialProfile || !profile) return false;
     return (
       initialProfile.goal !== profile.goal ||
       initialProfile.goals.join(',') !== profile.goals.join(',') ||
@@ -272,10 +264,7 @@ export function ProfileEditor() {
 
   function updateProfileGoals(goals: string[]) {
     setProfile((current) => {
-      if (!current) {
-        return current;
-      }
-
+      if (!current) return current;
       return {
         ...current,
         goals,
@@ -287,10 +276,7 @@ export function ProfileEditor() {
 
   function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    if (!profile) {
-      return;
-    }
+    if (!profile) return;
 
     const nextProfile = {
       ...profile,
@@ -321,56 +307,64 @@ export function ProfileEditor() {
 
   if (!profile) {
     return (
-      <section className="space-y-6">
-        <div>
-          <p className="text-sm font-semibold text-brand-cyan">Mi Perfil</p>
-          <h1 className="mt-2 text-3xl font-bold">Datos de escalada</h1>
-        </div>
-        <div className="rounded-lg border border-white/10 bg-white/[0.04] p-6">
-          <h2 className="text-2xl font-bold">Aún no hay perfil</h2>
-          <p className="mt-3 text-sm leading-6 text-white/68">
+      <motion.section
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="space-y-6"
+      >
+        <header className="space-y-1.5">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-cyan">Mi perfil</p>
+          <h1 className="text-3xl font-extrabold leading-tight">Datos de escalada</h1>
+        </header>
+        <Card variant="hero">
+          <h2 className="text-2xl font-extrabold">Aún no hay perfil</h2>
+          <p className="mt-3 text-sm leading-6 text-white/70">
             Completa el onboarding para crear tu perfil base.
           </p>
-          <Link
-            href="/onboarding"
-            className="mt-6 inline-flex w-full items-center justify-center rounded-md bg-brand-cyan px-4 py-3 text-sm font-bold text-brand-dark"
-          >
+          <Button href="/onboarding" size="lg" className="mt-5 w-full">
             Ir al onboarding
-          </Link>
-        </div>
+          </Button>
+        </Card>
         <SessionCard session={session} />
-      </section>
+      </motion.section>
     );
   }
 
   return (
-    <form onSubmit={handleSave} className="space-y-8">
-      <div>
-        <p className="text-sm font-semibold text-brand-cyan">Mi Perfil</p>
-        <h1 className="mt-2 text-3xl font-bold">Datos de escalada</h1>
-        <p className="mt-2 text-sm leading-6 text-white/58">
+    <motion.form
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      onSubmit={handleSave}
+      className="space-y-7"
+    >
+      <header className="space-y-2">
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-cyan">Mi perfil</p>
+        <h1 className="text-3xl font-extrabold leading-tight">Datos de escalada</h1>
+        <p className="text-sm leading-6 text-white/64">
           Edita tu contexto sin borrar historial. Cambios fuertes pueden necesitar regenerar el
           plan.
         </p>
-      </div>
+      </header>
 
       <SessionCard session={session} />
 
       {significantChange || needsRegeneration ? (
-        <div className="rounded-lg border border-brand-mustard/30 bg-brand-mustard/10 p-4 text-sm leading-6 text-white/76">
-          <p className="font-bold text-brand-mustard">Plan necesita regeneración</p>
-          <p className="mt-1">
-            {significantChange
+        <Banner
+          tone="mustard"
+          icon={Sparkles}
+          title="Plan necesita regeneración"
+          description={
+            significantChange
               ? 'Cambiaste objetivo, nivel, equipo, lesión o disponibilidad. Guarda el perfil y regenera tu plan para que BilClimb lo use.'
-              : 'Tu perfil guardado cambió datos importantes. Regenera tu plan para usar el contexto nuevo.'}
-          </p>
-        </div>
+              : 'Tu perfil guardado cambió datos importantes. Regenera tu plan para usar el contexto nuevo.'
+          }
+        />
       ) : null}
 
       {saved ? (
-        <div className="rounded-lg border border-brand-cyan/30 bg-brand-cyan/10 p-4 text-sm font-semibold text-white/78">
-          Perfil guardado.
-        </div>
+        <Banner tone="cyan" title="Perfil guardado" description="Tus cambios están seguros." />
       ) : null}
 
       <ProfileSection title="Identidad">
@@ -483,13 +477,13 @@ export function ProfileEditor() {
         </FieldGroup>
         <div className="grid gap-4 sm:grid-cols-2">
           <InputField
-            label="Peso kg"
+            label="Peso (kg)"
             value={profile.weight?.toString() ?? ''}
             inputMode="decimal"
             onChange={(value) => updateProfileField('weight', toNumberOrNull(value))}
           />
           <InputField
-            label="Estatura cm"
+            label="Estatura (cm)"
             value={profile.height?.toString() ?? ''}
             inputMode="decimal"
             onChange={(value) => updateProfileField('height', toNumberOrNull(value))}
@@ -595,10 +589,7 @@ export function ProfileEditor() {
                 key={option.value}
                 active={profile.availableDays.includes(option.value)}
                 onClick={() =>
-                  updateProfileField(
-                    'availableDays',
-                    toggleValue(profile.availableDays, option.value)
-                  )
+                  updateProfileField('availableDays', toggleValue(profile.availableDays, option.value))
                 }
               >
                 {option.label}
@@ -747,11 +738,9 @@ export function ProfileEditor() {
         <TextareaField
           label="Redacta lo que buscas"
           value={profile.goalDescription}
-          placeholder="Quiero mejorar técnica en placa, tener más resistencia para rutas largas y no cargar tanto los dedos..."
+          placeholder="Quiero mejorar técnica en placa, tener más resistencia para rutas largas…"
           onChange={(value) => {
-            const goals =
-              value.trim() && !profile.goals.length ? ['other'] : profile.goals;
-
+            const goals = value.trim() && !profile.goals.length ? ['other'] : profile.goals;
             setProfile((current) =>
               current
                 ? {
@@ -768,13 +757,13 @@ export function ProfileEditor() {
         <TextareaField
           label="Proyecto o ruta específica"
           value={profile.project}
-          placeholder="Ruta, boulder, fecha, zona o grado que traes en mente..."
+          placeholder="Ruta, boulder, fecha, zona o grado que traes en mente…"
           onChange={(value) => updateProfileField('project', value)}
         />
         <TextareaField
           label="Contexto del proyecto en roca"
           value={profile.rockProjectDescription}
-          placeholder="Tipo de ruta, estilo, crux, agarres, desplome/placa, fecha del viaje..."
+          placeholder="Tipo de ruta, estilo, crux, agarres, desplome/placa, fecha del viaje…"
           onChange={(value) => updateProfileField('rockProjectDescription', value)}
         />
         <FieldGroup title="Duración del plan">
@@ -793,74 +782,68 @@ export function ProfileEditor() {
       </ProfileSection>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <button
-          type="submit"
-          className="inline-flex items-center justify-center gap-2 rounded-md bg-brand-cyan px-4 py-4 text-base font-bold text-brand-dark transition hover:bg-brand-cyan/90"
-        >
-          <Save aria-hidden="true" size={18} />
+        <Button type="submit" size="lg" icon={<Save size={18} />} className="w-full">
           Guardar perfil
-        </button>
-        <Link
+        </Button>
+        <Button
+          variant={significantChange ? 'secondary' : 'mustard'}
           href="/generating-plan"
-          className={classNames(
-            'inline-flex items-center justify-center rounded-md border px-4 py-4 text-base font-bold transition',
-            significantChange
-              ? 'border-white/12 text-white/42'
-              : 'border-brand-cyan/40 text-brand-cyan hover:bg-brand-cyan/10'
-          )}
-          aria-disabled={significantChange}
+          size="lg"
+          className="w-full"
           onClick={(event) => {
-            if (significantChange) {
-              event.preventDefault();
-            }
+            if (significantChange) event.preventDefault();
           }}
+          aria-disabled={significantChange}
         >
           {significantChange ? 'Guarda antes de regenerar' : 'Regenerar plan'}
-        </Link>
+        </Button>
       </div>
-    </form>
+    </motion.form>
   );
 }
 
 function SessionCard({ session }: { session: LocalSession | null }) {
-  function handleLogout() {
+  async function handleLogout() {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {
+      // ignore — we'll still clear local and redirect
+    }
     clearLocalSession();
-    window.location.href = '/';
+    window.location.href = '/sign-in';
   }
 
   return (
-    <section className="space-y-4 rounded-lg border border-white/10 bg-white/[0.04] p-4">
-      <div>
-        <p className="text-sm font-semibold text-brand-cyan">Sesión</p>
-        <h2 className="mt-1 text-xl font-bold">{session?.name ?? 'Cuenta local'}</h2>
-        <p className="mt-1 text-sm text-white/58">{session?.email ?? 'Sin correo activo'}</p>
-      </div>
-
-      <button
-        type="button"
+    <Card>
+      <p className="text-xs font-bold uppercase tracking-[0.10em] text-brand-cyan">Sesión</p>
+      <h2 className="mt-1 text-xl font-extrabold">{session?.name ?? 'Cuenta'}</h2>
+      <p className="mt-1 text-sm text-white/60">{session?.email ?? 'Sin correo activo'}</p>
+      <Button
+        variant="secondary"
         onClick={handleLogout}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-white/12 px-4 py-3 text-sm font-bold text-white/72 transition hover:border-brand-mustard/60 hover:text-brand-mustard"
+        icon={<LogOut size={17} />}
+        className="mt-4 w-full"
       >
-        <LogOut aria-hidden="true" size={17} />
         Cerrar sesión
-      </button>
-    </section>
+      </Button>
+    </Card>
   );
 }
 
 function ProfileSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-5 rounded-lg border border-white/10 bg-white/[0.04] p-4">
-      <h2 className="text-xl font-bold">{title}</h2>
+    <Card className="space-y-5">
+      <h2 className="text-lg font-extrabold">{title}</h2>
       {children}
-    </section>
+    </Card>
   );
 }
 
 function FieldGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="mb-2 text-sm font-bold text-white/76">{title}</p>
+      <p className="mb-2 text-sm font-extrabold text-white/82">{title}</p>
       {children}
     </div>
   );
@@ -882,21 +865,24 @@ function PainScaleField({
   return (
     <FieldGroup title={`${title} (0-5)`}>
       <div className="grid grid-cols-6 gap-2">
-        {painScaleOptions.map((score) => (
-          <button
-            key={score}
-            type="button"
-            onClick={() => onChange(score)}
-            className={classNames(
-              'grid h-10 place-items-center rounded-md border text-sm font-bold transition',
-              value === score
-                ? 'border-brand-cyan bg-brand-cyan/14 text-brand-cyan'
-                : 'border-white/10 bg-white/[0.04] text-white/68 hover:border-white/24'
-            )}
-          >
-            {score}
-          </button>
-        ))}
+        {painScaleOptions.map((score) => {
+          const active = value === score;
+          return (
+            <button
+              key={score}
+              type="button"
+              onClick={() => onChange(score)}
+              className={cn(
+                'grid h-11 place-items-center rounded-xl border text-sm font-extrabold transition active:scale-[0.97]',
+                active
+                  ? 'border-brand-coral/55 bg-brand-coral/[0.15] text-brand-coral'
+                  : 'border-white/10 bg-white/[0.03] text-white/68 hover:border-white/22'
+              )}
+            >
+              {score}
+            </button>
+          );
+        })}
       </div>
     </FieldGroup>
   );
@@ -915,11 +901,11 @@ function OptionButton({
     <button
       type="button"
       onClick={onClick}
-      className={classNames(
-        'flex min-h-11 items-center justify-between gap-2 rounded-md border px-3 py-2 text-left text-sm font-bold transition',
+      className={cn(
+        'flex min-h-11 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-sm font-bold transition-all duration-150 active:scale-[0.99]',
         active
-          ? 'border-brand-cyan bg-brand-cyan/14 text-brand-cyan'
-          : 'border-white/10 bg-white/[0.04] text-white/68 hover:border-white/24'
+          ? 'border-brand-cyan/55 bg-brand-cyan/[0.12] text-brand-cyan shadow-glow'
+          : 'border-white/10 bg-white/[0.03] text-white/72 hover:border-white/22'
       )}
     >
       <span>{children}</span>
@@ -941,12 +927,12 @@ function InputField({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-bold text-white/76">{label}</span>
+      <span className="mb-2 block text-sm font-extrabold text-white/82">{label}</span>
       <input
         value={value}
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
-        className="h-12 w-full rounded-md border border-white/10 bg-white/[0.04] px-4 text-white outline-none transition placeholder:text-white/34 focus:border-brand-cyan"
+        className="h-12 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 text-white outline-none transition placeholder:text-white/30 focus:border-brand-cyan/60 focus:bg-white/[0.05]"
       />
     </label>
   );
@@ -965,13 +951,13 @@ function TextareaField({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-bold text-white/76">{label}</span>
+      <span className="mb-2 block text-sm font-extrabold text-white/82">{label}</span>
       <textarea
         value={value}
         placeholder={placeholder}
         rows={4}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full resize-none rounded-md border border-white/10 bg-white/[0.04] px-4 py-3 text-white outline-none transition placeholder:text-white/34 focus:border-brand-cyan"
+        className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 leading-6 text-white outline-none transition placeholder:text-white/30 focus:border-brand-cyan/60 focus:bg-white/[0.05]"
       />
     </label>
   );

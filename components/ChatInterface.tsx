@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import {
   AlertTriangle,
   Ban,
@@ -12,6 +13,8 @@ import {
   UserRound,
   type LucideIcon
 } from 'lucide-react';
+import { Card } from '@/components/ui/Card';
+import { Banner } from '@/components/ui/Banner';
 import { loadCheckIns } from '@/lib/checkin';
 import { loadTrainingPlan } from '@/lib/plan';
 import { loadProfile, saveProfile } from '@/lib/profile';
@@ -50,9 +53,7 @@ function parseSseEvents(buffer: string) {
       .map((line) => line.replace(/^data:\s?/, ''))
       .join('\n');
 
-    if (!dataText) {
-      return;
-    }
+    if (!dataText) return;
 
     try {
       events.push({
@@ -105,10 +106,7 @@ export function ChatInterface() {
 
     setProfile(nextProfile);
     setCharacter(nextCharacter);
-
-    if (ask) {
-      setDraft(ask);
-    }
+    if (ask) setDraft(ask);
   }, []);
 
   useEffect(() => {
@@ -117,12 +115,8 @@ export function ChatInterface() {
 
   async function sendMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     const content = draft.trim();
-
-    if (!content || loading) {
-      return;
-    }
+    if (!content || loading) return;
 
     const nextMessages: ChatMessage[] = [...messages, { role: 'user', content }];
     setMessages(nextMessages);
@@ -133,9 +127,7 @@ export function ChatInterface() {
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: nextMessages.slice(-8),
           profile: profile ? { ...profile, character } : null,
@@ -167,26 +159,22 @@ export function ChatInterface() {
               if (event.event === 'delta' && event.data.text) {
                 assistantMessage += event.data.text;
               }
-
               if (event.event === 'done') {
                 const metadata = {
                   usedFileSearch: Boolean(event.data.usedFileSearch),
                   sourceNames: event.data.sourceNames ?? []
                 };
-
                 setMessages((current) =>
                   current.map((message, index) =>
                     index === current.length - 1 ? { ...message, metadata } : message
                   )
                 );
               }
-
               if (event.event === 'error') {
                 throw new Error(event.data.message ?? 'No pudimos responder el mensaje.');
               }
             });
           }
-
           break;
         }
 
@@ -203,20 +191,17 @@ export function ChatInterface() {
               )
             );
           }
-
           if (event.event === 'done') {
             const metadata = {
               usedFileSearch: Boolean(event.data.usedFileSearch),
               sourceNames: event.data.sourceNames ?? []
             };
-
             setMessages((current) =>
               current.map((message, index) =>
                 index === current.length - 1 ? { ...message, metadata } : message
               )
             );
           }
-
           if (event.event === 'error') {
             throw new Error(event.data.message ?? 'No pudimos responder el mensaje.');
           }
@@ -231,33 +216,33 @@ export function ChatInterface() {
 
   function selectCharacter(nextCharacter: UserProfile['character']) {
     setCharacter(nextCharacter);
-
-    if (!profile) {
-      return;
-    }
-
+    if (!profile) return;
     const nextProfile = saveProfile({
       ...profile,
       character: nextCharacter,
       updatedAt: new Date().toISOString()
     });
-
     setProfile(nextProfile);
   }
 
-  return (
-    <section className="flex min-h-[calc(100vh-9rem)] flex-col">
-      <div className="mb-5">
-        <p className="text-sm font-semibold text-brand-cyan">Chat Coach</p>
-        <h1 className="mt-2 text-3xl font-bold">
-          Habla con {character === 'senda' ? 'Senda' : 'Bill'}
-        </h1>
-        <p className="mt-2 text-sm leading-6 text-white/58">
-          Usa tu perfil y la biblioteca de entrenamiento de BilClimb para responder con contexto.
-        </p>
-      </div>
+  const characterName = character === 'senda' ? 'Senda' : 'Bill';
 
-      <div className="mb-4 grid grid-cols-2 gap-2">
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className="flex min-h-[calc(100vh-9rem)] flex-col space-y-5"
+    >
+      <header className="space-y-1.5">
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-cyan">Coach</p>
+        <h1 className="text-3xl font-extrabold leading-tight">Habla con {characterName}</h1>
+        <p className="text-sm leading-6 text-white/64">
+          Usa tu perfil, plan y check-ins más recientes como contexto.
+        </p>
+      </header>
+
+      <div className="grid grid-cols-2 gap-2">
         <CharacterButton
           active={character === 'bill'}
           label="Bill"
@@ -272,15 +257,15 @@ export function ChatInterface() {
         />
       </div>
 
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-lg border border-white/10 bg-white/[0.03] p-3">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-2xl border border-white/8 bg-white/[0.025] p-3">
         {messages.map((message, index) => (
           <div
             key={`${message.role}-${index}`}
             className={[
-              'max-w-[86%] rounded-lg px-4 py-3 text-sm leading-6',
+              'max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-soft',
               message.role === 'user'
-                ? 'ml-auto whitespace-pre-wrap bg-brand-cyan text-brand-dark'
-                : 'mr-auto border border-white/10 bg-brand-dark/58 text-white/78'
+                ? 'ml-auto whitespace-pre-wrap bg-gradient-cyan text-brand-dark'
+                : 'mr-auto border border-white/8 bg-brand-elevated/60 text-white/82'
             ].join(' ')}
           >
             {message.role === 'assistant' ? (
@@ -297,20 +282,19 @@ export function ChatInterface() {
           </div>
         ))}
         {loading ? (
-          <div className="mr-auto rounded-lg border border-white/10 bg-brand-dark/58 px-4 py-3 text-sm text-white/58">
-            Pensando con tu contexto...
+          <div className="mr-auto inline-flex items-center gap-2 rounded-2xl border border-white/8 bg-brand-elevated/60 px-4 py-3 text-sm text-white/60">
+            <span className="size-1.5 animate-pulse rounded-full bg-brand-cyan" />
+            <span className="size-1.5 animate-pulse rounded-full bg-brand-cyan [animation-delay:120ms]" />
+            <span className="size-1.5 animate-pulse rounded-full bg-brand-cyan [animation-delay:240ms]" />
+            <span className="ml-1">Pensando con tu contexto…</span>
           </div>
         ) : null}
         <div ref={messagesEndRef} />
       </div>
 
-      {error ? (
-        <div className="mt-3 rounded-md border border-brand-mustard/30 bg-brand-mustard/10 p-3 text-sm text-white/78">
-          {error}
-        </div>
-      ) : null}
+      {error ? <Banner tone="mustard" icon={AlertTriangle} title="Algo no salió bien" description={error} /> : null}
 
-      <form onSubmit={sendMessage} className="mt-4 flex gap-2">
+      <form onSubmit={sendMessage} className="flex gap-2">
         <textarea
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
@@ -321,20 +305,19 @@ export function ChatInterface() {
             }
           }}
           rows={2}
-          placeholder="Pregunta algo sobre tu sesión, dolor, técnica o plan..."
-          className="min-h-12 min-w-0 flex-1 resize-none rounded-md border border-white/10 bg-white/[0.04] px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-white/34 focus:border-brand-cyan"
+          placeholder={`Pregunta a ${characterName} sobre tu sesión, dolor, técnica o plan…`}
+          className="min-h-12 min-w-0 flex-1 resize-none rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-white/30 focus:border-brand-cyan/60 focus:bg-white/[0.05]"
         />
         <button
           type="submit"
           disabled={loading || !draft.trim()}
-          className="grid size-12 shrink-0 place-items-center rounded-md bg-brand-cyan text-brand-dark transition hover:bg-brand-cyan/90 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/36"
+          className="grid size-12 shrink-0 place-items-center rounded-2xl bg-gradient-cyan text-brand-dark shadow-glow transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-white/10 disabled:bg-none disabled:text-white/36 disabled:shadow-none"
           aria-label="Enviar mensaje"
-          title="Enviar"
         >
           <SendHorizonal aria-hidden="true" size={20} strokeWidth={2.6} />
         </button>
       </form>
-    </section>
+    </motion.section>
   );
 }
 
@@ -354,23 +337,25 @@ function CharacterButton({
       type="button"
       onClick={onClick}
       className={[
-        'flex items-center gap-3 rounded-md border p-3 text-left transition',
+        'flex items-center gap-3 rounded-2xl border p-3 text-left transition-all duration-150 active:scale-[0.99]',
         active
-          ? 'border-brand-cyan bg-brand-cyan/12 text-white'
-          : 'border-white/10 bg-white/[0.03] text-white/68 hover:border-white/24'
+          ? 'border-brand-cyan/55 bg-brand-cyan/[0.08] shadow-glow'
+          : 'border-white/10 bg-white/[0.03] text-white/70 hover:border-white/22 hover:bg-white/[0.05]'
       ].join(' ')}
     >
       <span
         className={[
-          'grid size-9 shrink-0 place-items-center rounded-md',
-          active ? 'bg-brand-cyan text-brand-dark' : 'bg-white/8 text-white/58'
+          'grid size-10 shrink-0 place-items-center rounded-xl',
+          active ? 'bg-gradient-cyan text-brand-dark shadow-glow' : 'bg-white/8 text-white/60'
         ].join(' ')}
       >
-        <UserRound aria-hidden="true" size={18} strokeWidth={2.4} />
+        <UserRound aria-hidden="true" size={19} strokeWidth={2.3} />
       </span>
       <span className="min-w-0">
-        <span className="block text-sm font-bold">{label}</span>
-        <span className="block text-xs text-white/48">{description}</span>
+        <span className={`block text-sm font-extrabold ${active ? 'text-white' : 'text-white'}`}>
+          {label}
+        </span>
+        <span className="block text-xs text-white/52">{description}</span>
       </span>
     </button>
   );
@@ -384,9 +369,9 @@ function LibraryTraceBadge({
   showSources: boolean;
 }) {
   return (
-    <div className="mt-3 space-y-1 border-t border-white/10 pt-2">
-      <span className="inline-flex items-center gap-1.5 rounded-md border border-brand-cyan/25 bg-brand-cyan/10 px-2 py-1 text-[11px] font-bold text-brand-cyan">
-        <BookOpenCheck aria-hidden="true" size={13} strokeWidth={2.4} />
+    <div className="mt-3 space-y-1 border-t border-white/8 pt-2.5">
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-cyan/30 bg-brand-cyan/10 px-2.5 py-1 text-[11px] font-bold text-brand-cyan">
+        <BookOpenCheck aria-hidden="true" size={12} strokeWidth={2.4} />
         Basado en biblioteca BilClimb
       </span>
       {showSources && sourceNames.length ? (
@@ -413,11 +398,7 @@ type VisualSection = {
 
 const visualSectionConfig: Record<
   string,
-  {
-    title: string;
-    icon: LucideIcon;
-    className: string;
-  }
+  { title: string; icon: LucideIcon; className: string }
 > = {
   objective: {
     title: 'Objetivo',
@@ -454,7 +435,7 @@ const visualSectionConfig: Record<
 function normalizeSectionLabel(value: string) {
   return value
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/^\d+[.)]\s*/, '')
     .replace(/^[-*•]\s*/, '')
@@ -464,31 +445,17 @@ function normalizeSectionLabel(value: string) {
 
 function getSectionId(value: string) {
   const normalizedValue = normalizeSectionLabel(cleanInlineMarkdown(value));
-
-  if (['objetivo', 'meta'].includes(normalizedValue)) {
-    return 'objective';
-  }
-
-  if (['pasos', 'paso a paso', 'como hacerlo', 'como hacer'].includes(normalizedValue)) {
+  if (['objetivo', 'meta'].includes(normalizedValue)) return 'objective';
+  if (['pasos', 'paso a paso', 'como hacerlo', 'como hacer'].includes(normalizedValue))
     return 'steps';
-  }
-
-  if (['que sentir', 'que debes sentir', 'sensaciones'].includes(normalizedValue)) {
-    return 'feel';
-  }
-
-  if (['evita', 'errores comunes', 'no hagas'].includes(normalizedValue)) {
-    return 'avoid';
-  }
-
+  if (['que sentir', 'que debes sentir', 'sensaciones'].includes(normalizedValue)) return 'feel';
+  if (['evita', 'errores comunes', 'no hagas'].includes(normalizedValue)) return 'avoid';
   if (
     ['para si', 'detente si', 'para cuando', 'senales para parar', 'cuando parar'].includes(
       normalizedValue
     )
-  ) {
+  )
     return 'stop';
-  }
-
   return null;
 }
 
@@ -518,11 +485,9 @@ function parseVisualCoachSections(content: string) {
           items: []
         };
         sections.push(activeSection);
-
         if (inlineSectionId && colonMatch?.[2]) {
           activeSection.items.push(cleanInlineMarkdown(colonMatch[2]));
         }
-
         return;
       }
 
@@ -539,20 +504,15 @@ function parseVisualCoachSections(content: string) {
     });
 
   return sections
-    .map((section) => ({
-      ...section,
-      items: section.items.filter(Boolean)
-    }))
+    .map((section) => ({ ...section, items: section.items.filter(Boolean) }))
     .filter((section) => section.items.length > 0);
 }
 
 function FormattedCoachMessage({ content }: { content: string }) {
   const visualSections = parseVisualCoachSections(content);
-
   if (!visualSections.length) {
-    return <span className="text-white/42">...</span>;
+    return <span className="text-white/42">…</span>;
   }
-
   return (
     <div className="space-y-3">
       {visualSections.map((section, sectionIndex) => (
@@ -565,18 +525,17 @@ function FormattedCoachMessage({ content }: { content: string }) {
 function CoachVisualCard({ section }: { section: VisualSection }) {
   const config = visualSectionConfig[section.id] ?? visualSectionConfig.general;
   const Icon = config.icon;
-
   return (
-    <section className={`rounded-md border p-3 ${config.className}`}>
+    <section className={`rounded-xl border p-3 ${config.className}`}>
       <div className="flex items-center gap-2">
-        <span className="grid size-8 shrink-0 place-items-center rounded-md bg-white/8">
-          <Icon aria-hidden="true" size={17} strokeWidth={2.4} />
+        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white/8">
+          <Icon aria-hidden="true" size={16} strokeWidth={2.3} />
         </span>
-        <h3 className="text-xs font-bold uppercase tracking-[0.08em]">{config.title}</h3>
+        <h3 className="text-[0.65rem] font-bold uppercase tracking-[0.10em]">{config.title}</h3>
       </div>
       <div className="mt-3 space-y-2">
         {section.items.map((item, index) => (
-          <div key={`${item}-${index}`} className="flex gap-2 text-sm leading-6 text-white/76">
+          <div key={`${item}-${index}`} className="flex gap-2 text-sm leading-6 text-white/78">
             <span className="mt-2 size-1.5 shrink-0 rounded-full bg-current opacity-80" />
             <span>{item}</span>
           </div>

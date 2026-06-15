@@ -1,30 +1,23 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { Activity, AlertTriangle, BarChart3, CheckCircle2, Moon, Zap } from 'lucide-react';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Stat } from '@/components/ui/Stat';
 import { loadCheckIns, type CheckIn } from '@/lib/checkin';
 import { loadTrainingPlan, type TrainingPlan } from '@/lib/plan';
 import { withDerivedCurrentWeek } from '@/lib/training/current-session';
 
 function formatDate(value: string) {
   const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat('es-MX', {
-    day: 'numeric',
-    month: 'short'
-  }).format(date);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(date);
 }
 
 function getAverage(values: number[]) {
-  if (!values.length) {
-    return 0;
-  }
-
+  if (!values.length) return 0;
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
@@ -38,205 +31,200 @@ export function ProgressDashboard() {
     setCheckIns(loadCheckIns());
   }, []);
 
-  const allSessions = useMemo(() => {
-    return plan?.weeks.flatMap((week) => week.sessions) ?? [];
-  }, [plan]);
-
-  const completedSessions = allSessions.filter((session) => session.completed).length;
-  const adherence = allSessions.length ? Math.round((completedSessions / allSessions.length) * 100) : 0;
-  const averageRpe = getAverage(checkIns.map((checkIn) => checkIn.rpe));
-  const averageEnergy = getAverage(checkIns.map((checkIn) => checkIn.energy));
-  const averageSleep = getAverage(checkIns.map((checkIn) => checkIn.sleep));
+  const allSessions = useMemo(() => plan?.weeks.flatMap((w) => w.sessions) ?? [], [plan]);
+  const completedSessions = allSessions.filter((s) => s.completed).length;
+  const adherence = allSessions.length
+    ? Math.round((completedSessions / allSessions.length) * 100)
+    : 0;
+  const averageRpe = getAverage(checkIns.map((c) => c.rpe));
+  const averageEnergy = getAverage(checkIns.map((c) => c.energy));
+  const averageSleep = getAverage(checkIns.map((c) => c.sleep));
   const latestFingerPain = checkIns[0]?.fingerPain ?? 0;
   const chartCheckIns = [...checkIns].reverse().slice(-8);
-  const manualActivities = checkIns.filter((checkIn) => checkIn.manualActivity);
+  const manualActivities = checkIns.filter((c) => c.manualActivity);
 
   return (
-    <section className="space-y-6">
-      <div>
-        <p className="text-sm font-semibold text-brand-cyan">Mi Progreso</p>
-        <h1 className="mt-2 text-3xl font-bold">Historial de entrenamiento</h1>
-        <p className="mt-2 text-sm leading-6 text-white/58">
+    <motion.section
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className="space-y-6"
+    >
+      <header className="space-y-2">
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-cyan">
+          Mi progreso
+        </p>
+        <h1 className="text-3xl font-extrabold leading-tight">Historial de entrenamiento</h1>
+        <p className="text-sm leading-6 text-white/64">
           Tendencias simples para entender carga, energía y señales de dolor.
         </p>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <Metric
-          icon={CheckCircle2}
-          label="Sesiones completadas"
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+        <Stat
+          label="Completadas"
           value={plan ? `${completedSessions}/${allSessions.length}` : '0'}
+          icon={CheckCircle2}
+          tone="cyan"
         />
-        <Metric icon={BarChart3} label="Adherencia" value={`${adherence}%`} />
-        <Metric icon={Activity} label="RPE promedio" value={averageRpe ? averageRpe.toFixed(1) : '-'} />
-        <Metric icon={AlertTriangle} label="Dolor dedos" value={`${latestFingerPain}/10`} />
-        <Metric icon={Zap} label="Energía" value={averageEnergy ? `${averageEnergy.toFixed(1)}/5` : '-'} />
-        <Metric icon={Moon} label="Sueño" value={averageSleep ? `${averageSleep.toFixed(1)}/5` : '-'} />
+        <Stat label="Adherencia" value={`${adherence}%`} icon={BarChart3} tone="mustard" />
+        <Stat
+          label="RPE promedio"
+          value={averageRpe ? averageRpe.toFixed(1) : '—'}
+          icon={Activity}
+          tone="cyan"
+        />
+        <Stat
+          label="Dolor dedos"
+          value={`${latestFingerPain}/10`}
+          icon={AlertTriangle}
+          tone="coral"
+        />
+        <Stat
+          label="Energía"
+          value={averageEnergy ? `${averageEnergy.toFixed(1)}/5` : '—'}
+          icon={Zap}
+          tone="mustard"
+        />
+        <Stat
+          label="Sueño"
+          value={averageSleep ? `${averageSleep.toFixed(1)}/5` : '—'}
+          icon={Moon}
+          tone="cyan"
+        />
       </div>
 
       <LineChart
         title="RPE por sesión"
         max={10}
-        values={chartCheckIns.map((checkIn) => checkIn.rpe)}
-        labels={chartCheckIns.map((checkIn, index) => `S${index + 1}`)}
+        values={chartCheckIns.map((c) => c.rpe)}
+        labels={chartCheckIns.map((_, i) => `S${i + 1}`)}
         color="#00d4aa"
       />
 
       <LineChart
         title="Dolor de dedos"
         max={10}
-        values={chartCheckIns.map((checkIn) => checkIn.fingerPain)}
-        labels={chartCheckIns.map((checkIn, index) => `S${index + 1}`)}
+        values={chartCheckIns.map((c) => c.fingerPain)}
+        labels={chartCheckIns.map((_, i) => `S${i + 1}`)}
         color="#e8b931"
       />
 
       {averageEnergy > 0 ? (
-        <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+        <Card>
           <p className="text-sm font-bold text-white">Energía promedio</p>
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full rounded-full bg-brand-cyan"
-              style={{ width: `${(averageEnergy / 5) * 100}%` }}
+          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-white/[0.06]">
+            <motion.div
+              className="h-full rounded-full bg-gradient-cyan shadow-glow"
+              initial={{ width: 0 }}
+              animate={{ width: `${(averageEnergy / 5) * 100}%` }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
             />
           </div>
-          <p className="mt-2 text-sm text-white/58">{averageEnergy.toFixed(1)} de 5</p>
-        </div>
+          <p className="mt-2 text-sm text-white/60">{averageEnergy.toFixed(1)} de 5</p>
+        </Card>
       ) : null}
 
-      <section>
-        <h2 className="mb-3 text-xl font-bold">Actividades manuales</h2>
+      <section className="space-y-3">
+        <h2 className="text-lg font-extrabold">Actividades manuales</h2>
         {manualActivities.length ? (
-          <div className="space-y-3">
-            {manualActivities.slice(0, 6).map((checkIn) => (
-              <article
-                key={`manual-${checkIn.id}`}
-                className="rounded-lg border border-brand-cyan/20 bg-brand-cyan/10 p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-brand-cyan">
-                      {formatDate(checkIn.date)}
-                    </p>
-                    <h3 className="mt-1 font-bold text-white">
-                      {checkIn.manualActivity?.title ?? 'Actividad libre'}
-                    </h3>
-                  </div>
-                  {checkIn.manualActivity?.customizedPlan ? (
-                    <span className="rounded-md border border-brand-cyan/30 px-2 py-1 text-xs font-bold text-brand-cyan">
-                      adaptación
-                    </span>
-                  ) : null}
-                </div>
-                <p className="mt-2 text-sm font-semibold text-white/58">
-                  {checkIn.manualActivity?.location || 'libre'}
-                  {checkIn.manualActivity?.durationMinutes
-                    ? ` · ${checkIn.manualActivity.durationMinutes} min`
-                    : ''}
-                </p>
-                {checkIn.manualActivity?.details ? (
-                  <p className="mt-2 text-sm leading-6 text-white/70">
-                    {checkIn.manualActivity.details}
+          manualActivities.slice(0, 6).map((checkIn) => (
+            <Card key={`manual-${checkIn.id}`} variant="hero" className="!p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.10em] text-brand-cyan">
+                    {formatDate(checkIn.date)}
                   </p>
+                  <h3 className="mt-1 text-base font-extrabold text-white">
+                    {checkIn.manualActivity?.title ?? 'Actividad libre'}
+                  </h3>
+                </div>
+                {checkIn.manualActivity?.customizedPlan ? (
+                  <span className="rounded-full border border-brand-cyan/40 px-2.5 py-0.5 text-xs font-bold text-brand-cyan">
+                    adaptación
+                  </span>
                 ) : null}
-              </article>
-            ))}
-          </div>
+              </div>
+              <p className="mt-2 text-sm font-bold text-white/60">
+                {checkIn.manualActivity?.location || 'libre'}
+                {checkIn.manualActivity?.durationMinutes
+                  ? ` · ${checkIn.manualActivity.durationMinutes} min`
+                  : ''}
+              </p>
+              {checkIn.manualActivity?.details ? (
+                <p className="mt-2 text-sm leading-6 text-white/72">
+                  {checkIn.manualActivity.details}
+                </p>
+              ) : null}
+            </Card>
+          ))
         ) : (
-          <div className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
+          <Card>
             <p className="text-sm leading-6 text-white/68">
               Cuando hagas roca, movilidad o fuerza fuera del plan, quedará registrado aquí.
             </p>
-            <Link
-              href="/checkin?manual=1"
-              className="mt-4 inline-flex w-full items-center justify-center rounded-md border border-white/12 px-4 py-3 text-sm font-bold text-white/76"
-            >
+            <Button variant="secondary" href="/checkin?manual=1" className="mt-4 w-full">
               Registrar actividad manual
-            </Link>
-          </div>
+            </Button>
+          </Card>
         )}
       </section>
 
-      <section>
-        <h2 className="mb-3 text-xl font-bold">Últimos check-ins</h2>
+      <section className="space-y-3">
+        <h2 className="text-lg font-extrabold">Últimos check-ins</h2>
         {checkIns.length ? (
-          <div className="space-y-3">
-            {checkIns.slice(0, 8).map((checkIn) => (
-              <article key={checkIn.id} className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-bold text-white">{formatDate(checkIn.date)}</p>
-                    <p className="mt-1 text-sm text-white/58">
-                      RPE: {checkIn.rpe} | Dedos: {checkIn.fingerPain} | Energía: {checkIn.energy}
-                    </p>
-                  </div>
-                  <span className="rounded-md border border-white/10 px-2 py-1 text-xs font-bold text-white/58">
-                    {checkIn.manualActivity ? 'manual' : checkIn.completed}
-                  </span>
+          checkIns.slice(0, 8).map((checkIn) => (
+            <Card key={checkIn.id} className="!p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-extrabold text-white">{formatDate(checkIn.date)}</p>
+                  <p className="mt-1 text-sm text-white/60">
+                    RPE {checkIn.rpe} · Dedos {checkIn.fingerPain} · Energía {checkIn.energy}
+                  </p>
                 </div>
-                {checkIn.manualActivity ? (
-                  <div className="mt-3 rounded-md border border-brand-cyan/20 bg-brand-cyan/10 p-3">
-                    <p className="text-sm font-bold text-white">{checkIn.manualActivity.title}</p>
-                    <p className="mt-1 text-xs font-semibold text-white/52">
-                      {checkIn.manualActivity.location}
-                      {checkIn.manualActivity.durationMinutes
-                        ? ` · ${checkIn.manualActivity.durationMinutes} min`
-                        : ''}
-                      {checkIn.manualActivity.customizedPlan ? ' · adaptación del plan' : ''}
+                <span className="rounded-full border border-white/10 px-2.5 py-0.5 text-xs font-bold text-white/55">
+                  {checkIn.manualActivity ? 'manual' : checkIn.completed}
+                </span>
+              </div>
+              {checkIn.manualActivity ? (
+                <div className="mt-3 rounded-xl border border-brand-cyan/25 bg-brand-cyan/[0.06] p-3">
+                  <p className="text-sm font-extrabold text-white">{checkIn.manualActivity.title}</p>
+                  <p className="mt-1 text-xs font-bold text-white/55">
+                    {checkIn.manualActivity.location}
+                    {checkIn.manualActivity.durationMinutes
+                      ? ` · ${checkIn.manualActivity.durationMinutes} min`
+                      : ''}
+                    {checkIn.manualActivity.customizedPlan ? ' · adaptación del plan' : ''}
+                  </p>
+                  {checkIn.manualActivity.details ? (
+                    <p className="mt-2 text-sm leading-6 text-white/68">
+                      {checkIn.manualActivity.details}
                     </p>
-                    {checkIn.manualActivity.details ? (
-                      <p className="mt-2 text-sm leading-6 text-white/68">
-                        {checkIn.manualActivity.details}
-                      </p>
-                    ) : null}
-                  </div>
-                ) : null}
-                {checkIn.notes ? (
-                  <p className="mt-3 text-sm leading-6 text-white/68">{checkIn.notes}</p>
-                ) : null}
-              </article>
-            ))}
-          </div>
+                  ) : null}
+                </div>
+              ) : null}
+              {checkIn.notes ? (
+                <p className="mt-3 text-sm leading-6 text-white/68">{checkIn.notes}</p>
+              ) : null}
+            </Card>
+          ))
         ) : (
-          <div className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
+          <Card>
             <p className="text-sm leading-6 text-white/68">
               Todavía no hay check-ins. Registra cómo te fue al terminar tu próxima sesión.
             </p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <Link
-                href="/session"
-                className="inline-flex w-full items-center justify-center rounded-md bg-brand-cyan px-4 py-3 text-sm font-bold text-brand-dark"
-              >
+              <Button href="/session" className="w-full">
                 Ir a sesión
-              </Link>
-              <Link
-                href="/checkin?manual=1"
-                className="inline-flex w-full items-center justify-center rounded-md border border-white/12 px-4 py-3 text-sm font-bold text-white/76"
-              >
+              </Button>
+              <Button variant="secondary" href="/checkin?manual=1" className="w-full">
                 Registrar manual
-              </Link>
+              </Button>
             </div>
-          </div>
+          </Card>
         )}
       </section>
-    </section>
-  );
-}
-
-function Metric({
-  icon: Icon,
-  label,
-  value
-}: {
-  icon: typeof Activity;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-      <Icon aria-hidden="true" size={21} className="text-brand-cyan" />
-      <p className="mt-3 text-xs font-semibold text-white/46">{label}</p>
-      <p className="mt-1 text-2xl font-bold">{value}</p>
-    </div>
+    </motion.section>
   );
 }
 
@@ -265,33 +253,69 @@ function LineChart({
   });
 
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-bold">{title}</h2>
-        <p className="text-sm font-semibold text-white/46">{values.length} sesiones</p>
+    <Card>
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <h2 className="text-base font-extrabold">{title}</h2>
+        <p className="text-xs font-bold uppercase tracking-[0.08em] text-white/45">
+          {values.length} sesiones
+        </p>
       </div>
 
       {values.length ? (
         <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={title} className="h-44 w-full">
-          <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="rgba(255,255,255,0.18)" />
+          <defs>
+            <linearGradient id={`grad-${color.replace('#', '')}`} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity="0.32" />
+              <stop offset="100%" stopColor={color} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <line
+            x1={padding}
+            y1={padding}
+            x2={padding}
+            y2={height - padding}
+            stroke="rgba(255,255,255,0.10)"
+          />
           <line
             x1={padding}
             y1={height - padding}
             x2={width - padding}
             y2={height - padding}
-            stroke="rgba(255,255,255,0.18)"
+            stroke="rgba(255,255,255,0.10)"
           />
-          <polyline fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" points={points.join(' ')} />
+          {points.length > 1 ? (
+            <polygon
+              fill={`url(#grad-${color.replace('#', '')})`}
+              points={`${points[0].split(',')[0]},${height - padding} ${points.join(' ')} ${points[points.length - 1].split(',')[0]},${height - padding}`}
+            />
+          ) : null}
+          <polyline
+            fill="none"
+            stroke={color}
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            points={points.join(' ')}
+          />
           {points.map((point, index) => {
             const [x, y] = point.split(',').map(Number);
-            return <circle key={point} cx={x} cy={y} r="4" fill={color} aria-label={`${labels[index]} ${values[index]}`} />;
+            return (
+              <circle
+                key={point}
+                cx={x}
+                cy={y}
+                r="4"
+                fill={color}
+                aria-label={`${labels[index]} ${values[index]}`}
+              />
+            );
           })}
         </svg>
       ) : (
-        <div className="grid h-44 place-items-center rounded-md border border-white/10 bg-brand-dark/32 text-sm text-white/48">
+        <div className="grid h-44 place-items-center rounded-xl border border-white/8 bg-brand-deep/40 text-sm text-white/45">
           Sin datos todavía
         </div>
       )}
-    </div>
+    </Card>
   );
 }

@@ -2,7 +2,11 @@
 
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { ChevronLeft, CheckCircle2, PencilLine } from 'lucide-react';
+import { Card } from '@/components/ui/Card';
+import { Banner } from '@/components/ui/Banner';
+import { Button } from '@/components/ui/Button';
 import { saveCheckIn, type CheckIn } from '@/lib/checkin';
 import { loadCheckIns } from '@/lib/checkin';
 import { loadTrainingPlan, saveSessionCheckIn } from '@/lib/plan';
@@ -61,10 +65,10 @@ const completionOptions: Array<{ label: string; value: CompletionValue }> = [
 ];
 
 const fingerPainOptions = [
-  { label: '0 Nada', value: 0 },
-  { label: '1-3 Leve', value: 2 },
-  { label: '4-6 Moderado', value: 5 },
-  { label: '7-10 Fuerte', value: 8 }
+  { label: '0 · Nada', value: 0 },
+  { label: '1-3 · Leve', value: 2 },
+  { label: '4-6 · Moderado', value: 5 },
+  { label: '7-10 · Fuerte', value: 8 }
 ];
 
 const otherPainOptions = [
@@ -75,29 +79,14 @@ const otherPainOptions = [
   { label: 'Otro', value: 'other' }
 ];
 
-const energyOptions = [
-  { label: '1', value: 1 },
-  { label: '2', value: 2 },
-  { label: '3', value: 3 },
-  { label: '4', value: 4 },
-  { label: '5', value: 5 }
-];
-
-function classNames(...classes: Array<string | false | null | undefined>) {
+function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ');
 }
 
 function togglePain(currentValues: string[], value: string) {
-  if (value === 'none') {
-    return ['none'];
-  }
-
+  if (value === 'none') return ['none'];
   const withoutNone = currentValues.filter((item) => item !== 'none');
-
-  if (withoutNone.includes(value)) {
-    return withoutNone.filter((item) => item !== value);
-  }
-
+  if (withoutNone.includes(value)) return withoutNone.filter((item) => item !== value);
   return [...withoutNone, value];
 }
 
@@ -105,7 +94,6 @@ function createId() {
   if (typeof window !== 'undefined' && window.crypto?.randomUUID) {
     return window.crypto.randomUUID();
   }
-
   return `checkin-${Date.now()}`;
 }
 
@@ -192,27 +180,33 @@ export function CheckInForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-7">
+    <motion.form
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      onSubmit={handleSubmit}
+      className="space-y-6"
+    >
       <Link
         href={
           sessionContext
             ? `/session?week=${sessionContext.week.weekNumber}&day=${sessionContext.session.dayNumber}`
             : '/'
         }
-        className="inline-flex items-center gap-2 text-sm font-semibold text-white/62"
+        className="inline-flex items-center gap-2 text-sm font-bold text-white/62 hover:text-white"
       >
         <ChevronLeft aria-hidden="true" size={17} />
-        {sessionContext ? 'Sesión' : 'Dashboard'}
+        {sessionContext ? 'Volver a la sesión' : 'Volver al dashboard'}
       </Link>
 
-      <div>
-        <p className="text-sm font-semibold text-brand-mustard">
+      <header className="space-y-1.5">
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-mustard">
           {sessionContext ? sessionContext.session.title : 'Actividad manual'}
         </p>
-        <h1 className="mt-2 text-3xl font-bold">
+        <h1 className="text-3xl font-extrabold leading-tight">
           {sessionContext ? '¿Cómo te fue hoy?' : 'Registra lo que hiciste'}
         </h1>
-      </div>
+      </header>
 
       <ManualActivitySection
         forced={!sessionContext}
@@ -234,17 +228,14 @@ export function CheckInForm() {
         </OptionGrid>
       </FieldGroup>
 
-      <FieldGroup title="Esfuerzo percibido (RPE)">
+      <FieldGroup title="Esfuerzo percibido (RPE)" hint="1 muy fácil · 10 máximo">
         <NumberScale
           min={1}
           max={10}
           value={draft.rpe}
+          tone="cyan"
           onChange={(rpe) => setDraft((current) => ({ ...current, rpe }))}
         />
-        <div className="mt-2 flex justify-between text-xs font-semibold text-white/44">
-          <span>Muy fácil</span>
-          <span>Máximo esfuerzo</span>
-        </div>
       </FieldGroup>
 
       <FieldGroup title="¿Dolor en dedos?">
@@ -280,94 +271,65 @@ export function CheckInForm() {
         </OptionGrid>
       </FieldGroup>
 
-      <FieldGroup title="Energía general hoy">
+      <FieldGroup title="Energía general hoy" hint="1 baja · 5 alta">
         <NumberScale
           min={1}
           max={5}
           value={draft.energy}
+          tone="mustard"
           onChange={(energy) => setDraft((current) => ({ ...current, energy }))}
         />
       </FieldGroup>
 
-      <FieldGroup title="Sueño anoche">
+      <FieldGroup title="Sueño anoche" hint="1 malo · 5 reparador">
         <NumberScale
           min={1}
           max={5}
           value={draft.sleep}
+          tone="cyan"
           onChange={(sleep) => setDraft((current) => ({ ...current, sleep }))}
         />
       </FieldGroup>
 
       <label className="block">
-        <span className="mb-2 block text-base font-semibold">Notas (opcional)</span>
+        <span className="mb-2 block text-sm font-extrabold text-white">Notas (opcional)</span>
         <textarea
           value={draft.notes}
           rows={4}
-          placeholder="Me costó la tercera serie, bajé intensidad y terminé bien..."
+          placeholder="Me costó la tercera serie, bajé intensidad y terminé bien…"
           onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))}
-          className="w-full resize-none rounded-md border border-white/10 bg-white/[0.04] px-4 py-3 text-white outline-none transition placeholder:text-white/34 focus:border-brand-cyan"
+          className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 leading-6 text-white outline-none transition placeholder:text-white/30 focus:border-brand-cyan/60 focus:bg-white/[0.05]"
         />
       </label>
 
       {savedCheckIn ? (
         <div className="space-y-3">
-          <div className="rounded-lg border border-brand-cyan/30 bg-brand-cyan/10 p-4 text-sm leading-6 text-white/76">
-            <div className="flex items-start gap-3">
-              <CheckCircle2 aria-hidden="true" size={22} className="mt-0.5 shrink-0 text-brand-cyan" />
-              <div>
-                <p className="font-bold text-white">Check-in guardado</p>
-                <p className="mt-1 text-white/70">
-                  RPE {savedCheckIn.rpe}/10 · Dedos {savedCheckIn.fingerPain}/10 · Energía{' '}
-                  {savedCheckIn.energy}/5
-                </p>
-              </div>
-            </div>
-          </div>
-
+          <Banner
+            tone="cyan"
+            icon={CheckCircle2}
+            title="Check-in guardado"
+            description={`RPE ${savedCheckIn.rpe}/10 · Dedos ${savedCheckIn.fingerPain}/10 · Energía ${savedCheckIn.energy}/5`}
+          />
           {alerts.map((alert) => (
-            <PostCheckInAlert key={alert.id} alert={alert} />
+            <Banner
+              key={alert.id}
+              tone={alert.tone === 'danger' ? 'danger' : alert.tone === 'warning' ? 'mustard' : 'cyan'}
+              title={alert.title}
+              description={alert.message}
+            />
           ))}
         </div>
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <button
-          type="submit"
-          className="flex w-full items-center justify-center rounded-md bg-brand-cyan px-4 py-4 text-base font-bold text-brand-dark transition hover:bg-brand-cyan/90"
-        >
+        <Button type="submit" size="lg" className="w-full">
           Guardar check-in
-        </button>
-        <Link
-          href="/"
-          className="flex w-full items-center justify-center rounded-md border border-white/12 px-4 py-4 text-base font-bold text-white/76 transition hover:bg-white/[0.05]"
-        >
+        </Button>
+        <Button variant="secondary" href="/" size="lg" className="w-full">
           Volver al dashboard
-        </Link>
+        </Button>
       </div>
-    </form>
-  );
-}
-
-function PostCheckInAlert({ alert }: { alert: CheckInAlert }) {
-  const toneClassName =
-    alert.tone === 'danger'
-      ? 'border-red-400/30 bg-red-400/10'
-      : alert.tone === 'warning'
-        ? 'border-brand-mustard/30 bg-brand-mustard/10'
-        : 'border-brand-cyan/30 bg-brand-cyan/10';
-
-  const titleClassName =
-    alert.tone === 'danger'
-      ? 'text-red-200'
-      : alert.tone === 'warning'
-        ? 'text-brand-mustard'
-        : 'text-brand-cyan';
-
-  return (
-    <div className={`rounded-lg border p-4 text-sm leading-6 text-white/76 ${toneClassName}`}>
-      <p className={`font-bold ${titleClassName}`}>{alert.title}</p>
-      <p className="mt-1">{alert.message}</p>
-    </div>
+    </motion.form>
   );
 }
 
@@ -387,7 +349,7 @@ function ManualActivitySection({
   }
 
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+    <Card>
       <button
         type="button"
         disabled={forced}
@@ -396,15 +358,17 @@ function ManualActivitySection({
       >
         <span className="flex min-w-0 items-center gap-3">
           <span
-            className={classNames(
-              'grid size-10 shrink-0 place-items-center rounded-md',
-              active ? 'bg-brand-cyan text-brand-dark' : 'bg-white/8 text-white/58'
+            className={cn(
+              'grid size-10 shrink-0 place-items-center rounded-xl transition',
+              active
+                ? 'bg-gradient-cyan text-brand-dark shadow-glow'
+                : 'bg-white/8 text-white/60'
             )}
           >
-            <PencilLine aria-hidden="true" size={19} strokeWidth={2.4} />
+            <PencilLine aria-hidden="true" size={18} strokeWidth={2.3} />
           </span>
           <span className="min-w-0">
-            <span className="block text-base font-bold text-white">
+            <span className="block text-base font-extrabold text-white">
               {forced ? 'Actividad fuera del plan' : 'Hice algo diferente al plan'}
             </span>
             <span className="mt-1 block text-sm leading-5 text-white/58">
@@ -414,13 +378,13 @@ function ManualActivitySection({
         </span>
         {!forced ? (
           <span
-            className={classNames(
+            className={cn(
               'h-6 w-11 shrink-0 rounded-full border p-0.5 transition',
-              active ? 'border-brand-cyan bg-brand-cyan/24' : 'border-white/16 bg-white/6'
+              active ? 'border-brand-cyan/60 bg-brand-cyan/24' : 'border-white/16 bg-white/[0.06]'
             )}
           >
             <span
-              className={classNames(
+              className={cn(
                 'block size-4 rounded-full transition',
                 active ? 'translate-x-5 bg-brand-cyan' : 'translate-x-0 bg-white/50'
               )}
@@ -432,57 +396,56 @@ function ManualActivitySection({
       {active ? (
         <div className="mt-4 grid gap-3">
           <label className="block">
-            <span className="mb-2 block text-sm font-semibold text-white/76">Qué hiciste</span>
+            <span className="mb-2 block text-sm font-bold text-white/76">Qué hiciste</span>
             <input
               value={value.title}
               onChange={(event) => update({ title: event.target.value })}
-              placeholder="Ej. Bloque suave en roca, movilidad, fuerza en casa"
-              className="h-12 w-full rounded-md border border-white/10 bg-brand-dark/40 px-4 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-brand-cyan"
+              placeholder="Bloque suave en roca, movilidad, fuerza en casa…"
+              className="h-12 w-full rounded-xl border border-white/10 bg-brand-deep/40 px-4 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-brand-cyan/60"
             />
           </label>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-white/76">Lugar</span>
+              <span className="mb-2 block text-sm font-bold text-white/76">Lugar</span>
               <input
                 value={value.location}
                 onChange={(event) => update({ location: event.target.value })}
                 placeholder="roca, casa, gym, parque"
-                className="h-12 w-full rounded-md border border-white/10 bg-brand-dark/40 px-4 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-brand-cyan"
+                className="h-12 w-full rounded-xl border border-white/10 bg-brand-deep/40 px-4 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-brand-cyan/60"
               />
             </label>
-
             <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-white/76">Minutos</span>
+              <span className="mb-2 block text-sm font-bold text-white/76">Minutos</span>
               <input
                 inputMode="numeric"
                 value={value.durationMinutes}
                 onChange={(event) => update({ durationMinutes: event.target.value })}
                 placeholder="90"
-                className="h-12 w-full rounded-md border border-white/10 bg-brand-dark/40 px-4 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-brand-cyan"
+                className="h-12 w-full rounded-xl border border-white/10 bg-brand-deep/40 px-4 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-brand-cyan/60"
               />
             </label>
           </div>
 
           <label className="block">
-            <span className="mb-2 block text-sm font-semibold text-white/76">Detalle</span>
+            <span className="mb-2 block text-sm font-bold text-white/76">Detalle</span>
             <textarea
               value={value.details}
               rows={3}
               onChange={(event) => update({ details: event.target.value })}
-              placeholder="Qué cambiaste, intensidad, volumen, rutas, molestias o por qué lo adaptaste..."
-              className="w-full resize-none rounded-md border border-white/10 bg-brand-dark/40 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-brand-cyan"
+              placeholder="Qué cambiaste, intensidad, volumen, rutas, molestias o por qué lo adaptaste…"
+              className="w-full resize-none rounded-xl border border-white/10 bg-brand-deep/40 px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-white/30 focus:border-brand-cyan/60"
             />
           </label>
 
           <button
             type="button"
             onClick={() => update({ customizedPlan: !value.customizedPlan })}
-            className={classNames(
-              'flex min-h-12 items-center justify-between gap-3 rounded-md border px-3 py-3 text-left text-sm font-bold transition',
+            className={cn(
+              'flex min-h-12 items-center justify-between gap-3 rounded-xl border px-3 py-3 text-left text-sm font-bold transition',
               value.customizedPlan
-                ? 'border-brand-cyan bg-brand-cyan/14 text-brand-cyan'
-                : 'border-white/10 bg-white/[0.04] text-white/70 hover:border-white/24'
+                ? 'border-brand-cyan/55 bg-brand-cyan/[0.08] text-brand-cyan'
+                : 'border-white/10 bg-white/[0.03] text-white/70 hover:border-white/22'
             )}
           >
             <span>Fue una adaptación del plan</span>
@@ -490,14 +453,29 @@ function ManualActivitySection({
           </button>
         </div>
       ) : null}
-    </section>
+    </Card>
   );
 }
 
-function FieldGroup({ title, children }: { title: string; children: React.ReactNode }) {
+function FieldGroup({
+  title,
+  hint,
+  children
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <section>
-      <h2 className="mb-3 text-base font-semibold">{title}</h2>
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <h2 className="text-sm font-extrabold text-white">{title}</h2>
+        {hint ? (
+          <span className="text-[0.7rem] font-bold uppercase tracking-[0.10em] text-white/45">
+            {hint}
+          </span>
+        ) : null}
+      </div>
       {children}
     </section>
   );
@@ -520,11 +498,11 @@ function OptionButton({
     <button
       type="button"
       onClick={onClick}
-      className={classNames(
-        'min-h-12 rounded-md border px-3 py-3 text-sm font-bold transition',
+      className={cn(
+        'min-h-12 rounded-xl border px-3 py-3 text-sm font-bold transition-all duration-150 active:scale-[0.99]',
         active
-          ? 'border-brand-cyan bg-brand-cyan/14 text-brand-cyan'
-          : 'border-white/10 bg-white/[0.04] text-white/70 hover:border-white/24'
+          ? 'border-brand-cyan/55 bg-brand-cyan/[0.12] text-brand-cyan shadow-glow'
+          : 'border-white/10 bg-white/[0.03] text-white/74 hover:border-white/22'
       )}
     >
       {children}
@@ -536,15 +514,17 @@ function NumberScale({
   min,
   max,
   value,
+  tone,
   onChange
 }: {
   min: number;
   max: number;
   value: number;
+  tone: 'cyan' | 'mustard';
   onChange: (value: number) => void;
 }) {
   const values = Array.from({ length: max - min + 1 }, (_, index) => min + index);
-
+  const activeBg = tone === 'cyan' ? 'bg-gradient-cyan shadow-glow' : 'bg-gradient-mustard shadow-glow-mustard';
   return (
     <div className="grid grid-cols-5 gap-2 sm:grid-cols-10">
       {values.map((item) => (
@@ -552,11 +532,11 @@ function NumberScale({
           key={item}
           type="button"
           onClick={() => onChange(item)}
-          className={classNames(
-            'grid aspect-square place-items-center rounded-md border text-sm font-bold transition',
+          className={cn(
+            'grid aspect-square place-items-center rounded-xl border text-sm font-extrabold transition active:scale-[0.97]',
             item === value
-              ? 'border-brand-cyan bg-brand-cyan text-brand-dark'
-              : 'border-white/10 bg-white/[0.04] text-white/70 hover:border-white/24'
+              ? `${activeBg} border-transparent text-brand-dark`
+              : 'border-white/10 bg-white/[0.03] text-white/70 hover:border-white/22'
           )}
         >
           {item}
