@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
 import { zodResponseFormat } from 'openai/helpers/zod';
-import { markFreePlanUsed, requirePlanGenerationAccess } from '@/lib/billing/subscription';
+import { gatePlanGeneration, markFreePlanConsumed } from '@/lib/billing/gates';
 import { enforceRateLimit } from '@/lib/rate-limit';
 import {
   FastPlanMetadataSchema,
@@ -502,8 +502,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const subscriptionError = requirePlanGenerationAccess();
-  if (subscriptionError) return subscriptionError;
+  const gate = await gatePlanGeneration();
+  if (!gate.allowed) return gate.response;
+  const userId = gate.userId;
 
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
@@ -606,7 +607,9 @@ export async function POST(request: Request) {
       }
     }
 
-    markFreePlanUsed();
+    // Solo consumir el plan gratis si el plan pasó safety. Si el reintento falló,
+    // la función ya retornó 422 arriba y no llegamos acá.
+    await markFreePlanConsumed(userId);
     return NextResponse.json({ plan });
   } catch (caughtError) {
     const message =

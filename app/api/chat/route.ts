@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import type { CheckIn } from '@/lib/checkin';
 import type { TrainingPlan } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
-import { requireSubscriptionAccess } from '@/lib/billing/subscription';
+import { gateChat } from '@/lib/billing/gates';
 import { enforceRateLimit } from '@/lib/rate-limit';
 import { buildCoachSystemPrompt } from '@/lib/prompts/coach-system';
 import { extractLibraryTraceability } from '@/lib/ai/response-sources';
@@ -53,11 +53,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const subscriptionError = requireSubscriptionAccess();
-
-  if (subscriptionError) {
-    return subscriptionError;
-  }
+  const gate = await gateChat();
+  if (!gate.allowed) return gate.response;
 
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
