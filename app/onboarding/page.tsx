@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  ArrowRight,
   Check,
   Dumbbell,
   HeartPulse,
@@ -13,6 +14,7 @@ import {
   Zap
 } from 'lucide-react';
 import { saveProfile, type UserProfile } from '@/lib/profile';
+import { Card } from '@/components/ui/Card';
 
 type DurationChoice = '' | '4' | '8' | '12' | 'starter';
 
@@ -54,11 +56,7 @@ type OnboardingForm = {
   durationChoice: DurationChoice;
 };
 
-type Option = {
-  label: string;
-  value: string;
-  helper?: string;
-};
+type Option = { label: string; value: string; helper?: string };
 
 const initialForm: OnboardingForm = {
   character: 'bill',
@@ -274,7 +272,7 @@ const durationOptions: Array<{ label: string; value: DurationChoice }> = [
   { label: 'Solo quiero empezar', value: 'starter' }
 ];
 
-function classNames(...classes: Array<string | false | null | undefined>) {
+function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ');
 }
 
@@ -283,25 +281,15 @@ function getLabel(options: Option[], value: string) {
 }
 
 function getLabels(options: Option[], values: string[]) {
-  if (!values.length) {
-    return 'Pendiente';
-  }
-
+  if (!values.length) return 'Pendiente';
   return values.map((value) => getLabel(options, value)).join(' + ');
 }
 
 function getGoalSummary(goals: string[], goalDescription: string) {
   const selectedGoals = getLabels(goalOptions, goals);
   const description = goalDescription.trim();
-
-  if (description && goals.length) {
-    return `${selectedGoals} · ${description}`;
-  }
-
-  if (description) {
-    return description;
-  }
-
+  if (description && goals.length) return `${selectedGoals} · ${description}`;
+  if (description) return description;
   return selectedGoals;
 }
 
@@ -314,21 +302,13 @@ function createId() {
   if (typeof window !== 'undefined' && window.crypto?.randomUUID) {
     return window.crypto.randomUUID();
   }
-
   return `profile-${Date.now()}`;
 }
 
 function toggleExclusiveList(currentValues: string[], value: string, exclusiveValues: string[]) {
   const isActive = currentValues.includes(value);
-
-  if (isActive) {
-    return currentValues.filter((item) => item !== value);
-  }
-
-  if (exclusiveValues.includes(value)) {
-    return [value];
-  }
-
+  if (isActive) return currentValues.filter((item) => item !== value);
+  if (exclusiveValues.includes(value)) return [value];
   return [...currentValues.filter((item) => !exclusiveValues.includes(item)), value];
 }
 
@@ -345,15 +325,15 @@ function OptionButton({
     <button
       type="button"
       onClick={onClick}
-      className={classNames(
-        'flex min-h-12 items-center justify-between rounded-md border px-4 py-3 text-left text-sm font-semibold transition',
+      className={cn(
+        'group flex min-h-12 items-center justify-between rounded-xl border px-4 py-3 text-left text-sm font-bold transition-all duration-150 active:scale-[0.99]',
         active
-          ? 'border-brand-cyan bg-brand-cyan/14 text-brand-cyan'
-          : 'border-white/10 bg-white/[0.04] text-white/76 hover:border-white/24 hover:bg-white/[0.07]'
+          ? 'border-brand-cyan/60 bg-brand-cyan/[0.12] text-brand-cyan shadow-glow'
+          : 'border-white/10 bg-white/[0.03] text-white/78 hover:border-white/22 hover:bg-white/[0.05]'
       )}
     >
       <span>{children}</span>
-      {active ? <Check aria-hidden="true" size={18} strokeWidth={2.6} /> : null}
+      {active ? <Check aria-hidden="true" size={17} strokeWidth={2.8} /> : null}
     </button>
   );
 }
@@ -362,25 +342,42 @@ function StepSection({
   number,
   title,
   children,
-  icon: Icon
+  icon: Icon,
+  done
 }: {
   number: number;
   title: string;
   children: React.ReactNode;
   icon: typeof UserRound;
+  done: boolean;
 }) {
   return (
-    <section className="border-b border-white/10 py-8">
-      <div className="mb-5 flex items-center gap-3">
-        <div className="grid size-10 shrink-0 place-items-center rounded-md bg-brand-cyan/14 text-brand-cyan">
-          <Icon aria-hidden="true" size={20} strokeWidth={2.4} />
+    <section className="py-8 first:pt-4">
+      <Card className="space-y-7 p-6">
+        <div className="flex items-center gap-3">
+          <div
+            className={cn(
+              'grid size-11 shrink-0 place-items-center rounded-2xl transition',
+              done
+                ? 'bg-gradient-cyan text-brand-dark shadow-glow'
+                : 'bg-brand-cyan/14 text-brand-cyan'
+            )}
+          >
+            {done ? (
+              <Check aria-hidden="true" size={20} strokeWidth={3} />
+            ) : (
+              <Icon aria-hidden="true" size={20} strokeWidth={2.3} />
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-mustard">
+              Paso {number} de 7
+            </p>
+            <h2 className="mt-0.5 text-xl font-extrabold leading-tight">{title}</h2>
+          </div>
         </div>
-        <div>
-          <p className="text-sm font-semibold text-brand-mustard">Paso {number} de 7</p>
-          <h2 className="text-2xl font-bold">{title}</h2>
-        </div>
-      </div>
-      {children}
+        {children}
+      </Card>
     </section>
   );
 }
@@ -388,46 +385,28 @@ function StepSection({
 export default function OnboardingPage() {
   const router = useRouter();
   const [form, setForm] = useState<OnboardingForm>(initialForm);
-  const [scrollProgress, setScrollProgress] = useState(0);
 
-  useEffect(() => {
-    function updateScrollProgress() {
-      const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const nextProgress =
-        scrollableHeight > 0 ? (window.scrollY / scrollableHeight) * 100 : 100;
-
-      setScrollProgress(Math.max(0, Math.min(100, nextProgress)));
-    }
-
-    updateScrollProgress();
-    window.addEventListener('scroll', updateScrollProgress, { passive: true });
-    window.addEventListener('resize', updateScrollProgress);
-
-    return () => {
-      window.removeEventListener('scroll', updateScrollProgress);
-      window.removeEventListener('resize', updateScrollProgress);
-    };
-  }, []);
-
-  const completedSteps = useMemo(() => {
-    return [
-      Boolean(form.character),
-      Boolean(form.climbingTime && form.disciplines.length && form.level && form.setting),
-      Boolean(form.age && form.sex),
-      Boolean(form.injuries.length && form.warmup && form.sleep && form.energy),
-      Boolean(
+  const stepsDone = useMemo(() => {
+    return {
+      1: Boolean(form.character),
+      2: Boolean(form.climbingTime && form.disciplines.length && form.level && form.setting),
+      3: Boolean(form.age && form.sex),
+      4: Boolean(form.injuries.length && form.warmup && form.sleep && form.energy),
+      5: Boolean(
         form.daysPerWeek &&
           form.availableDays.length &&
           form.sessionDuration &&
           form.equipment.length &&
           form.previousTraining
       ),
-      Boolean((form.goals.length || form.goalDescription.trim()) && form.durationChoice),
-      true
-    ].filter(Boolean).length;
+      6: Boolean((form.goals.length || form.goalDescription.trim()) && form.durationChoice),
+      7: true
+    };
   }, [form]);
 
+  const completedSteps = Object.values(stepsDone).filter(Boolean).length;
   const canSubmit = completedSteps === 7;
+  const progressPercent = (completedSteps / 7) * 100;
 
   const durationWeeks = form.durationChoice === 'starter' ? 4 : Number(form.durationChoice);
   const daysLabel = daysOptions.find((option) => option.value === form.daysPerWeek)?.label;
@@ -435,9 +414,7 @@ export default function OnboardingPage() {
     durationOptions.find((option) => option.value === form.durationChoice)?.label ?? 'Pendiente';
 
   function handleSubmit() {
-    if (!canSubmit) {
-      return;
-    }
+    if (!canSubmit) return;
 
     const now = new Date().toISOString();
     const goals = form.goals.length ? form.goals : ['other'];
@@ -498,300 +475,292 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-brand-dark text-white">
-      <div className="sticky top-0 z-40 border-b border-white/10 bg-brand-dark/96 backdrop-blur">
+    <main className="min-h-screen text-white">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10 bg-gradient-glow"
+      />
+
+      <div className="sticky top-0 z-40 border-b border-white/[0.06] bg-brand-dark/85 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-3xl px-4 py-4">
           <div className="mb-3 flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-brand-cyan">BilClimb.ai</p>
-              <h1 className="text-xl font-bold">Onboarding</h1>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-cyan">
+                BilClimb.ai
+              </p>
+              <h1 className="mt-0.5 text-xl font-extrabold">Onboarding</h1>
             </div>
-            <p className="text-sm font-semibold text-white/70">{completedSteps}/7</p>
+            <div className="text-right">
+              <p className="text-xs font-bold uppercase tracking-[0.10em] text-white/50">
+                Pasos
+              </p>
+              <p className="text-lg font-extrabold text-brand-cyan">
+                {completedSteps}<span className="text-white/40">/7</span>
+              </p>
+            </div>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-white/10" aria-hidden="true">
+          <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]" aria-hidden="true">
             <div
-              className="h-full rounded-full bg-brand-cyan transition-[width]"
-              style={{ width: `${scrollProgress}%` }}
+              className="h-full rounded-full bg-gradient-cyan shadow-glow transition-[width] duration-500 ease-out"
+              style={{ width: `${progressPercent}%` }}
             />
           </div>
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-3xl px-4 pb-12">
-        <StepSection number={1} title="Elige tu compañer@" icon={Sparkles}>
-          <p className="mb-4 text-lg font-semibold">¿Con quién quieres entrenar?</p>
+      <div className="mx-auto w-full max-w-3xl px-4 pb-16">
+        <StepSection number={1} title="Elige tu compañer@" icon={Sparkles} done={stepsDone[1]}>
+          <p className="text-base font-bold">¿Con quién quieres entrenar?</p>
           <div className="grid gap-3 sm:grid-cols-2">
-            <button
-              type="button"
+            <CharacterCard
+              active={form.character === 'bill'}
+              icon={Dumbbell}
+              name="Bill"
+              description="Entrenamiento general, fuerza, periodización."
+              tone="cyan"
               onClick={() => setForm((current) => ({ ...current, character: 'bill' }))}
-              className={classNames(
-                'rounded-lg border p-5 text-left transition',
-                form.character === 'bill'
-                  ? 'border-brand-cyan bg-brand-cyan/12'
-                  : 'border-white/10 bg-white/[0.04] hover:border-white/24'
-              )}
-            >
-              <div className="mb-5 flex h-24 items-center justify-center rounded-md bg-white/[0.05] text-brand-cyan">
-                <Dumbbell aria-hidden="true" size={40} strokeWidth={2.2} />
-              </div>
-              <h3 className="text-xl font-bold">Bill</h3>
-              <p className="mt-2 text-sm leading-6 text-white/68">
-                Entrenamiento general, fuerza, periodización.
-              </p>
-            </button>
-
-            <button
-              type="button"
+            />
+            <CharacterCard
+              active={form.character === 'senda'}
+              icon={Mountain}
+              name="Senda"
+              description="Entrenamiento general + especialista en escalada femenina."
+              tone="mustard"
               onClick={() => setForm((current) => ({ ...current, character: 'senda' }))}
-              className={classNames(
-                'rounded-lg border p-5 text-left transition',
-                form.character === 'senda'
-                  ? 'border-brand-cyan bg-brand-cyan/12'
-                  : 'border-white/10 bg-white/[0.04] hover:border-white/24'
-              )}
-            >
-              <div className="mb-5 flex h-24 items-center justify-center rounded-md bg-white/[0.05] text-brand-mustard">
-                <Mountain aria-hidden="true" size={40} strokeWidth={2.2} />
-              </div>
-              <h3 className="text-xl font-bold">Senda</h3>
-              <p className="mt-2 text-sm leading-6 text-white/68">
-                Entrenamiento general + especialista en escalada femenina.
-              </p>
-            </button>
+            />
           </div>
         </StepSection>
 
-        <StepSection number={2} title="Tu escalada" icon={Mountain}>
-          <div className="space-y-7">
-            <FieldGroup title="¿Cuánto tiempo llevas escalando?">
-              <OptionGrid>
-                {climbingTimeOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.climbingTime === option.value}
-                    onClick={() =>
-                      setForm((current) => ({ ...current, climbingTime: option.value }))
-                    }
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
+        <StepSection number={2} title="Tu escalada" icon={Mountain} done={stepsDone[2]}>
+          <FieldGroup title="¿Cuánto tiempo llevas escalando?">
+            <OptionGrid>
+              {climbingTimeOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.climbingTime === option.value}
+                  onClick={() =>
+                    setForm((current) => ({ ...current, climbingTime: option.value }))
+                  }
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
 
-            <FieldGroup title="¿Qué tipo de escalada practicas? (selecciona varias)">
-              <OptionGrid>
-                {disciplineOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.disciplines.includes(option.value)}
-                    onClick={() =>
-                      setForm((current) => ({
-                        ...current,
-                        disciplines: toggleExclusiveList(current.disciplines, option.value, [
-                          'all',
-                          'unsure'
-                        ])
-                      }))
-                    }
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
+          <FieldGroup title="¿Qué tipo de escalada practicas?" hint="Selecciona varias">
+            <OptionGrid>
+              {disciplineOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.disciplines.includes(option.value)}
+                  onClick={() =>
+                    setForm((current) => ({
+                      ...current,
+                      disciplines: toggleExclusiveList(current.disciplines, option.value, [
+                        'all',
+                        'unsure'
+                      ])
+                    }))
+                  }
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
 
-            <FieldGroup title="¿Cuál es tu nivel?">
-              <OptionGrid>
-                {levelOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.level === option.value}
-                    onClick={() => setForm((current) => ({ ...current, level: option.value }))}
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
+          <FieldGroup title="¿Cuál es tu nivel?">
+            <OptionGrid>
+              {levelOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.level === option.value}
+                  onClick={() => setForm((current) => ({ ...current, level: option.value }))}
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
 
-            <FieldGroup title="¿Dónde escalas más?">
-              <OptionGrid>
-                {settingOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.setting === option.value}
-                    onClick={() => setForm((current) => ({ ...current, setting: option.value }))}
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
+          <FieldGroup title="¿Dónde escalas más?">
+            <OptionGrid>
+              {settingOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.setting === option.value}
+                  onClick={() => setForm((current) => ({ ...current, setting: option.value }))}
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
+        </StepSection>
+
+        <StepSection number={3} title="Sobre ti" icon={UserRound} done={stepsDone[3]}>
+          <FieldGroup title="Rango de edad">
+            <OptionGrid>
+              {ageOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.age === option.value}
+                  onClick={() => setForm((current) => ({ ...current, age: option.value }))}
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
+
+          <FieldGroup title="Sexo biológico" hint="Para temas de salud">
+            <OptionGrid>
+              {sexOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.sex === option.value}
+                  onClick={() => setForm((current) => ({ ...current, sex: option.value }))}
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <InputField
+              label="Peso aproximado (kg)"
+              optional
+              value={form.weight}
+              inputMode="decimal"
+              onChange={(value) => setForm((current) => ({ ...current, weight: value }))}
+            />
+            <InputField
+              label="Estatura (cm)"
+              optional
+              value={form.height}
+              inputMode="decimal"
+              onChange={(value) => setForm((current) => ({ ...current, height: value }))}
+            />
           </div>
         </StepSection>
 
-        <StepSection number={3} title="Sobre ti" icon={UserRound}>
-          <div className="space-y-7">
-            <FieldGroup title="Rango de edad">
-              <OptionGrid>
-                {ageOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.age === option.value}
-                    onClick={() => setForm((current) => ({ ...current, age: option.value }))}
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
+        <StepSection number={4} title="Tu cuerpo" icon={HeartPulse} done={stepsDone[4]}>
+          <FieldGroup title="¿Tienes alguna lesión o molestia?" hint="Selecciona todas">
+            <OptionGrid>
+              {injuryOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.injuries.includes(option.value)}
+                  onClick={() =>
+                    setForm((current) => ({
+                      ...current,
+                      injuries: toggleExclusiveList(current.injuries, option.value, ['none'])
+                    }))
+                  }
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
 
-            <FieldGroup title="Sexo biológico (para temas de salud)">
-              <OptionGrid>
-                {sexOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.sex === option.value}
-                    onClick={() => setForm((current) => ({ ...current, sex: option.value }))}
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
+          <TextareaField
+            label="Si tienes lesión, descríbela brevemente"
+            value={form.injuryNotes}
+            placeholder="Me duele el anular de la mano izquierda desde hace 2 semanas cuando crimpo fuerte..."
+            onChange={(value) => setForm((current) => ({ ...current, injuryNotes: value }))}
+          />
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <InputField
-                label="Peso aproximado en kg (opcional)"
-                value={form.weight}
-                inputMode="decimal"
-                onChange={(value) => setForm((current) => ({ ...current, weight: value }))}
-              />
-              <InputField
-                label="Estatura en cm (opcional)"
-                value={form.height}
-                inputMode="decimal"
-                onChange={(value) => setForm((current) => ({ ...current, height: value }))}
-              />
-            </div>
-          </div>
+          <PainScaleField
+            title="Dolor de dedos hoy"
+            value={form.currentFingerPain}
+            onChange={(value) => setForm((current) => ({ ...current, currentFingerPain: value }))}
+          />
+
+          <PainScaleField
+            title="Dolor de hombro hoy"
+            value={form.currentShoulderPain}
+            onChange={(value) =>
+              setForm((current) => ({ ...current, currentShoulderPain: value }))
+            }
+          />
+
+          <PainScaleField
+            title="Dolor de codo hoy"
+            value={form.currentElbowPain}
+            onChange={(value) => setForm((current) => ({ ...current, currentElbowPain: value }))}
+          />
+
+          <FieldGroup title="¿Calientas antes de escalar?">
+            <OptionGrid>
+              {warmupOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.warmup === option.value}
+                  onClick={() => setForm((current) => ({ ...current, warmup: option.value }))}
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
+
+          <FieldGroup title="¿Cómo duermes normalmente?">
+            <OptionGrid>
+              {sleepOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.sleep === option.value}
+                  onClick={() => setForm((current) => ({ ...current, sleep: option.value }))}
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
+
+          <FieldGroup title="¿Cómo es tu energía general?">
+            <OptionGrid>
+              {energyOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.energy === option.value}
+                  onClick={() => setForm((current) => ({ ...current, energy: option.value }))}
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
         </StepSection>
 
-        <StepSection number={4} title="Tu cuerpo" icon={HeartPulse}>
-          <div className="space-y-7">
-            <FieldGroup title="¿Tienes alguna lesión o molestia? (selecciona todas)">
-              <OptionGrid>
-                {injuryOptions.map((option) => (
-                  <OptionButton
+        <StepSection number={5} title="Tu entrenamiento" icon={Dumbbell} done={stepsDone[5]}>
+          <FieldGroup title="¿Cuántos días por semana puedes entrenar?">
+            <OptionGrid>
+              {daysOptions.map((option) => (
+                <OptionButton
+                  key={option.label}
+                  active={form.daysPerWeek === option.value}
+                  onClick={() =>
+                    setForm((current) => ({ ...current, daysPerWeek: option.value }))
+                  }
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
+
+          <FieldGroup title="¿Qué días sueles tener disponibles?">
+            <div className="grid grid-cols-7 gap-2">
+              {availableDayOptions.map((option) => {
+                const active = form.availableDays.includes(option.value);
+                return (
+                  <button
                     key={option.value}
-                    active={form.injuries.includes(option.value)}
-                    onClick={() =>
-                      setForm((current) => ({
-                        ...current,
-                        injuries: toggleExclusiveList(current.injuries, option.value, ['none'])
-                      }))
-                    }
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
-
-            <TextareaField
-              label="Si tienes lesión, descríbela brevemente"
-              value={form.injuryNotes}
-              placeholder="Me duele el anular de la mano izquierda desde hace 2 semanas cuando crimpo fuerte..."
-              onChange={(value) => setForm((current) => ({ ...current, injuryNotes: value }))}
-            />
-
-            <PainScaleField
-              title="Dolor de dedos hoy"
-              value={form.currentFingerPain}
-              onChange={(value) => setForm((current) => ({ ...current, currentFingerPain: value }))}
-            />
-
-            <PainScaleField
-              title="Dolor de hombro hoy"
-              value={form.currentShoulderPain}
-              onChange={(value) => setForm((current) => ({ ...current, currentShoulderPain: value }))}
-            />
-
-            <PainScaleField
-              title="Dolor de codo hoy"
-              value={form.currentElbowPain}
-              onChange={(value) => setForm((current) => ({ ...current, currentElbowPain: value }))}
-            />
-
-            <FieldGroup title="¿Calientas antes de escalar?">
-              <OptionGrid>
-                {warmupOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.warmup === option.value}
-                    onClick={() => setForm((current) => ({ ...current, warmup: option.value }))}
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
-
-            <FieldGroup title="¿Cómo duermes normalmente?">
-              <OptionGrid>
-                {sleepOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.sleep === option.value}
-                    onClick={() => setForm((current) => ({ ...current, sleep: option.value }))}
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
-
-            <FieldGroup title="¿Cómo es tu energía general?">
-              <OptionGrid>
-                {energyOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.energy === option.value}
-                    onClick={() => setForm((current) => ({ ...current, energy: option.value }))}
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
-          </div>
-        </StepSection>
-
-        <StepSection number={5} title="Tu entrenamiento" icon={Dumbbell}>
-          <div className="space-y-7">
-            <FieldGroup title="¿Cuántos días por semana puedes entrenar?">
-              <OptionGrid>
-                {daysOptions.map((option) => (
-                  <OptionButton
-                    key={option.label}
-                    active={form.daysPerWeek === option.value}
-                    onClick={() =>
-                      setForm((current) => ({ ...current, daysPerWeek: option.value }))
-                    }
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
-
-            <FieldGroup title="¿Qué días sueles tener disponibles?">
-              <OptionGrid>
-                {availableDayOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.availableDays.includes(option.value)}
+                    type="button"
                     onClick={() =>
                       setForm((current) => ({
                         ...current,
@@ -800,314 +769,392 @@ export default function OnboardingPage() {
                           : [...current.availableDays, option.value]
                       }))
                     }
+                    className={cn(
+                      'grid h-12 place-items-center rounded-xl border text-sm font-bold transition active:scale-[0.97]',
+                      active
+                        ? 'border-brand-cyan/60 bg-brand-cyan/15 text-brand-cyan shadow-glow'
+                        : 'border-white/10 bg-white/[0.03] text-white/70 hover:border-white/22'
+                    )}
                   >
                     {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
-
-            <FieldGroup title="¿Cuánto dura normalmente tu sesión?">
-              <OptionGrid>
-                {sessionDurationOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.sessionDuration === option.value}
-                    onClick={() =>
-                      setForm((current) => ({ ...current, sessionDuration: option.value }))
-                    }
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
-
-            <FieldGroup title="Máximo real si una sesión se alarga">
-              <OptionGrid>
-                {sessionDurationOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.maxSessionDuration === option.value}
-                    onClick={() =>
-                      setForm((current) => ({ ...current, maxSessionDuration: option.value }))
-                    }
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
-
-            <FieldGroup title="¿A qué tienes acceso? (selecciona todo)">
-              <OptionGrid>
-                {equipmentOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.equipment.includes(option.value)}
-                    onClick={() =>
-                      setForm((current) => ({
-                        ...current,
-                        equipment: current.equipment.includes(option.value)
-                          ? current.equipment.filter((item) => item !== option.value)
-                          : [...current.equipment, option.value]
-                      }))
-                    }
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
-
-            <TextareaField
-              label="Describe tu setup"
-              value={form.equipmentNotes}
-              placeholder="Voy a Adamanta 3 veces por semana, tengo un Beastmaker 1000 en casa y bandas de resistencia..."
-              onChange={(value) => setForm((current) => ({ ...current, equipmentNotes: value }))}
-            />
-
-            <FieldGroup title="¿Has seguido algún plan de entrenamiento antes?">
-              <OptionGrid>
-                {previousTrainingOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.previousTraining === option.value}
-                    onClick={() =>
-                      setForm((current) => ({ ...current, previousTraining: option.value }))
-                    }
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
-
-            <FieldGroup title="Dominadas estrictas actuales">
-              <OptionGrid>
-                {pullUpAbilityOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.pullUpAbility === option.value}
-                    onClick={() => setForm((current) => ({ ...current, pullUpAbility: option.value }))}
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
-
-            <FieldGroup title="Experiencia entrenando dedos">
-              <OptionGrid>
-                {trainingExperienceOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.fingerTrainingExperience === option.value}
-                    onClick={() =>
-                      setForm((current) => ({ ...current, fingerTrainingExperience: option.value }))
-                    }
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
-
-            <FieldGroup title="Experiencia con campus board">
-              <OptionGrid>
-                {campusExperienceOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.campusExperience === option.value}
-                    onClick={() => setForm((current) => ({ ...current, campusExperience: option.value }))}
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
-
-            <FieldGroup title="Frecuencia en roca">
-              <OptionGrid>
-                {outdoorFrequencyOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.outdoorFrequency === option.value}
-                    onClick={() => setForm((current) => ({ ...current, outdoorFrequency: option.value }))}
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
-
-            <FieldGroup title="Qué tan agresivo quieres el plan">
-              <OptionGrid>
-                {trainingAggressivenessOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.trainingAggressiveness === option.value}
-                    onClick={() =>
-                      setForm((current) => ({ ...current, trainingAggressiveness: option.value }))
-                    }
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
-          </div>
-        </StepSection>
-
-        <StepSection number={6} title="Tu objetivo" icon={Target}>
-          <div className="space-y-7">
-            <FieldGroup title="¿Qué objetivos quieres trabajar? (selecciona varios)">
-              <OptionGrid>
-                {goalOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.goals.includes(option.value)}
-                    onClick={() =>
-                      setForm((current) => ({
-                        ...current,
-                        goals: current.goals.includes(option.value)
-                          ? current.goals.filter((item) => item !== option.value)
-                          : [...current.goals, option.value]
-                      }))
-                    }
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
-
-            <TextareaField
-              label="Redacta lo que buscas"
-              value={form.goalDescription}
-              placeholder="Quiero sentirme más fuerte en desplomes, mejorar lectura de boulder y llegar sin dolor de dedos a mi viaje de roca..."
-              onChange={(value) =>
-                setForm((current) => ({
-                  ...current,
-                  goalDescription: value,
-                  goals:
-                    value.trim() && !current.goals.length
-                      ? ['other']
-                      : current.goals
-                }))
-              }
-            />
-
-            <TextareaField
-              label="¿Tienes un proyecto o ruta específica?"
-              value={form.project}
-              placeholder="Quiero encadenar La Catrina 5.12a en El Salto antes de diciembre"
-              onChange={(value) => setForm((current) => ({ ...current, project: value }))}
-            />
-
-            <TextareaField
-              label="Contexto del proyecto en roca"
-              value={form.rockProjectDescription}
-              placeholder="Tipo de ruta, estilo, crux, agarres, desplome/placa, fecha del viaje, miedos o limitantes..."
-              onChange={(value) =>
-                setForm((current) => ({ ...current, rockProjectDescription: value }))
-              }
-            />
-
-            <FieldGroup title="¿En cuántas semanas quieres ver resultados?">
-              <OptionGrid>
-                {durationOptions.map((option) => (
-                  <OptionButton
-                    key={option.value}
-                    active={form.durationChoice === option.value}
-                    onClick={() =>
-                      setForm((current) => ({ ...current, durationChoice: option.value }))
-                    }
-                  >
-                    {option.label}
-                  </OptionButton>
-                ))}
-              </OptionGrid>
-            </FieldGroup>
-          </div>
-        </StepSection>
-
-        <StepSection number={7} title="Nombre + Confirmación" icon={Zap}>
-          <div className="space-y-7">
-            <InputField
-              label="¿Cómo te llamas? (opcional)"
-              value={form.name}
-              onChange={(value) => setForm((current) => ({ ...current, name: value }))}
-            />
-
-            <div className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
-              <h3 className="text-lg font-bold">Resumen visual de perfil</h3>
-              <dl className="mt-5 grid gap-3 text-sm">
-                <SummaryRow label="Compañer@" value={form.character === 'bill' ? 'Bill' : 'Senda'} />
-                <SummaryRow
-                  label="Experiencia"
-                  value={getLabel(climbingTimeOptions, form.climbingTime)}
-                />
-                <SummaryRow label="Nivel" value={getLabel(levelOptions, form.level)} />
-                <SummaryRow
-                  label="Objetivo"
-                  value={getGoalSummary(form.goals, form.goalDescription)}
-                />
-                <SummaryRow
-                  label="Días"
-                  value={
-                    daysLabel
-                      ? `${daysLabel}/semana · ${getLabels(availableDayOptions, form.availableDays)}`
-                      : 'Pendiente'
-                  }
-                />
-                <SummaryRow label="Duración sesión" value={`${form.sessionDuration} min`} />
-                <SummaryRow label="Equipo" value={getLabels(equipmentOptions, form.equipment)} />
-                <SummaryRow label="Lesión" value={getLabels(injuryOptions, form.injuries)} />
-                <SummaryRow
-                  label="Dolor actual"
-                  value={`Dedos ${form.currentFingerPain}/5 · hombro ${form.currentShoulderPain}/5 · codo ${form.currentElbowPain}/5`}
-                />
-                <SummaryRow
-                  label="Carga"
-                  value={getLabel(trainingAggressivenessOptions, form.trainingAggressiveness)}
-                />
-                <SummaryRow label="Duración" value={durationLabel} />
-              </dl>
+                  </button>
+                );
+              })}
             </div>
+          </FieldGroup>
 
-            <button
-              type="button"
-              disabled={!canSubmit}
-              onClick={handleSubmit}
-              className={classNames(
-                'flex w-full items-center justify-center gap-2 rounded-md px-5 py-4 text-base font-bold transition',
-                canSubmit
-                  ? 'bg-brand-cyan text-brand-dark hover:bg-brand-cyan/90'
-                  : 'cursor-not-allowed bg-white/10 text-white/40'
-              )}
-            >
-              Generar mi plan de entrenamiento
-              <Zap aria-hidden="true" size={19} strokeWidth={2.6} />
-            </button>
+          <FieldGroup title="¿Cuánto dura normalmente tu sesión?">
+            <OptionGrid columns={3}>
+              {sessionDurationOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.sessionDuration === option.value}
+                  onClick={() =>
+                    setForm((current) => ({ ...current, sessionDuration: option.value }))
+                  }
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
+
+          <FieldGroup title="Máximo real si una sesión se alarga">
+            <OptionGrid columns={3}>
+              {sessionDurationOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.maxSessionDuration === option.value}
+                  onClick={() =>
+                    setForm((current) => ({ ...current, maxSessionDuration: option.value }))
+                  }
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
+
+          <FieldGroup title="¿A qué tienes acceso?" hint="Selecciona todo">
+            <OptionGrid>
+              {equipmentOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.equipment.includes(option.value)}
+                  onClick={() =>
+                    setForm((current) => ({
+                      ...current,
+                      equipment: current.equipment.includes(option.value)
+                        ? current.equipment.filter((item) => item !== option.value)
+                        : [...current.equipment, option.value]
+                    }))
+                  }
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
+
+          <TextareaField
+            label="Describe tu setup"
+            value={form.equipmentNotes}
+            placeholder="Voy a Adamanta 3 veces por semana, tengo un Beastmaker 1000 en casa y bandas de resistencia..."
+            onChange={(value) => setForm((current) => ({ ...current, equipmentNotes: value }))}
+          />
+
+          <FieldGroup title="¿Has seguido algún plan de entrenamiento antes?">
+            <OptionGrid>
+              {previousTrainingOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.previousTraining === option.value}
+                  onClick={() =>
+                    setForm((current) => ({ ...current, previousTraining: option.value }))
+                  }
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
+
+          <FieldGroup title="Dominadas estrictas actuales">
+            <OptionGrid columns={3}>
+              {pullUpAbilityOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.pullUpAbility === option.value}
+                  onClick={() =>
+                    setForm((current) => ({ ...current, pullUpAbility: option.value }))
+                  }
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
+
+          <FieldGroup title="Experiencia entrenando dedos">
+            <OptionGrid>
+              {trainingExperienceOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.fingerTrainingExperience === option.value}
+                  onClick={() =>
+                    setForm((current) => ({
+                      ...current,
+                      fingerTrainingExperience: option.value
+                    }))
+                  }
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
+
+          <FieldGroup title="Experiencia con campus board">
+            <OptionGrid>
+              {campusExperienceOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.campusExperience === option.value}
+                  onClick={() =>
+                    setForm((current) => ({ ...current, campusExperience: option.value }))
+                  }
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
+
+          <FieldGroup title="Frecuencia en roca">
+            <OptionGrid>
+              {outdoorFrequencyOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.outdoorFrequency === option.value}
+                  onClick={() =>
+                    setForm((current) => ({ ...current, outdoorFrequency: option.value }))
+                  }
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
+
+          <FieldGroup title="Qué tan agresivo quieres el plan">
+            <OptionGrid columns={3}>
+              {trainingAggressivenessOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.trainingAggressiveness === option.value}
+                  onClick={() =>
+                    setForm((current) => ({
+                      ...current,
+                      trainingAggressiveness: option.value
+                    }))
+                  }
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
+        </StepSection>
+
+        <StepSection number={6} title="Tu objetivo" icon={Target} done={stepsDone[6]}>
+          <FieldGroup title="¿Qué objetivos quieres trabajar?" hint="Selecciona varios">
+            <OptionGrid>
+              {goalOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.goals.includes(option.value)}
+                  onClick={() =>
+                    setForm((current) => ({
+                      ...current,
+                      goals: current.goals.includes(option.value)
+                        ? current.goals.filter((item) => item !== option.value)
+                        : [...current.goals, option.value]
+                    }))
+                  }
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
+
+          <TextareaField
+            label="Redacta lo que buscas"
+            value={form.goalDescription}
+            placeholder="Quiero sentirme más fuerte en desplomes, mejorar lectura de boulder y llegar sin dolor de dedos a mi viaje de roca..."
+            onChange={(value) =>
+              setForm((current) => ({
+                ...current,
+                goalDescription: value,
+                goals: value.trim() && !current.goals.length ? ['other'] : current.goals
+              }))
+            }
+          />
+
+          <TextareaField
+            label="¿Tienes un proyecto o ruta específica?"
+            value={form.project}
+            placeholder="Quiero encadenar La Catrina 5.12a en El Salto antes de diciembre"
+            onChange={(value) => setForm((current) => ({ ...current, project: value }))}
+          />
+
+          <TextareaField
+            label="Contexto del proyecto en roca"
+            value={form.rockProjectDescription}
+            placeholder="Tipo de ruta, estilo, crux, agarres, desplome/placa, fecha del viaje, miedos o limitantes..."
+            onChange={(value) =>
+              setForm((current) => ({ ...current, rockProjectDescription: value }))
+            }
+          />
+
+          <FieldGroup title="¿En cuántas semanas quieres ver resultados?">
+            <OptionGrid columns={2}>
+              {durationOptions.map((option) => (
+                <OptionButton
+                  key={option.value}
+                  active={form.durationChoice === option.value}
+                  onClick={() =>
+                    setForm((current) => ({ ...current, durationChoice: option.value }))
+                  }
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
+        </StepSection>
+
+        <StepSection number={7} title="Resumen + generar" icon={Zap} done={stepsDone[7]}>
+          <InputField
+            label="¿Cómo te llamas?"
+            optional
+            value={form.name}
+            onChange={(value) => setForm((current) => ({ ...current, name: value }))}
+          />
+
+          <div className="rounded-2xl border border-white/8 bg-gradient-card p-5">
+            <h3 className="text-base font-extrabold">Resumen de tu perfil</h3>
+            <dl className="mt-5 grid gap-3 text-sm">
+              <SummaryRow label="Compañer@" value={form.character === 'bill' ? 'Bill' : 'Senda'} />
+              <SummaryRow
+                label="Experiencia"
+                value={getLabel(climbingTimeOptions, form.climbingTime)}
+              />
+              <SummaryRow label="Nivel" value={getLabel(levelOptions, form.level)} />
+              <SummaryRow
+                label="Objetivo"
+                value={getGoalSummary(form.goals, form.goalDescription)}
+              />
+              <SummaryRow
+                label="Días"
+                value={
+                  daysLabel
+                    ? `${daysLabel}/semana · ${getLabels(availableDayOptions, form.availableDays)}`
+                    : 'Pendiente'
+                }
+              />
+              <SummaryRow label="Duración sesión" value={`${form.sessionDuration} min`} />
+              <SummaryRow label="Equipo" value={getLabels(equipmentOptions, form.equipment)} />
+              <SummaryRow label="Lesión" value={getLabels(injuryOptions, form.injuries)} />
+              <SummaryRow
+                label="Dolor actual"
+                value={`Dedos ${form.currentFingerPain}/5 · hombro ${form.currentShoulderPain}/5 · codo ${form.currentElbowPain}/5`}
+              />
+              <SummaryRow
+                label="Carga"
+                value={getLabel(trainingAggressivenessOptions, form.trainingAggressiveness)}
+              />
+              <SummaryRow label="Duración" value={durationLabel} />
+            </dl>
           </div>
+
+          <button
+            type="button"
+            disabled={!canSubmit}
+            onClick={handleSubmit}
+            className={cn(
+              'flex h-14 w-full items-center justify-center gap-2 rounded-xl text-base font-extrabold transition-all duration-150',
+              canSubmit
+                ? 'bg-gradient-cyan text-brand-dark shadow-glow-strong hover:brightness-110 active:scale-[0.99]'
+                : 'cursor-not-allowed bg-white/[0.06] text-white/35'
+            )}
+          >
+            Generar mi plan de entrenamiento
+            <ArrowRight aria-hidden="true" size={20} strokeWidth={2.8} />
+          </button>
+
+          {!canSubmit ? (
+            <p className="text-center text-xs text-white/55">
+              Te faltan {7 - completedSteps} {7 - completedSteps === 1 ? 'paso' : 'pasos'} para
+              poder generar el plan.
+            </p>
+          ) : null}
         </StepSection>
       </div>
     </main>
   );
 }
 
-function FieldGroup({ title, children }: { title: string; children: React.ReactNode }) {
+function CharacterCard({
+  active,
+  icon: Icon,
+  name,
+  description,
+  tone,
+  onClick
+}: {
+  active: boolean;
+  icon: typeof Mountain;
+  name: string;
+  description: string;
+  tone: 'cyan' | 'mustard';
+  onClick: () => void;
+}) {
+  const iconClasses =
+    tone === 'cyan' ? 'bg-brand-cyan/14 text-brand-cyan' : 'bg-brand-mustard/14 text-brand-mustard';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'rounded-2xl border p-5 text-left transition-all duration-200 active:scale-[0.99]',
+        active
+          ? 'border-brand-cyan/60 bg-brand-cyan/[0.08] shadow-glow'
+          : 'border-white/10 bg-white/[0.03] hover:border-white/22 hover:bg-white/[0.05]'
+      )}
+    >
+      <div className={cn('mb-5 grid h-24 place-items-center rounded-xl', iconClasses)}>
+        <Icon aria-hidden="true" size={40} strokeWidth={2.1} />
+      </div>
+      <h3 className="text-xl font-extrabold">{name}</h3>
+      <p className="mt-2 text-sm leading-6 text-white/70">{description}</p>
+    </button>
+  );
+}
+
+function FieldGroup({
+  title,
+  hint,
+  children
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
-      <p className="mb-3 text-base font-semibold text-white">{title}</p>
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <p className="text-sm font-extrabold text-white">{title}</p>
+        {hint ? (
+          <p className="text-[0.7rem] font-bold uppercase tracking-[0.10em] text-white/45">
+            {hint}
+          </p>
+        ) : null}
+      </div>
       {children}
     </div>
   );
 }
 
-function OptionGrid({ children }: { children: React.ReactNode }) {
-  return <div className="grid gap-2 sm:grid-cols-2">{children}</div>;
+function OptionGrid({
+  children,
+  columns = 2
+}: {
+  children: React.ReactNode;
+  columns?: 2 | 3;
+}) {
+  const classes = columns === 3 ? 'grid gap-2 grid-cols-3' : 'grid gap-2 sm:grid-cols-2';
+  return <div className={classes}>{children}</div>;
 }
 
 function PainScaleField({
@@ -1120,23 +1167,34 @@ function PainScaleField({
   onChange: (value: number) => void;
 }) {
   return (
-    <FieldGroup title={`${title} (0-5)`}>
+    <FieldGroup title={title} hint="0 sin dolor · 5 fuerte">
       <div className="grid grid-cols-6 gap-2">
-        {painScaleOptions.map((score) => (
-          <button
-            key={score}
-            type="button"
-            onClick={() => onChange(score)}
-            className={classNames(
-              'grid h-11 place-items-center rounded-md border text-sm font-bold transition',
-              value === score
-                ? 'border-brand-cyan bg-brand-cyan/14 text-brand-cyan'
-                : 'border-white/10 bg-white/[0.04] text-white/68 hover:border-white/24'
-            )}
-          >
-            {score}
-          </button>
-        ))}
+        {painScaleOptions.map((score) => {
+          const active = value === score;
+          const intensity = score / 5;
+          return (
+            <button
+              key={score}
+              type="button"
+              onClick={() => onChange(score)}
+              className={cn(
+                'grid h-11 place-items-center rounded-xl border text-sm font-extrabold transition active:scale-[0.97]',
+                active
+                  ? 'border-brand-coral/60 text-brand-coral shadow-glow'
+                  : 'border-white/10 bg-white/[0.03] text-white/70 hover:border-white/22'
+              )}
+              style={
+                active
+                  ? {
+                      background: `linear-gradient(180deg, rgba(255,122,89,${0.10 + intensity * 0.18}) 0%, rgba(255,122,89,${0.04 + intensity * 0.08}) 100%)`
+                    }
+                  : undefined
+              }
+            >
+              {score}
+            </button>
+          );
+        })}
       </div>
     </FieldGroup>
   );
@@ -1144,23 +1202,32 @@ function PainScaleField({
 
 function InputField({
   label,
+  optional,
   value,
   inputMode,
   onChange
 }: {
   label: string;
+  optional?: boolean;
   value: string;
   inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
   onChange: (value: string) => void;
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-base font-semibold text-white">{label}</span>
+      <span className="mb-2 flex items-baseline justify-between gap-3">
+        <span className="text-sm font-extrabold text-white">{label}</span>
+        {optional ? (
+          <span className="text-[0.7rem] font-bold uppercase tracking-[0.10em] text-white/40">
+            Opcional
+          </span>
+        ) : null}
+      </span>
       <input
         value={value}
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
-        className="h-12 w-full rounded-md border border-white/10 bg-white/[0.04] px-4 text-white outline-none transition placeholder:text-white/34 focus:border-brand-cyan"
+        className="h-12 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 text-white outline-none transition placeholder:text-white/30 focus:border-brand-cyan/60 focus:bg-white/[0.05]"
       />
     </label>
   );
@@ -1179,13 +1246,13 @@ function TextareaField({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-base font-semibold text-white">{label}</span>
+      <span className="mb-2 block text-sm font-extrabold text-white">{label}</span>
       <textarea
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
         rows={4}
-        className="w-full resize-none rounded-md border border-white/10 bg-white/[0.04] px-4 py-3 text-white outline-none transition placeholder:text-white/34 focus:border-brand-cyan"
+        className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 leading-6 text-white outline-none transition placeholder:text-white/30 focus:border-brand-cyan/60 focus:bg-white/[0.05]"
       />
     </label>
   );
@@ -1193,9 +1260,9 @@ function TextareaField({
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-[7.5rem_1fr] gap-3 border-b border-white/10 pb-3 last:border-b-0 last:pb-0">
-      <dt className="text-white/48">{label}</dt>
-      <dd className="font-semibold text-white/86">{value}</dd>
+    <div className="grid grid-cols-[7.5rem_1fr] items-baseline gap-3 border-b border-white/[0.06] pb-3 last:border-b-0 last:pb-0">
+      <dt className="text-xs font-bold uppercase tracking-[0.08em] text-white/45">{label}</dt>
+      <dd className="text-sm font-bold text-white/86">{value}</dd>
     </div>
   );
 }
