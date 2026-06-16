@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import {
   canGenerateFreePlan,
   getEntitlement,
+  hasActivePlanAccess,
   hasActiveSubscription,
   markFreePlanUsed as dbMarkFreePlanUsed
 } from '@/lib/entitlements';
@@ -57,11 +58,19 @@ const PAYMENT_REQUIRED_PLAN = NextResponse.json(
   { status: 402 }
 );
 
-const PAYMENT_REQUIRED_CHAT = NextResponse.json(
+const PAYMENT_REQUIRED_CHAT_EXPIRED = NextResponse.json(
   {
     code: 'payment_required',
     error:
-      'El chat con IA requiere una suscripción activa. Suscribite por $1/mes para hablar con Bill o Senda.'
+      'Tu plan gratis terminó. Suscribite para seguir entrenando con Bill y Senda.'
+  },
+  { status: 402 }
+);
+
+const PAYMENT_REQUIRED_CHAT_NO_PLAN = NextResponse.json(
+  {
+    code: 'plan_required',
+    error: 'Generá tu plan gratuito antes de hablar con tu coach.'
   },
   { status: 402 }
 );
@@ -109,8 +118,16 @@ export async function gatePlanGeneration(): Promise<PlanGateDecision> {
 }
 
 /**
- * Gate para /api/chat. El chat requiere SIEMPRE suscripción activa una vez
- * habilitado REQUIRE_SUBSCRIPTION (no hay versión gratis del chat).
+ * Gate para /api/chat. Reglas (cuando REQUIRE_SUBSCRIPTION=true):
+ * 1. Si no hay user autenticado → 401.
+ * 2. Si tiene suscripción activa (o cancelada con período vigente) → permitido.
+ * 3. Si está dentro de su mes gratis (free_plan_used_at + 30 días aún en el
+ *    futuro) → permitido. Está viviendo su plan gratuito.
+ * 4. Si ya usó el mes gratis y no tiene suscripción → 402
+ *    "Tu plan gratis terminó. Suscribite…".
+ * 5. Si nunca generó un plan (no tiene free_plan_used_at y no hay
+ *    suscripción) → 402 "Generá tu plan gratuito antes de hablar con tu
+ *    coach.".
  */
 export type ChatGateDecision =
   | { allowed: true; userId: string | null }
@@ -127,12 +144,17 @@ export async function gateChat(): Promise<ChatGateDecision> {
     return { allowed: false, response: UNAUTHENTICATED };
   }
 
-  const active = await hasActiveSubscription(userId);
-  if (active) {
+  const hasAccess = await hasActivePlanAccess(userId);
+  if (hasAccess) {
     return { allowed: true, userId };
   }
 
-  return { allowed: false, response: PAYMENT_REQUIRED_CHAT };
+  const entitlement = await getEntitlement(userId);
+  // Si nunca usó plan gratis → distinto mensaje (le pedimos que primero genere).
+  if (!entitlement.free_plan_used_at) {
+    return { allowed: false, response: PAYMENT_REQUIRED_CHAT_NO_PLAN };
+  }
+  return { allowed: false, response: PAYMENT_REQUIRED_CHAT_EXPIRED };
 }
 
 /**

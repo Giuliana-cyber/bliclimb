@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -15,7 +14,6 @@ import type { LucideIcon } from 'lucide-react';
 import { AuthGate } from '@/components/AuthGate';
 import { AuthHeaderActions } from '@/components/AuthHeaderActions';
 import { BrandLogo } from '@/components/ui/BrandLogo';
-import { SubscribeCard } from '@/components/billing/SubscribeCard';
 
 type NavItem = {
   label: string;
@@ -52,30 +50,13 @@ function isActive(pathname: string, href: string) {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const hideShell = routesWithoutShell.some((route) => pathname.startsWith(route));
-  const [subscriptionState, setSubscriptionState] = useState<'loading' | 'active' | 'inactive'>(
-    'loading'
-  );
-
-  useEffect(() => {
-    if (hideShell) {
-      setSubscriptionState('active');
-      return;
-    }
-    async function checkSubscription() {
-      try {
-        const response = await fetch('/api/billing/status');
-        const data = (await response.json()) as { active?: boolean };
-        setSubscriptionState(data.active ? 'active' : 'inactive');
-      } catch {
-        setSubscriptionState('inactive');
-      }
-    }
-    void checkSubscription();
-  }, [hideShell, pathname]);
 
   if (hideShell) {
     return <>{children}</>;
   }
+  // El paywall ya no bloquea el shell entero. Los gates per-route
+  // (/api/generate-plan, /api/chat) deciden, y el banner de mes gratis
+  // se muestra inline en Dashboard / Plan.
 
   return (
     <div className="relative min-h-screen text-white">
@@ -97,17 +78,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <main className="mx-auto min-h-[calc(100vh-4rem)] w-full max-w-3xl px-4 pb-32 pt-6">
-        <AuthGate>
-          {subscriptionState === 'loading' ? (
-            <div className="grid min-h-[50vh] place-items-center text-sm font-semibold text-white/54">
-              Revisando suscripción…
-            </div>
-          ) : subscriptionState === 'inactive' ? (
-            <SubscribeCard compact />
-          ) : (
-            children
-          )}
-        </AuthGate>
+        <AuthGate>{children}</AuthGate>
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.06] bg-brand-dark/90 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 backdrop-blur-xl">

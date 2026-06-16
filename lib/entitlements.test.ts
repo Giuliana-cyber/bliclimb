@@ -2,8 +2,11 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import {
   canGenerateFreePlan,
   findEntitlementBySubscriptionId,
+  freePlanExpiresAt,
   getEntitlement,
+  hasActivePlanAccess,
   hasActiveSubscription,
+  isWithinFreePlanWindow,
   markFreePlanUsed,
   upsertEntitlementFromWebhook,
   type EntitlementsClient
@@ -259,6 +262,98 @@ describe('hasActiveSubscription', () => {
       client
     );
     expect(await hasActiveSubscription(USER_ID, client)).toBe(false);
+  });
+});
+
+describe('freePlanExpiresAt / isWithinFreePlanWindow / hasActivePlanAccess', () => {
+  it('freePlanExpiresAt es null cuando no se generó plan', () => {
+    const exp = freePlanExpiresAt({
+      profile_id: USER_ID,
+      free_plan_used_at: null,
+      provider: null,
+      provider_subscription_id: null,
+      payer_email: null,
+      status: null,
+      current_period_end: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+    expect(exp).toBeNull();
+  });
+
+  it('freePlanExpiresAt suma 30 días al free_plan_used_at', () => {
+    const usedAt = new Date('2026-01-01T12:00:00Z');
+    const exp = freePlanExpiresAt({
+      profile_id: USER_ID,
+      free_plan_used_at: usedAt.toISOString(),
+      provider: null,
+      provider_subscription_id: null,
+      payer_email: null,
+      status: null,
+      current_period_end: null,
+      created_at: usedAt.toISOString(),
+      updated_at: usedAt.toISOString()
+    });
+    expect(exp).toBeInstanceOf(Date);
+    expect(exp!.toISOString()).toBe('2026-01-31T12:00:00.000Z');
+  });
+
+  it('isWithinFreePlanWindow false si nunca usó plan', async () => {
+    const client = createFakeClient();
+    expect(await isWithinFreePlanWindow(USER_ID, client)).toBe(false);
+  });
+
+  it('isWithinFreePlanWindow true 5 días después del primer plan', async () => {
+    const client = createFakeClient();
+    await markFreePlanUsed(USER_ID, client);
+    expect(await isWithinFreePlanWindow(USER_ID, client)).toBe(true);
+  });
+
+  it('isWithinFreePlanWindow false 31 días después del primer plan', async () => {
+    const client = createFakeClient();
+    await markFreePlanUsed(USER_ID, client);
+    // Mutamos el timestamp para simular el paso del tiempo.
+    const { data } = await (client as unknown as {
+      from: (t: string) => {
+        select: () => { eq: (c: string, v: string) => { maybeSingle: () => Promise<{ data: { free_plan_used_at: string } | null }> } };
+      };
+    })
+      .from('entitlements')
+      .select()
+      .eq('profile_id', USER_ID)
+      .maybeSingle();
+    if (data) {
+      const stale = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
+      (data as { free_plan_used_at: string }).free_plan_used_at = stale;
+    }
+    expect(await isWithinFreePlanWindow(USER_ID, client)).toBe(false);
+  });
+
+  it('hasActivePlanAccess true con suscripción activa aunque no haya usado plan gratis', async () => {
+    const client = createFakeClient();
+    const future = new Date(Date.now() + 7 * 86_400_000).toISOString();
+    await upsertEntitlementFromWebhook(
+      {
+        profile_id: USER_ID,
+        provider_subscription_id: 'sub_x',
+        payer_email: null,
+        status: 'active',
+        current_period_end: future
+      },
+      client
+    );
+    expect(await hasActivePlanAccess(USER_ID, client)).toBe(true);
+  });
+
+  it('hasActivePlanAccess true durante mes gratis sin suscripción', async () => {
+    const client = createFakeClient();
+    await markFreePlanUsed(USER_ID, client);
+    expect(await hasActivePlanAccess(USER_ID, client)).toBe(true);
+  });
+
+  it('hasActivePlanAccess false sin plan generado y sin suscripción', async () => {
+    const client = createFakeClient();
+    expect(await hasActivePlanAccess(USER_ID, client)).toBe(false);
   });
 });
 

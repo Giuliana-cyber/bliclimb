@@ -169,6 +169,61 @@ export async function canGenerateFreePlan(
   return entitlement.free_plan_used_at === null;
 }
 
+/**
+ * Duración del mes gratis tras generar el primer plan (en ms).
+ * Expuesto como constante para que la UI lo use al calcular la fecha de fin.
+ */
+export const FREE_PLAN_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
+ * Devuelve la fecha en la que termina el mes gratis del usuario, o `null` si
+ * no aplica (nunca generó plan o ya tiene suscripción activa).
+ *
+ * Mientras la generación del plan no persista `created_at` en Supabase usamos
+ * `free_plan_used_at + 30 días` como proxy (que es exactamente el momento en
+ * que la generación del primer plan terminó OK).
+ */
+export function freePlanExpiresAt(entitlement: Entitlement): Date | null {
+  if (!entitlement.free_plan_used_at) return null;
+  const used = new Date(entitlement.free_plan_used_at).getTime();
+  if (!Number.isFinite(used)) return null;
+  return new Date(used + FREE_PLAN_WINDOW_MS);
+}
+
+/**
+ * true si el usuario está dentro de la ventana de mes gratis (ya generó el
+ * primer plan pero no han pasado 30 días).
+ */
+export async function isWithinFreePlanWindow(
+  userId: string,
+  client: EntitlementsClient = defaultClient()
+): Promise<boolean> {
+  const entitlement = await getEntitlement(userId, client);
+  const expiresAt = freePlanExpiresAt(entitlement);
+  if (!expiresAt) return false;
+  return expiresAt.getTime() > Date.now();
+}
+
+/**
+ * true si el usuario puede usar features que dependen de tener un plan
+ * "vivo" (chat, sesión, check-ins). Devuelve true cuando:
+ *   - tiene suscripción activa O cancelada con período vigente, O
+ *   - está dentro de la ventana de mes gratis (post-primer-plan).
+ *
+ * Nota: si el usuario nunca generó un plan, esta función devuelve false —
+ * el chat no debería ser usable sin contexto de plan.
+ */
+export async function hasActivePlanAccess(
+  userId: string,
+  client: EntitlementsClient = defaultClient()
+): Promise<boolean> {
+  const [activeSub, withinFreeWindow] = await Promise.all([
+    hasActiveSubscription(userId, client),
+    isWithinFreePlanWindow(userId, client)
+  ]);
+  return activeSub || withinFreeWindow;
+}
+
 // ---------- Helpers para B3 (webhook) ----------
 
 /**

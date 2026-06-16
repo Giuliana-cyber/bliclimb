@@ -18,6 +18,8 @@ import { Button } from '@/components/ui/Button';
 import { Stat } from '@/components/ui/Stat';
 import { Banner } from '@/components/ui/Banner';
 import { MountainBackdrop } from '@/components/ui/MountainBackdrop';
+import { FreePlanWindowBanner } from '@/components/billing/FreePlanWindowBanner';
+import { useBillingStatus } from '@/lib/hooks/useBillingStatus';
 import {
   loadTrainingPlan,
   type Exercise,
@@ -84,6 +86,7 @@ export function PlanTimeline() {
   const [openWeeks, setOpenWeeks] = useState<number[]>([]);
   const [openSessions, setOpenSessions] = useState<string[]>([]);
   const showDevelopmentSources = process.env.NODE_ENV !== 'production';
+  const billing = useBillingStatus();
 
   useEffect(() => {
     const storedPlan = loadTrainingPlan();
@@ -179,6 +182,13 @@ export function PlanTimeline() {
         <Stat label="Sesiones" value={`${completedSessions}/${totalSessions}`} tone="mustard" />
         <Stat label="Estado" value={formatPlanStatus(plan.status)} tone="cyan" />
       </div>
+
+      {billing ? (
+        <FreePlanWindowBanner
+          freePlanExpiresAt={billing.freePlanExpiresAt}
+          hasActiveSubscription={billing.hasActiveSubscription}
+        />
+      ) : null}
 
       <PlanDetailsAccordion plan={plan} />
 
