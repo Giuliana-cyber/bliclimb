@@ -173,11 +173,14 @@ export function ExerciseGuide({ exercise, contextLabel }: ExerciseGuideProps) {
             </div>
 
             <div className="mt-5 space-y-4">
-              <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-6">
+              <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
                 <GuideMetric label="Series" value={exercise.sets ? String(exercise.sets) : null} />
-                <GuideMetric label="Dosis" value={exercise.prescription ?? exercise.reps ?? exercise.duration ?? null} />
+                <GuideMetric label="Reps / tiempo" value={exercise.reps ?? exercise.duration ?? null} />
                 <GuideMetric label="Descanso" value={exercise.rest} />
-                <GuideMetric label="Intensidad" value={exercise.intensityPercent ?? exercise.rpeTarget ?? exercise.intensity} />
+                <GuideMetric
+                  label="Intensidad"
+                  value={exercise.intensityPercent ?? exercise.intensity ?? exercise.rpeTarget ?? null}
+                />
                 <GuideMetric label="Riesgo" value={exercise.riskLevel ?? null} />
                 <GuideMetric label="Equipo" value={guide.equipment} />
               </div>
