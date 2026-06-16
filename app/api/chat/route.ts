@@ -8,6 +8,7 @@ import { enforceRateLimit } from '@/lib/rate-limit';
 import { buildCoachSystemPrompt } from '@/lib/prompts/coach-system';
 import { extractLibraryTraceability } from '@/lib/ai/response-sources';
 import { CHAT_MAX_OUTPUT_TOKENS } from '@/lib/ai/token-budget';
+import { ChatRequestSchema } from '@/lib/schemas/user-profile';
 
 export const runtime = 'nodejs';
 
@@ -63,15 +64,43 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = (await request.json()) as ChatRequestBody;
-  const messages = Array.isArray(body.messages) ? body.messages.filter(isChatMessage) : [];
+  let rawBody: unknown;
+  try {
+    rawBody = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: 'invalid_chat_payload', issues: [{ message: 'Body no es JSON válido.' }] },
+      { status: 400 }
+    );
+  }
+
+  const parsed = ChatRequestSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: 'invalid_chat_payload',
+        issues: parsed.error.issues.map((issue) => ({
+          path: issue.path.join('.'),
+          code: issue.code,
+          message: issue.message
+        }))
+      },
+      { status: 400 }
+    );
+  }
+
+  const validated = parsed.data;
+  const messages = validated.messages.filter(isChatMessage);
+  const body = rawBody as ChatRequestBody;
   const checkIns = Array.isArray(body.checkIns) ? body.checkIns.slice(0, 5) : [];
   const plan = body.plan && typeof body.plan === 'object' ? body.plan : null;
-  const character =
-    body.character === 'bill' || body.character === 'senda' ? body.character : undefined;
+  const character = validated.character;
 
   if (!messages.length) {
-    return NextResponse.json({ error: 'At least one chat message is required.' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'invalid_chat_payload', issues: [{ message: 'Mensajes requeridos.' }] },
+      { status: 400 }
+    );
   }
 
   const vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID;

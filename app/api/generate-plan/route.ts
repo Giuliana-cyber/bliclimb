@@ -21,12 +21,16 @@ import {
   type SafetyViolation
 } from '@/lib/ai/plan-safety';
 import { extractLibraryTraceability, type LibraryTraceability } from '@/lib/ai/response-sources';
+import { UserProfileSchema } from '@/lib/schemas/user-profile';
 import type { TrainingPlan, Week, Session, Exercise } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
+// Compatibilidad: el endpoint también valida con Zod (UserProfileSchema)
+// y devuelve 400 con detalle si falla. Esta función queda como tipo guard
+// auxiliar para el resto del archivo, pero ya no decide la respuesta HTTP.
 function isUserProfile(value: unknown): value is UserProfile {
   if (!value || typeof value !== 'object') return false;
   const profile = value as Partial<UserProfile>;
@@ -513,15 +517,46 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = (await request.json()) as { profile?: unknown };
-  if (!isUserProfile(body.profile)) {
+  let body: { profile?: unknown };
+  try {
+    body = (await request.json()) as { profile?: unknown };
+  } catch {
     return NextResponse.json(
-      { error: 'Perfil incompleto. Vuelve al onboarding y completa todos los pasos.' },
+      { error: 'invalid_profile', issues: [{ message: 'Body no es JSON válido.' }] },
       { status: 400 }
     );
   }
 
-  const profile = body.profile;
+  const parsed = UserProfileSchema.safeParse(body.profile);
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: 'invalid_profile',
+        issues: parsed.error.issues.map((issue) => ({
+          path: issue.path.join('.'),
+          code: issue.code,
+          message: issue.message
+        }))
+      },
+      { status: 400 }
+    );
+  }
+
+  // El payload validado por Zod es estructuralmente equivalente a UserProfile.
+  // Casteamos para mantener el tipo del resto del flujo (helpers que esperan
+  // UserProfile sin opcionales).
+  const profile = parsed.data as UserProfile;
+  if (!isUserProfile(profile)) {
+    // Defensa en profundidad: si por algún motivo el Zod aceptó algo que el
+    // resto del código no puede consumir, fallamos con detalle accionable.
+    return NextResponse.json(
+      {
+        error: 'invalid_profile',
+        issues: [{ message: 'Perfil válido en schema pero incompleto para generación.' }]
+      },
+      { status: 400 }
+    );
+  }
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   // gpt-4o por defecto — mucha mejor calidad de coaching que gpt-4o-mini.
   // Costo justificado por la suscripción de $1/mes (1 generación cada N días).

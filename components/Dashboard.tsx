@@ -27,6 +27,8 @@ import { Stat } from '@/components/ui/Stat';
 import { Banner } from '@/components/ui/Banner';
 import { MountainBackdrop } from '@/components/ui/MountainBackdrop';
 import { CharacterAvatar } from '@/components/ui/CharacterAvatar';
+import { FreePlanWindowBanner } from '@/components/billing/FreePlanWindowBanner';
+import { useBillingStatus } from '@/lib/hooks/useBillingStatus';
 
 function formatRelativeDate(value: string) {
   const date = new Date(value);
@@ -116,6 +118,7 @@ export function Dashboard() {
   const [plan, setPlan] = useState<TrainingPlan | null>(null);
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
   const [needsRegeneration, setNeedsRegeneration] = useState(false);
+  const billing = useBillingStatus();
 
   useEffect(() => {
     setProfile(loadProfile());
@@ -153,6 +156,13 @@ export function Dashboard() {
       </header>
 
       <TodaySessionCard todayState={todayState} hasPlan={Boolean(plan)} checkIns={checkIns} />
+
+      {billing ? (
+        <FreePlanWindowBanner
+          freePlanExpiresAt={billing.freePlanExpiresAt}
+          hasActiveSubscription={billing.hasActiveSubscription}
+        />
+      ) : null}
 
       {needsRegeneration ? (
         <Banner

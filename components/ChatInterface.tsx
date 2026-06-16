@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Banner } from '@/components/ui/Banner';
 import { CharacterAvatar } from '@/components/ui/CharacterAvatar';
+import { RateLimitBanner } from '@/components/ui/RateLimitBanner';
 import { loadCheckIns } from '@/lib/checkin';
 import { loadTrainingPlan } from '@/lib/plan';
 import { loadProfile, saveProfile } from '@/lib/profile';
@@ -82,6 +83,10 @@ export function ChatInterface() {
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [rateLimit, setRateLimit] = useState<{
+    seconds: number | null;
+    message: string;
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const showDevelopmentSources = process.env.NODE_ENV !== 'production';
 
@@ -114,6 +119,7 @@ export function ChatInterface() {
 
   async function sendMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (rateLimit) return;
     const content = draft.trim();
     if (!content || loading) return;
 
@@ -135,6 +141,29 @@ export function ChatInterface() {
           checkIns: loadCheckIns().slice(0, 5)
         })
       });
+
+      if (response.status === 429) {
+        const data = (await response.json().catch(() => null)) as
+          | { error?: string; resetSeconds?: number }
+          | null;
+        const retryAfterHeader = response.headers.get('Retry-After');
+        const retryAfter = retryAfterHeader ? Number(retryAfterHeader) : null;
+        const seconds =
+          typeof data?.resetSeconds === 'number'
+            ? data.resetSeconds
+            : Number.isFinite(retryAfter)
+              ? retryAfter
+              : null;
+        setRateLimit({
+          seconds,
+          message:
+            'Estás escribiendo muy rápido. Espera {{seconds}} antes de mandar otro mensaje.'
+        });
+        // Saco el mensaje del usuario que NO se procesó del estado optimista
+        setMessages(messages);
+        setDraft(content);
+        return;
+      }
 
       if (!response.ok || !response.body) {
         const data = (await response.json().catch(() => null)) as { error?: string } | null;
@@ -306,7 +335,17 @@ export function ChatInterface() {
         <div ref={messagesEndRef} />
       </div>
 
-      {error ? <Banner tone="mustard" icon={AlertTriangle} title="Algo no salió bien" description={error} /> : null}
+      {rateLimit ? (
+        <RateLimitBanner
+          resetSeconds={rateLimit.seconds}
+          message={rateLimit.message}
+          onExpire={() => setRateLimit(null)}
+        />
+      ) : null}
+
+      {error && !rateLimit ? (
+        <Banner tone="mustard" icon={AlertTriangle} title="Algo no salió bien" description={error} />
+      ) : null}
 
       <form onSubmit={sendMessage} className="flex gap-2">
         <textarea
@@ -318,13 +357,18 @@ export function ChatInterface() {
               event.currentTarget.form?.requestSubmit();
             }
           }}
+          disabled={Boolean(rateLimit)}
           rows={2}
-          placeholder={`Pregunta a ${characterName} sobre tu sesión, dolor, técnica o plan…`}
-          className="min-h-12 min-w-0 flex-1 resize-none rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-white/30 focus:border-brand-cyan/60 focus:bg-white/[0.05]"
+          placeholder={
+            rateLimit
+              ? 'En pausa unos segundos…'
+              : `Pregunta a ${characterName} sobre tu sesión, dolor, técnica o plan…`
+          }
+          className="min-h-12 min-w-0 flex-1 resize-none rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-white/30 focus:border-brand-cyan/60 focus:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-50"
         />
         <button
           type="submit"
-          disabled={loading || !draft.trim()}
+          disabled={loading || !draft.trim() || Boolean(rateLimit)}
           className="grid size-12 shrink-0 place-items-center rounded-2xl bg-gradient-cyan text-brand-dark shadow-glow transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-white/10 disabled:bg-none disabled:text-white/36 disabled:shadow-none"
           aria-label="Enviar mensaje"
         >

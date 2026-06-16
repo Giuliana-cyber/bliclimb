@@ -150,3 +150,24 @@ export async function retrieveSubscriptionPreapproval(preapprovalId: string) {
     `/preapproval/${encodeURIComponent(preapprovalId)}`
   );
 }
+
+/**
+ * Cancela una suscripción en Mercado Pago.
+ *
+ * Llamar siempre desde server-side — requiere `MERCADO_PAGO_ACCESS_TOKEN`,
+ * que no debe llegar al cliente.
+ *
+ * Después de cancelar, MP dispara un webhook `subscription_preapproval.updated`
+ * con `status: 'cancelled'` que actualiza la fila de `entitlements`. El
+ * `current_period_end` se conserva → el usuario mantiene acceso hasta el final
+ * del período pagado.
+ */
+export async function cancelSubscriptionPreapproval(preapprovalId: string) {
+  return mercadoPagoRequest<MercadoPagoPreapproval>(
+    `/preapproval/${encodeURIComponent(preapprovalId)}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'cancelled' })
+    }
+  );
+}
