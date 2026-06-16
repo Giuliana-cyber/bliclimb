@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/Card';
 import { Banner } from '@/components/ui/Banner';
 import { Button } from '@/components/ui/Button';
 import { MountainBackdrop } from '@/components/ui/MountainBackdrop';
+import { RateLimitBanner } from '@/components/ui/RateLimitBanner';
 import { clearProfileNeedsRegeneration, loadProfile } from '@/lib/profile';
 import { saveTrainingPlan, type TrainingPlan } from '@/lib/plan';
 
@@ -43,6 +44,10 @@ export default function GeneratingPlanPage() {
   const [needsSubscription, setNeedsSubscription] = useState(false);
   const [status, setStatus] = useState<'generating' | 'success' | 'error'>('generating');
   const [error, setError] = useState('');
+  const [rateLimit, setRateLimit] = useState<{
+    seconds: number | null;
+    message: string;
+  } | null>(null);
   const currentStep = generationSteps[stepIndex];
   const CurrentIcon = currentStep.icon;
 
@@ -71,10 +76,30 @@ export default function GeneratingPlanPage() {
           plan?: TrainingPlan;
           error?: string;
           code?: string;
+          resetSeconds?: number;
         };
 
         if (response.status === 402 || data.code === 'subscription_required') {
           setNeedsSubscription(true);
+        }
+
+        // Rate limit propio del servidor (no de OpenAI) — UI con contador.
+        if (response.status === 429 && data.code === 'rate_limited') {
+          const retryAfterHeader = response.headers.get('Retry-After');
+          const retryAfter = retryAfterHeader ? Number(retryAfterHeader) : null;
+          const seconds =
+            typeof data.resetSeconds === 'number'
+              ? data.resetSeconds
+              : Number.isFinite(retryAfter)
+                ? retryAfter
+                : null;
+          setRateLimit({
+            seconds,
+            message:
+              'Para evitar gastos altos en IA limitamos la generación de planes. Vuelve a intentar en {{seconds}}.'
+          });
+          setStatus('error');
+          return;
         }
 
         if (!response.ok || !data.plan) {
@@ -191,7 +216,19 @@ export default function GeneratingPlanPage() {
 
         {status === 'error' ? (
           <div className="mt-5 space-y-3">
-            <Banner tone="mustard" title="No pudimos generar" description={error} />
+            {rateLimit ? (
+              <RateLimitBanner
+                resetSeconds={rateLimit.seconds}
+                message={rateLimit.message}
+                onExpire={() => {
+                  setRateLimit(null);
+                  hasStartedRef.current = false;
+                  window.location.reload();
+                }}
+              />
+            ) : (
+              <Banner tone="mustard" title="No pudimos generar" description={error} />
+            )}
             {!hasProfile ? (
               <Button variant="mustard" href="/onboarding" size="lg" className="w-full">
                 Volver al onboarding
