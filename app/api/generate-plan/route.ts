@@ -1,7 +1,8 @@
 import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
 import { zodResponseFormat } from 'openai/helpers/zod';
-import { requireSubscriptionAccess } from '@/lib/billing/subscription';
+import { gatePlanGeneration, markFreePlanConsumed } from '@/lib/billing/gates';
+import { enforceRateLimit } from '@/lib/rate-limit';
 import {
   FastPlanMetadataSchema,
   FastWeekSchema,
@@ -9,7 +10,17 @@ import {
   type FastWeek,
   type FastExercise
 } from '@/lib/ai/fast-plan-schema';
-import { PRO_STYLE_RULES, PRO_STYLE_EXAMPLES } from '@/lib/prompts/pro-style';
+import {
+  PRO_STYLE_RULES,
+  PRO_STYLE_EXAMPLES,
+  EQUIPMENT_ADAPTATION_RULES
+} from '@/lib/prompts/pro-style';
+import {
+  buildSafetyRetryMessage,
+  validatePlanSafety,
+  type SafetyViolation
+} from '@/lib/ai/plan-safety';
+import { extractLibraryTraceability, type LibraryTraceability } from '@/lib/ai/response-sources';
 import type { TrainingPlan, Week, Session, Exercise } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
 
@@ -101,6 +112,8 @@ const WEEK_PROMPT = `Eres un coach de escalada profesional del calibre de Lattic
 
 ${PRO_STYLE_RULES}
 
+${EQUIPMENT_ADAPTATION_RULES}
+
 ${PRO_STYLE_EXAMPLES}
 
 REGLAS DURAS:
@@ -160,21 +173,14 @@ function toExercise(fast: FastExercise): Exercise {
     requiredEquipment: fast.equipment ? [fast.equipment] : null,
     riskLevel: null,
     objective: null,
-    prescription:
-      [
-        fast.sets ? `${fast.sets} series` : null,
-        fast.reps,
-        fast.rest ? `descanso ${fast.rest}` : null
-      ]
-        .filter(Boolean)
-        .join(' · ') || null,
+    prescription: null,
     sets: fast.sets,
     reps: fast.reps,
-    duration: fast.reps,
+    duration: null,
     rest: fast.rest,
     intensity: fast.intensity,
     intensityPercent: null,
-    rpeTarget: fast.intensity,
+    rpeTarget: null,
     tempo: null,
     notes: fast.notes,
     timerSeconds: null,
@@ -194,7 +200,8 @@ function toExercise(fast: FastExercise): Exercise {
 function buildPlan(
   metadata: FastPlanMetadata,
   fastWeeks: FastWeek[],
-  profile: UserProfile
+  profile: UserProfile,
+  traceability: LibraryTraceability = { usedFileSearch: false, sourceNames: [] }
 ): TrainingPlan {
   const now = new Date().toISOString();
   const sortedWeeks = [...fastWeeks].sort((a, b) => a.weekNumber - b.weekNumber);
@@ -261,27 +268,132 @@ function buildPlan(
     weeks,
     status: 'active',
     createdAt: now,
-    usedFileSearch: false,
-    librarySources: null,
+    // SOLO marcamos la badge cuando OpenAI realmente citó chunks del vector store.
+    // Si usedFileSearch=true pero sourceNames vacío → el modelo no usó la biblioteca de verdad.
+    usedFileSearch: traceability.usedFileSearch && traceability.sourceNames.length > 0,
+    librarySources: traceability.sourceNames.length > 0 ? traceability.sourceNames : null,
     qualityScores: null
   };
 }
 
-async function generateMetadata(
+const GROUNDING_PROMPT = `Eres un asistente que consulta una biblioteca de fuentes profesionales de entrenamiento de escalada (Eva López, Eric Hörst, Power Company, Lattice, Climb Strong, investigación RED-S, etc).
+
+Tu trabajo: para el perfil de escalador dado, extraer de la biblioteca los principios, protocolos y prescripciones aplicables al diseño de su mesociclo.
+
+Responde:
+- En bullets concisos. No prosa larga.
+- Cita ejercicios y protocolos específicos cuando aparezcan en las fuentes (ej. "Eva López — Maximum Hangs en 10 segundos al límite").
+- Si la fuente discute precauciones (dedos, RED-S, menores, lesiones), inclúyelas EXPLÍCITAS.
+- Si la biblioteca no tiene información relevante para una pregunta específica, dilo. NO inventes.
+
+Devuelve un brief de máximo 12 bullets.`;
+
+function extractResponsesText(response: unknown): string {
+  // Soporta tanto el getter conveniente output_text como el array output[].
+  const value = response as { output_text?: string; output?: Array<unknown> };
+  if (typeof value.output_text === 'string' && value.output_text.trim().length > 0) {
+    return value.output_text;
+  }
+  if (!Array.isArray(value.output)) return '';
+  const chunks: string[] = [];
+  for (const item of value.output) {
+    const node = item as {
+      type?: string;
+      content?: Array<{ type?: string; text?: string }>;
+    };
+    if (node.type === 'message' && Array.isArray(node.content)) {
+      for (const part of node.content) {
+        if (part.type === 'output_text' && typeof part.text === 'string') {
+          chunks.push(part.text);
+        }
+      }
+    }
+  }
+  return chunks.join('\n');
+}
+
+async function groundFromLibrary(
   client: OpenAI,
   model: string,
   profile: UserProfile
+): Promise<{ context: string; traceability: LibraryTraceability }> {
+  const empty: LibraryTraceability = { usedFileSearch: false, sourceNames: [] };
+  const vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID;
+
+  if (!vectorStoreId) {
+    return { context: '', traceability: empty };
+  }
+
+  try {
+    const response = await client.responses.create({
+      model,
+      max_output_tokens: 900,
+      input: [
+        { role: 'system', content: GROUNDING_PROMPT },
+        {
+          role: 'user',
+          content: `Para este escalador, extrae de la biblioteca los principios y protocolos relevantes para diseñar su plan. Cita las fuentes.
+
+Perfil:
+${profileToPrompt(profile)}`
+        }
+      ],
+      tools: [
+        {
+          type: 'file_search',
+          vector_store_ids: [vectorStoreId]
+        }
+      ]
+    });
+
+    const context = extractResponsesText(response);
+    const traceability = extractLibraryTraceability(response);
+
+    return { context, traceability };
+  } catch (error) {
+    // Silenciamos errores de RAG para no romper la generación si File Search falla.
+    console.warn(
+      JSON.stringify({
+        kind: 'plan_grounding_failed',
+        message: error instanceof Error ? error.message : 'unknown'
+      })
+    );
+    return { context: '', traceability: empty };
+  }
+}
+
+type ChatMessage =
+  | { role: 'system'; content: string }
+  | { role: 'user'; content: string };
+
+async function generateMetadata(
+  client: OpenAI,
+  model: string,
+  profile: UserProfile,
+  groundingContext: string
 ): Promise<FastPlanMetadata> {
+  const messages: ChatMessage[] = [{ role: 'system', content: METADATA_PROMPT }];
+
+  if (groundingContext) {
+    messages.push({
+      role: 'system',
+      content: `BIBLIOTECA — principios y protocolos relevantes para este atleta (extraídos de fuentes reales del vector store, citados con [fuente]):
+
+${groundingContext}
+
+Usa estos principios cuando definas mesociclo, semanas, áreas de foco, recoveryGuidelines y safetyRules. Si una recomendación contradice algo de la biblioteca, prioriza la biblioteca.`
+    });
+  }
+
+  messages.push({
+    role: 'user',
+    content: `Diseña la estructura meta de un plan de ${profile.planDuration} semanas para este escalador con ${profile.daysPerWeek} sesiones por semana.\n\nPerfil:\n${profileToPrompt(profile)}`
+  });
+
   const completion = await client.chat.completions.parse({
     model,
     response_format: zodResponseFormat(FastPlanMetadataSchema, 'metadata'),
-    messages: [
-      { role: 'system', content: METADATA_PROMPT },
-      {
-        role: 'user',
-        content: `Diseña la estructura meta de un plan de ${profile.planDuration} semanas para este escalador con ${profile.daysPerWeek} sesiones por semana.\n\nPerfil:\n${profileToPrompt(profile)}`
-      }
-    ]
+    messages
   });
 
   const metadata = completion.choices[0]?.message.parsed;
@@ -295,32 +407,50 @@ async function generateWeek(
   client: OpenAI,
   model: string,
   profile: UserProfile,
-  weekMeta: FastPlanMetadata['weekThemes'][number]
+  weekMeta: FastPlanMetadata['weekThemes'][number],
+  retryCorrection: string | null = null
 ): Promise<FastWeek> {
+  const equipment = profile.equipment?.length ? profile.equipment : ['home'];
+  const equipmentLines = equipment
+    .map((item) => `- ${item}`)
+    .join('\n');
+
+  const messages = [
+    { role: 'system' as const, content: WEEK_PROMPT },
+    {
+      role: 'user' as const,
+      content: `Genera la SEMANA ${weekMeta.weekNumber} del plan completo.
+
+EQUIPO DISPONIBLE DEL ATLETA (única lista permitida):
+${equipmentLines}
+
+⚠️ REGLA INVIOLABLE: cualquier ejercicio que requiera equipo FUERA de esta lista está PROHIBIDO. No incluyas hangboard, campus, muro, TRX, pesas, etc si no aparecen arriba. Aplica las reglas de adaptación de equipo del system prompt.
+
+Contexto de la semana:
+- Tema: ${weekMeta.theme}
+- Objetivo: ${weekMeta.objective}
+- Áreas de foco: ${weekMeta.focusAreas.join(', ')}
+- Carga: ${weekMeta.loadLevel}
+- Descarga: ${weekMeta.deloadWeek ? 'sí' : 'no'}
+
+Debe tener EXACTAMENTE ${profile.daysPerWeek} sesiones (campo "sessions" con ${profile.daysPerWeek} elementos), una por cada día disponible.
+
+Perfil completo:
+${profileToPrompt(profile)}
+
+Devuelve la semana con weekNumber=${weekMeta.weekNumber}.`
+    }
+  ];
+
+  if (retryCorrection) {
+    messages.push({ role: 'user' as const, content: retryCorrection });
+  }
+
   const completion = await client.chat.completions.parse({
     model,
     max_tokens: 8000,
     response_format: zodResponseFormat(FastWeekSchema, 'week'),
-    messages: [
-      { role: 'system', content: WEEK_PROMPT },
-      {
-        role: 'user',
-        content: `Genera la SEMANA ${weekMeta.weekNumber} del plan completo.
-
-Tema de la semana: ${weekMeta.theme}
-Objetivo: ${weekMeta.objective}
-Áreas de foco: ${weekMeta.focusAreas.join(', ')}
-Nivel de carga: ${weekMeta.loadLevel}
-Es semana de descarga: ${weekMeta.deloadWeek ? 'sí' : 'no'}
-
-Debe tener exactamente ${profile.daysPerWeek} sesiones (campo "sessions" con ${profile.daysPerWeek} elementos), una por cada día disponible.
-
-Perfil del escalador:
-${profileToPrompt(profile)}
-
-Devuelve la semana con weekNumber=${weekMeta.weekNumber}.`
-      }
-    ]
+    messages
   });
 
   const week = completion.choices[0]?.message.parsed;
@@ -330,9 +460,51 @@ Devuelve la semana con weekNumber=${weekMeta.weekNumber}.`
   return week;
 }
 
+function logSafetyViolations(
+  attempt: 'first' | 'retry',
+  profile: UserProfile,
+  violations: SafetyViolation[]
+) {
+  // Stub de observability — un Sentry/Logtail aterriza aquí en el futuro.
+  // Lo escribimos como JSON estructurado para que sea parseable.
+  console.warn(
+    JSON.stringify({
+      kind: 'plan_safety_violation',
+      attempt,
+      profile: {
+        id: profile.id,
+        age: profile.age,
+        climbingTime: profile.climbingTime,
+        currentFingerPain: profile.currentFingerPain
+      },
+      violations: violations.map((v) => ({
+        rule: v.rule,
+        reason: v.reason,
+        trigger: v.triggerExercise
+      }))
+    })
+  );
+}
+
 export async function POST(request: Request) {
-  const subscriptionError = requireSubscriptionAccess();
-  if (subscriptionError) return subscriptionError;
+  const limit = await enforceRateLimit('plan');
+  if (!limit.ok) {
+    return NextResponse.json(
+      {
+        code: 'rate_limited',
+        error: limit.userMessage,
+        resetSeconds: limit.resetSeconds
+      },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(limit.resetSeconds) }
+      }
+    );
+  }
+
+  const gate = await gatePlanGeneration();
+  if (!gate.allowed) return gate.response;
+  const userId = gate.userId;
 
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
@@ -356,7 +528,16 @@ export async function POST(request: Request) {
   const model = process.env.OPENAI_PLAN_MODEL ?? 'gpt-4o';
 
   try {
-    const metadata = await generateMetadata(client, model, profile);
+    // 1. Grounding desde la biblioteca (File Search vía Responses API).
+    //    Solo se hace UNA vez por plan, no por semana, para no inflar latencia.
+    const { context: groundingContext, traceability } = await groundFromLibrary(
+      client,
+      model,
+      profile
+    );
+
+    // 2. Metadata estructurada (con el grounding como contexto adicional).
+    const metadata = await generateMetadata(client, model, profile, groundingContext);
 
     // Si la metadata trajo menos o más semanas, ajustamos a planDuration
     const themes = metadata.weekThemes
@@ -375,12 +556,60 @@ export async function POST(request: Request) {
       });
     }
 
-    // Generar todas las semanas EN PARALELO
-    const fastWeeks = await Promise.all(
+    // 3. Generar todas las semanas EN PARALELO (sin RAG — la velocidad importa).
+    let fastWeeks = await Promise.all(
       themes.map((theme) => generateWeek(client, model, profile, theme))
     );
+    let plan = buildPlan(metadata, fastWeeks, profile, traceability);
 
-    const plan = buildPlan(metadata, fastWeeks, profile);
+    // Validación de seguridad enforceable server-side
+    let safety = validatePlanSafety(plan, profile);
+
+    if (!safety.ok) {
+      logSafetyViolations('first', profile, safety.violations);
+
+      // Reintento: regeneramos SOLO las semanas que tienen el problema, con feedback correctivo.
+      const correction = buildSafetyRetryMessage(safety.violations);
+      const offendingWeekNumbers = new Set(
+        safety.violations
+          .map((v) => v.triggerExercise?.week)
+          .filter((w): w is number => typeof w === 'number')
+      );
+
+      const regenerated = await Promise.all(
+        themes.map(async (theme) => {
+          if (offendingWeekNumbers.size === 0 || offendingWeekNumbers.has(theme.weekNumber)) {
+            return generateWeek(client, model, profile, theme, correction);
+          }
+          return fastWeeks.find((w) => w.weekNumber === theme.weekNumber)!;
+        })
+      );
+
+      fastWeeks = regenerated;
+      plan = buildPlan(metadata, fastWeeks, profile, traceability);
+      safety = validatePlanSafety(plan, profile);
+
+      if (!safety.ok) {
+        // Segundo fallo → no devolvemos plan inseguro al usuario.
+        logSafetyViolations('retry', profile, safety.violations);
+        return NextResponse.json(
+          {
+            code: 'plan_unsafe_after_retry',
+            error:
+              'Generamos el plan pero contiene ejercicios que no son seguros para tu perfil. Estamos revisando esto — vuelve a intentarlo en un momento o ajusta tu perfil (lesiones, edad, tiempo escalando).',
+            violations: safety.violations.map((v) => ({
+              rule: v.rule,
+              reason: v.reason
+            }))
+          },
+          { status: 422 }
+        );
+      }
+    }
+
+    // Solo consumir el plan gratis si el plan pasó safety. Si el reintento falló,
+    // la función ya retornó 422 arriba y no llegamos acá.
+    await markFreePlanConsumed(userId);
     return NextResponse.json({ plan });
   } catch (caughtError) {
     const message =

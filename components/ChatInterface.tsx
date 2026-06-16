@@ -397,6 +397,45 @@ function cleanInlineMarkdown(value: string) {
     .trim();
 }
 
+type InlineSegment = { text: string; bold: boolean };
+
+function parseInlineBold(value: string): InlineSegment[] {
+  const segments: InlineSegment[] = [];
+  const regex = /\*\*(.+?)\*\*/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(value)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({ text: value.slice(lastIndex, match.index), bold: false });
+    }
+    segments.push({ text: match[1], bold: true });
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < value.length) {
+    segments.push({ text: value.slice(lastIndex), bold: false });
+  }
+
+  return segments.length ? segments : [{ text: value, bold: false }];
+}
+
+function renderInline(value: string) {
+  return parseInlineBold(value).map((segment, index) =>
+    segment.bold ? (
+      <strong key={index} className="font-extrabold text-white">
+        {segment.text}
+      </strong>
+    ) : (
+      <span key={index}>{segment.text}</span>
+    )
+  );
+}
+
+function stripListPrefixOnly(value: string) {
+  return value.replace(/^[-*•]\s+/, '').replace(/^\d+[.)]\s+/, '');
+}
+
 type VisualSection = {
   id: string;
   title: string;
@@ -477,23 +516,28 @@ function parseVisualCoachSections(content: string) {
   content
     .replace(/\r\n/g, '\n')
     .split('\n')
-    .map((line) => cleanInlineMarkdown(stripListPrefix(line.trim())))
+    // Quita prefijos de lista pero PRESERVA el **bold** para renderizado
+    .map((line) => stripListPrefixOnly(line.trim()))
     .filter(Boolean)
     .forEach((line) => {
-      const colonMatch = line.match(/^([^:]{3,36}):\s*(.+)$/);
+      // Para detección de section ID usamos versión sin markdown
+      const plainLine = cleanInlineMarkdown(line);
+      const colonMatch = plainLine.match(/^([^:]{3,36}):\s*(.+)$/);
       const inlineSectionId = colonMatch ? getSectionId(colonMatch[1]) : null;
-      const lineSectionId = getSectionId(line);
+      const lineSectionId = getSectionId(plainLine);
       const sectionId = inlineSectionId ?? lineSectionId;
 
       if (sectionId) {
         activeSection = {
           id: sectionId,
-          title: visualSectionConfig[sectionId]?.title ?? line,
+          title: visualSectionConfig[sectionId]?.title ?? plainLine,
           items: []
         };
         sections.push(activeSection);
         if (inlineSectionId && colonMatch?.[2]) {
-          activeSection.items.push(cleanInlineMarkdown(colonMatch[2]));
+          // Re-extraer la parte después del ":" del line ORIGINAL (con bold)
+          const originalColonMatch = line.match(/^[^:]+:\s*(.+)$/);
+          activeSection.items.push(originalColonMatch?.[1] ?? colonMatch[2]);
         }
         return;
       }
@@ -520,10 +564,31 @@ function FormattedCoachMessage({ content }: { content: string }) {
   if (!visualSections.length) {
     return <span className="text-white/42">…</span>;
   }
+
+  // Si todo es "general" (respuesta directa sin secciones), renderizamos plano sin card grande.
+  const isAllGeneral = visualSections.every((s) => s.id === 'general');
+  if (isAllGeneral) {
+    const items = visualSections.flatMap((s) => s.items);
+    return <PlainCoachList items={items} />;
+  }
+
   return (
     <div className="space-y-3">
       {visualSections.map((section, sectionIndex) => (
         <CoachVisualCard key={`${section.id}-${sectionIndex}`} section={section} />
+      ))}
+    </div>
+  );
+}
+
+function PlainCoachList({ items }: { items: string[] }) {
+  return (
+    <div className="space-y-2">
+      {items.map((item, index) => (
+        <div key={`${item}-${index}`} className="flex gap-2 text-sm leading-6 text-white/82">
+          <span className="mt-2 size-1 shrink-0 rounded-full bg-brand-cyan opacity-80" />
+          <span className="min-w-0">{renderInline(item)}</span>
+        </div>
       ))}
     </div>
   );
@@ -542,9 +607,9 @@ function CoachVisualCard({ section }: { section: VisualSection }) {
       </div>
       <div className="mt-3 space-y-2">
         {section.items.map((item, index) => (
-          <div key={`${item}-${index}`} className="flex gap-2 text-sm leading-6 text-white/78">
+          <div key={`${item}-${index}`} className="flex gap-2 text-sm leading-6 text-white/82">
             <span className="mt-2 size-1.5 shrink-0 rounded-full bg-current opacity-80" />
-            <span>{item}</span>
+            <span className="min-w-0">{renderInline(item)}</span>
           </div>
         ))}
       </div>

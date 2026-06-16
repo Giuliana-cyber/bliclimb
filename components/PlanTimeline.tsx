@@ -473,6 +473,43 @@ function PlanDetailsAccordion({ plan }: { plan: TrainingPlan }) {
   );
 }
 
+function ExerciseChips({ exercise }: { exercise: Exercise }) {
+  // Prioridad: prescription compuesta gana, si no hay, mostramos las partes.
+  // Sin duplicados (la prescripción YA contiene sets/reps/rest).
+  const chips: string[] = [];
+
+  if (exercise.prescription) {
+    chips.push(exercise.prescription);
+  } else {
+    if (exercise.sets) chips.push(`${exercise.sets} series`);
+    if (exercise.reps) chips.push(exercise.reps);
+    if (exercise.duration && exercise.duration !== exercise.reps) chips.push(exercise.duration);
+    if (exercise.rest) chips.push(`descanso ${exercise.rest}`);
+  }
+
+  // Intensidad: solo una, evitando duplicado entre intensity, intensityPercent y rpeTarget.
+  const intensity =
+    exercise.intensityPercent || exercise.intensity || exercise.rpeTarget || null;
+  if (intensity) chips.push(intensity);
+
+  if (exercise.category) chips.unshift(exercise.category);
+
+  if (chips.length === 0) return null;
+
+  return (
+    <div className="mt-3 flex flex-wrap gap-1.5 text-[0.7rem] font-bold text-white/55">
+      {chips.map((chip, i) => (
+        <span
+          key={`${chip}-${i}`}
+          className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-2 py-0.5"
+        >
+          {chip}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function Pair({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-white/8 bg-white/[0.025] p-3">
@@ -507,17 +544,7 @@ function ExerciseSection({
               <ExerciseGuide exercise={exercise} contextLabel={`${title} - ${sessionTitle}`} />
             </div>
             <p className="mt-2 text-sm leading-6 text-white/66">{exercise.description}</p>
-            <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-white/45">
-              {exercise.category ? <span>Categoría: {exercise.category}</span> : null}
-              {exercise.prescription ? <span>{exercise.prescription}</span> : null}
-              {exercise.sets ? <span>{exercise.sets} series</span> : null}
-              {exercise.reps ? <span>{exercise.reps}</span> : null}
-              {exercise.duration ? <span>{exercise.duration}</span> : null}
-              {exercise.rest ? <span>descanso {exercise.rest}</span> : null}
-              {exercise.intensity ? <span>{exercise.intensity}</span> : null}
-              {exercise.intensityPercent ? <span>{exercise.intensityPercent}</span> : null}
-              {exercise.rpeTarget ? <span>{exercise.rpeTarget}</span> : null}
-            </div>
+            <ExerciseChips exercise={exercise} />
             {exercise.notes ? (
               <p className="mt-2 text-xs leading-5 text-white/55">Nota: {exercise.notes}</p>
             ) : null}

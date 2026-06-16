@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 import type { CheckIn } from '@/lib/checkin';
 import type { TrainingPlan } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
-import { requireSubscriptionAccess } from '@/lib/billing/subscription';
+import { gateChat } from '@/lib/billing/gates';
+import { enforceRateLimit } from '@/lib/rate-limit';
 import { buildCoachSystemPrompt } from '@/lib/prompts/coach-system';
 import { extractLibraryTraceability } from '@/lib/ai/response-sources';
 import { CHAT_MAX_OUTPUT_TOKENS } from '@/lib/ai/token-budget';
@@ -37,11 +38,23 @@ function isChatMessage(value: unknown): value is ChatMessage {
 }
 
 export async function POST(request: Request) {
-  const subscriptionError = requireSubscriptionAccess();
-
-  if (subscriptionError) {
-    return subscriptionError;
+  const limit = await enforceRateLimit('chat');
+  if (!limit.ok) {
+    return NextResponse.json(
+      {
+        code: 'rate_limited',
+        error: limit.userMessage,
+        resetSeconds: limit.resetSeconds
+      },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(limit.resetSeconds) }
+      }
+    );
   }
+
+  const gate = await gateChat();
+  if (!gate.allowed) return gate.response;
 
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(

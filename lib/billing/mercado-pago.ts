@@ -113,10 +113,17 @@ async function mercadoPagoRequest<T>(path: string, init?: RequestInit) {
 
 export async function createSubscriptionPreapproval({
   email,
-  requestUrl
+  requestUrl,
+  userId
 }: {
   email: string;
   requestUrl: string;
+  /**
+   * Identificador del usuario autenticado en Supabase. Se envía como
+   * `external_reference` a Mercado Pago para que el webhook pueda hacer
+   * el binding entre el pago y la fila en `entitlements`.
+   */
+  userId: string;
 }) {
   const appBaseUrl = getAppBaseUrl(requestUrl);
 
@@ -125,7 +132,7 @@ export async function createSubscriptionPreapproval({
     body: JSON.stringify({
       reason: 'BilClimb.ai Pro',
       payer_email: email,
-      external_reference: `bilclimb-${crypto.randomUUID()}`,
+      external_reference: userId,
       back_url: `${appBaseUrl}/billing/success`,
       auto_recurring: {
         frequency: 1,

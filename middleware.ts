@@ -10,6 +10,7 @@ const PROTECTED_PREFIXES = [
   '/progress',
   '/profile',
   '/checkin',
+  '/settings',
   '/api/chat',
   '/api/generate-plan'
 ];
