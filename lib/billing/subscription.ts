@@ -1,3 +1,8 @@
+// TODO(legacy-mp): remove after Stripe validated.
+// Cookie HMAC legacy del flujo de Mercado Pago. Los gates críticos ya no la
+// consultan; queda por dependencias residuales (BillingSuccess viejo) hasta
+// que confirmemos Stripe en producción.
+
 import crypto from 'node:crypto';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';

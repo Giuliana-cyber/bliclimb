@@ -1,3 +1,9 @@
+// TODO(legacy-mp): remove after Stripe validated.
+// Cuenta de Mercado Pago bloqueada por PA_UNAUTHORIZED_RESULT_FROM_POLICIES.
+// Reemplazado por Stripe (ver lib/billing/stripe.ts + STRIPE_SETUP.md).
+// Este archivo queda para no romper imports históricos y para poder volver
+// rápido si Stripe presenta problemas en producción.
+
 const MERCADO_PAGO_API_BASE = 'https://api.mercadopago.com';
 
 export type MercadoPagoPreapproval = {

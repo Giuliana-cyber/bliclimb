@@ -1,3 +1,9 @@
+// TODO(legacy-mp): remove after Stripe validated.
+// Webhook viejo de Mercado Pago. El nuevo es /api/webhooks/stripe. Este
+// endpoint sigue verificando firma HMAC e idempotencia para que si MP
+// envía algo nuestra cuenta no se quiebre, pero ya no se espera tráfico
+// aquí.
+
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import {
