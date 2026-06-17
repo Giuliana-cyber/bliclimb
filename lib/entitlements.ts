@@ -150,9 +150,12 @@ export async function markFreePlanUsed(
  * true si el usuario tiene suscripción activa con período vigente.
  *
  * Reglas:
- * - `status === 'active'` AND `current_period_end > now()`.
- * - 'cancelled' con `current_period_end > now()` también cuenta como activo (cancelado
- *   pero todavía dentro del período pagado).
+ * - `status === 'active'` AND `current_period_end > now()`. Incluye Stripe
+ *   `trialing` porque mapStripeStatus colapsa trialing → 'active' al persistir
+ *   (durante el trial de 30 días `current_period_end` es la fecha de fin del
+ *   trial; al cobrarse la primera factura Stripe avanza el período un año).
+ * - 'cancelled' con `current_period_end > now()` también cuenta como activo
+ *   (cancelado pero todavía dentro del período pagado).
  */
 export async function hasActiveSubscription(
   userId: string,
