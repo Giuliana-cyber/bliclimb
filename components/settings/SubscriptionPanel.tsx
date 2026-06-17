@@ -70,14 +70,14 @@ function statusCopy(data: SubscriptionPanelData): StatusCopy {
       badge: 'Pausada',
       tone: 'mustard',
       description:
-        'Tu suscripción está pausada en Mercado Pago. Reanudala desde tu cuenta de MP para recuperar el acceso.'
+        'Tu suscripción está pausada. Reactivala desde tu cuenta de Stripe para recuperar el acceso.'
     };
   }
   if (data.status === 'past_due') {
     return {
       badge: 'Pago vencido',
       tone: 'danger',
-      description: 'Mercado Pago no pudo cobrarte. Revisá tu método de pago.'
+      description: 'Stripe no pudo cobrarte la renovación. Actualizá tu método de pago.'
     };
   }
   if (data.status === 'pending') {
@@ -85,7 +85,7 @@ function statusCopy(data: SubscriptionPanelData): StatusCopy {
       badge: 'Pendiente',
       tone: 'mustard',
       description:
-        'Estamos esperando que Mercado Pago confirme tu pago. Refrescá esta página en unos minutos.'
+        'Estamos esperando que Stripe confirme tu pago. Refrescá esta página en unos minutos.'
     };
   }
   return {

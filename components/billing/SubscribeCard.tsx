@@ -1,99 +1,52 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CreditCard, Loader2, ShieldCheck, Sparkles } from 'lucide-react';
+import { CalendarClock, CreditCard, Loader2, ShieldCheck, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Banner } from '@/components/ui/Banner';
 import { Button } from '@/components/ui/Button';
 import { MountainBackdrop } from '@/components/ui/MountainBackdrop';
 import { loadLocalSession } from '@/lib/session';
 
-type BillingStatus = {
-  active?: boolean;
-  configured?: boolean;
-  required?: boolean;
-  configError?: string | null;
-  billing?: {
-    amount: number;
-    currency: string;
-    sandbox: boolean;
-  } | null;
-  subscription?: {
-    payerEmail?: string;
-    expiresAt?: string;
-  } | null;
-};
-
-function formatMoney(amount: number, currency: string) {
-  try {
-    return new Intl.NumberFormat('es-MX', {
-      currency,
-      style: 'currency'
-    }).format(amount);
-  } catch {
-    return `${amount} ${currency}`;
-  }
-}
+const PRICE_LABEL = '$249 MXN / año';
+const TRIAL_LABEL = '30 días gratis';
 
 export function SubscribeCard({ compact = false }: { compact?: boolean }) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [billingStatus, setBillingStatus] = useState<BillingStatus | null>(null);
-  const [checkingStatus, setCheckingStatus] = useState(true);
 
   useEffect(() => {
     const session = loadLocalSession();
     if (session?.email) setEmail(session.email);
-
-    async function checkBillingStatus() {
-      try {
-        const response = await fetch('/api/billing/status');
-        const data = (await response.json()) as BillingStatus;
-        setBillingStatus(data);
-      } catch {
-        setBillingStatus(null);
-      } finally {
-        setCheckingStatus(false);
-      }
-    }
-    void checkBillingStatus();
   }, []);
-
-  const priceLabel = useMemo(() => {
-    const billing = billingStatus?.billing;
-    if (!billing) return '$1 USD';
-    return formatMoney(billing.amount, billing.currency);
-  }, [billingStatus]);
-
-  const isBillingConfigured = billingStatus?.configured ?? true;
 
   async function startCheckout() {
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch('/api/billing/create-subscription', {
+      const response = await fetch('/api/billing/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
       });
       const data = (await response.json()) as {
-        preapprovalId?: string;
-        url?: string;
+        checkoutUrl?: string;
         error?: string;
+        detail?: string;
       };
 
-      if (!response.ok || !data.url) {
-        throw new Error(data.error ?? 'No pudimos abrir el checkout.');
+      if (!response.ok || !data.checkoutUrl) {
+        const detail = data.detail ? `${data.error ?? 'error'} — ${data.detail}` : data.error;
+        throw new Error(detail ?? 'No pudimos abrir el checkout.');
       }
-      if (data.preapprovalId) {
-        window.localStorage.setItem('bilclimb:last-preapproval-id', data.preapprovalId);
-      }
-      window.location.href = data.url;
+      window.location.href = data.checkoutUrl;
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'No pudimos abrir Mercado Pago.');
+      setError(
+        caughtError instanceof Error ? caughtError.message : 'No pudimos abrir Stripe.'
+      );
       setLoading(false);
     }
   }
@@ -119,27 +72,28 @@ export function SubscribeCard({ compact = false }: { compact?: boolean }) {
             BilClimb.ai Pro
           </p>
           <h1 className="mt-2 text-3xl font-extrabold leading-tight">
-            Entrena con IA por {priceLabel} al mes
+            Entrena con IA por {PRICE_LABEL}
           </h1>
           <p className="mt-3 text-sm leading-6 text-white/72">
-            La suscripción cubre el uso de OpenAI para generar planes, responder con Senda/Bill y
-            mantener tu bitácora inteligente.
+            Empezás con {TRIAL_LABEL}. Después, $249 MXN una vez al año — sin meses
+            recurrentes ni sorpresas.
           </p>
 
-          {billingStatus?.billing ? (
-            <div className="mt-4 inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-bold text-white/60">
-              Mercado Pago {billingStatus.billing.sandbox ? 'sandbox' : 'producción'}
-            </div>
-          ) : null}
-
           <div className="mt-5 space-y-3 text-sm leading-6 text-white/76">
-            <Bullet icon={ShieldCheck} text="Planes personalizados y chat contextual con tu perfil." />
-            <Bullet icon={CreditCard} text="Pago mensual seguro con Mercado Pago." />
+            <Bullet
+              icon={CalendarClock}
+              text={`${TRIAL_LABEL} para probar planes y chat sin pagar.`}
+            />
+            <Bullet
+              icon={ShieldCheck}
+              text="Planes personalizados con guardrails y chat contextual."
+            />
+            <Bullet icon={CreditCard} text="Cobro anual seguro vía Stripe. Cancelás cuando querés." />
           </div>
 
           <label className="mt-5 block">
             <span className="mb-2 block text-sm font-extrabold text-white/82">
-              Email para Mercado Pago
+              Email para tu suscripción
             </span>
             <input
               value={email}
@@ -156,25 +110,15 @@ export function SubscribeCard({ compact = false }: { compact?: boolean }) {
             </div>
           ) : null}
 
-          {!checkingStatus && !isBillingConfigured ? (
-            <div className="mt-4">
-              <Banner
-                tone="mustard"
-                title="Mercado Pago no configurado"
-                description={`${billingStatus?.configError ?? 'No encontramos las credenciales.'} Agrega o revisa MERCADO_PAGO_ACCESS_TOKEN en Vercel y vuelve a desplegar.`}
-              />
-            </div>
-          ) : null}
-
           <Button
             type="button"
             onClick={startCheckout}
-            disabled={loading || checkingStatus || !isBillingConfigured || !email.trim()}
+            disabled={loading || !email.trim()}
             size="lg"
             className="mt-6 w-full"
             icon={loading ? <Loader2 size={18} className="animate-spin" /> : undefined}
           >
-            Suscribirme por {priceLabel}/mes
+            Empezar {TRIAL_LABEL}
           </Button>
 
           {!compact ? (
