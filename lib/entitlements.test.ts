@@ -1,14 +1,21 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import {
   canGenerateFreePlan,
+  findEntitlementByStripeCustomerId,
   findEntitlementBySubscriptionId,
   freePlanExpiresAt,
   getEntitlement,
   hasActivePlanAccess,
   hasActiveSubscription,
   isWithinFreePlanWindow,
+  mapStripeStatus,
   markFreePlanUsed,
+  markStripePastDue,
+  markStripeSubscriptionCancelled,
+  updateStripePeriodEnd,
   upsertEntitlementFromWebhook,
+  upsertFromStripeSubscription,
+  upsertStripeCustomer,
   type EntitlementsClient
 } from './entitlements';
 
@@ -22,6 +29,9 @@ type Row = {
   payer_email: string | null;
   status: string | null;
   current_period_end: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_price_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -36,6 +46,9 @@ function makeRow(profileId: string): Row {
     payer_email: null,
     status: null,
     current_period_end: null,
+    stripe_customer_id: null,
+    stripe_subscription_id: null,
+    stripe_price_id: null,
     created_at: now,
     updated_at: now
   };
@@ -275,6 +288,9 @@ describe('freePlanExpiresAt / isWithinFreePlanWindow / hasActivePlanAccess', () 
       payer_email: null,
       status: null,
       current_period_end: null,
+      stripe_customer_id: null,
+      stripe_subscription_id: null,
+      stripe_price_id: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     });
@@ -291,6 +307,9 @@ describe('freePlanExpiresAt / isWithinFreePlanWindow / hasActivePlanAccess', () 
       payer_email: null,
       status: null,
       current_period_end: null,
+      stripe_customer_id: null,
+      stripe_subscription_id: null,
+      stripe_price_id: null,
       created_at: usedAt.toISOString(),
       updated_at: usedAt.toISOString()
     });
@@ -376,6 +395,200 @@ describe('findEntitlementBySubscriptionId', () => {
       client
     );
     const found = await findEntitlementBySubscriptionId('sub_42', client);
+    expect(found?.profile_id).toBe(USER_ID);
+  });
+});
+
+// ---------- Stripe helpers ----------
+
+describe('mapStripeStatus', () => {
+  it('active y trialing → active', () => {
+    expect(mapStripeStatus('active')).toBe('active');
+    expect(mapStripeStatus('trialing')).toBe('active');
+  });
+  it('canceled → cancelled', () => {
+    expect(mapStripeStatus('canceled')).toBe('cancelled');
+  });
+  it('past_due y unpaid → past_due', () => {
+    expect(mapStripeStatus('past_due')).toBe('past_due');
+    expect(mapStripeStatus('unpaid')).toBe('past_due');
+  });
+  it('paused → paused', () => {
+    expect(mapStripeStatus('paused')).toBe('paused');
+  });
+  it('incomplete y incomplete_expired → pending', () => {
+    expect(mapStripeStatus('incomplete')).toBe('pending');
+    expect(mapStripeStatus('incomplete_expired')).toBe('pending');
+  });
+  it('estatus desconocido → null', () => {
+    expect(mapStripeStatus('whatever')).toBeNull();
+  });
+});
+
+describe('upsertStripeCustomer', () => {
+  it('escribe stripe_customer_id por primera vez', async () => {
+    const client = createFakeClient();
+    await upsertStripeCustomer(USER_ID, 'cus_test', client);
+    const ent = await getEntitlement(USER_ID, client);
+    expect(ent.stripe_customer_id).toBe('cus_test');
+    expect(ent.provider).toBe('stripe');
+  });
+
+  it('es idempotente', async () => {
+    const client = createFakeClient();
+    await upsertStripeCustomer(USER_ID, 'cus_test', client);
+    await upsertStripeCustomer(USER_ID, 'cus_test', client);
+    const ent = await getEntitlement(USER_ID, client);
+    expect(ent.stripe_customer_id).toBe('cus_test');
+  });
+});
+
+describe('upsertFromStripeSubscription', () => {
+  it('mapea trialing → active y guarda period_end', async () => {
+    const client = createFakeClient();
+    const trialEnd = Math.floor(Date.now() / 1000) + 30 * 86400;
+    const result = await upsertFromStripeSubscription(
+      USER_ID,
+      {
+        id: 'sub_T',
+        status: 'trialing',
+        current_period_end: trialEnd,
+        customer: 'cus_T',
+        items: { data: [{ price: { id: 'price_X' } }] }
+      },
+      client
+    );
+    expect(result.status).toBe('active');
+    expect(result.stripe_subscription_id).toBe('sub_T');
+    expect(result.stripe_customer_id).toBe('cus_T');
+    expect(result.stripe_price_id).toBe('price_X');
+    expect(result.current_period_end).toBeTypeOf('string');
+  });
+
+  it('mapea active → active', async () => {
+    const client = createFakeClient();
+    const periodEnd = Math.floor(Date.now() / 1000) + 365 * 86400;
+    const result = await upsertFromStripeSubscription(
+      USER_ID,
+      {
+        id: 'sub_A',
+        status: 'active',
+        current_period_end: periodEnd,
+        customer: { id: 'cus_A' }
+      },
+      client
+    );
+    expect(result.status).toBe('active');
+    expect(result.stripe_customer_id).toBe('cus_A');
+  });
+
+  it('mapea canceled → cancelled preservando period_end', async () => {
+    const client = createFakeClient();
+    const futureEnd = Math.floor(Date.now() / 1000) + 86400;
+    const result = await upsertFromStripeSubscription(
+      USER_ID,
+      {
+        id: 'sub_C',
+        status: 'canceled',
+        current_period_end: futureEnd,
+        customer: 'cus_C'
+      },
+      client
+    );
+    expect(result.status).toBe('cancelled');
+    expect(result.current_period_end).toBeTypeOf('string');
+  });
+
+  it('mapea past_due', async () => {
+    const client = createFakeClient();
+    const result = await upsertFromStripeSubscription(
+      USER_ID,
+      {
+        id: 'sub_PD',
+        status: 'past_due',
+        current_period_end: Math.floor(Date.now() / 1000) + 86400,
+        customer: 'cus_PD'
+      },
+      client
+    );
+    expect(result.status).toBe('past_due');
+  });
+
+  it('lanza si el status no es mapeable', async () => {
+    const client = createFakeClient();
+    await expect(
+      upsertFromStripeSubscription(
+        USER_ID,
+        { id: 'sub_X', status: 'mystery_status', customer: 'cus_X' },
+        client
+      )
+    ).rejects.toThrow(/no mapeable/);
+  });
+});
+
+describe('markStripeSubscriptionCancelled / updateStripePeriodEnd / markStripePastDue', () => {
+  it('markStripeSubscriptionCancelled pone status cancelled sin tocar period_end', async () => {
+    const client = createFakeClient();
+    const futureEnd = Math.floor(Date.now() / 1000) + 86400;
+    await upsertFromStripeSubscription(
+      USER_ID,
+      { id: 'sub_M', status: 'active', current_period_end: futureEnd, customer: 'cus_M' },
+      client
+    );
+    const before = await getEntitlement(USER_ID, client);
+    await markStripeSubscriptionCancelled('sub_M', client);
+    const after = await getEntitlement(USER_ID, client);
+    expect(after.status).toBe('cancelled');
+    expect(after.current_period_end).toBe(before.current_period_end);
+  });
+
+  it('updateStripePeriodEnd actualiza la fecha y vuelve a active', async () => {
+    const client = createFakeClient();
+    await upsertFromStripeSubscription(
+      USER_ID,
+      {
+        id: 'sub_R',
+        status: 'past_due',
+        current_period_end: Math.floor(Date.now() / 1000),
+        customer: 'cus_R'
+      },
+      client
+    );
+    const nextPeriod = Math.floor(Date.now() / 1000) + 365 * 86400;
+    await updateStripePeriodEnd('sub_R', nextPeriod, client);
+    const ent = await getEntitlement(USER_ID, client);
+    expect(ent.status).toBe('active');
+    expect(ent.current_period_end).toBe(new Date(nextPeriod * 1000).toISOString());
+  });
+
+  it('markStripePastDue pone status past_due', async () => {
+    const client = createFakeClient();
+    await upsertFromStripeSubscription(
+      USER_ID,
+      {
+        id: 'sub_F',
+        status: 'active',
+        current_period_end: Math.floor(Date.now() / 1000) + 86400,
+        customer: 'cus_F'
+      },
+      client
+    );
+    await markStripePastDue('sub_F', client);
+    const ent = await getEntitlement(USER_ID, client);
+    expect(ent.status).toBe('past_due');
+  });
+});
+
+describe('findEntitlementByStripeCustomerId', () => {
+  it('null cuando no existe', async () => {
+    const client = createFakeClient();
+    expect(await findEntitlementByStripeCustomerId('cus_nope', client)).toBeNull();
+  });
+
+  it('encuentra la fila por stripe_customer_id', async () => {
+    const client = createFakeClient();
+    await upsertStripeCustomer(USER_ID, 'cus_found', client);
+    const found = await findEntitlementByStripeCustomerId('cus_found', client);
     expect(found?.profile_id).toBe(USER_ID);
   });
 });

@@ -1,50 +1,72 @@
 # BilClimb.ai · Modelo de billing
 
-> Última actualización: Junio 2026
+> Última actualización: Junio 2026 — migración a Stripe.
 
 ## Resumen
 
-- **Plan gratuito**: 1 plan completo + chat ilimitado durante **30 días** desde la generación.
-- **Suscripción**: cuando el usuario quiere generar un **segundo plan**, o cuando se acaba el mes gratis, se pide suscripción de **$1/mes** (configurable; en producción puede subir a $20 MXN/mes).
-- **Cancelación**: en cualquier momento, desde `/settings`. El acceso se mantiene hasta el final del período pagado.
+- **Plan inicial gratuito**: 1 plan + chat ilimitado durante **30 días** después de
+  generarlo (gate viejo `free_plan_used_at`). Sin tarjeta.
+- **Suscripción**: anual de **$249 MXN/año** vía Stripe Checkout con **30 días de
+  trial** gestionados por Stripe. Después de los 30 días Stripe cobra
+  automáticamente.
+- **Sin recurrencia mensual.** Una vez al año.
+- **Mercado Pago** queda como código legacy hasta validar Stripe en producción.
 
 ## Reglas exactas
 
 | Estado del usuario | Puede generar plan | Puede usar chat | Notas |
 |---|---|---|---|
-| Nunca generó plan, sin suscripción | ✅ (1er plan) | ❌ (necesita plan primero) | `plan_required` |
-| Plan generado hace ≤ 30 días, sin suscripción | ❌ (es su 2°) | ✅ | Mes gratis activo |
-| Plan generado hace > 30 días, sin suscripción | ❌ | ❌ `payment_required` | Mes terminó |
-| Cualquier momento, con `status='active'` | ✅ ilimitado | ✅ ilimitado | Suscripción pagada |
-| `status='cancelled'` + `current_period_end > now` | ✅ ilimitado | ✅ ilimitado | Período pagado en curso |
-| `status='cancelled'` + período vencido | ❌ | ❌ | Igual que sin suscripción |
-| `status='paused'` o `'past_due'` | ❌ | ❌ | Mercado Pago rechazó cobro |
+| Nunca generó plan, sin trial activo | ✅ (1er plan gratis) | ❌ | `plan_required` hasta que genere |
+| Plan generado hace ≤ 30 días, sin Stripe | ❌ | ✅ | Mes gratis del modelo viejo |
+| Plan generado > 30 días, sin Stripe | ❌ `payment_required` | ❌ `payment_required` | Hay que suscribirse |
+| Stripe `trialing` o `active` con período vigente | ✅ ilimitado | ✅ ilimitado | Cubre el trial de 30 días + período pagado |
+| Stripe `cancelled` con `current_period_end > now` | ✅ ilimitado | ✅ ilimitado | Acceso hasta el final del año pagado |
+| Stripe `cancelled` con período vencido | ❌ | ❌ | Igual que sin suscripción |
+| Stripe `past_due` o `paused` | ❌ | ❌ | Renovación falló o pausada |
 
 ## Cómo se enforce en código
 
-### Source of truth: tabla `entitlements`
+### Tabla `entitlements` (Supabase)
 
-Una fila por usuario (`UNIQUE (profile_id)`). Campos relevantes:
+Una fila por usuario (`UNIQUE (profile_id)`). Campos relevantes después de
+`0004_stripe_fields.sql`:
 
-- `free_plan_used_at: timestamptz | null` — se setea **después** de que `/api/generate-plan` genera Y valida un plan exitosamente.
-- `status: 'active' | 'paused' | 'cancelled' | 'past_due' | 'pending' | null` — escrito por el webhook de MP.
-- `current_period_end: timestamptz | null` — fecha en la que termina el período pagado.
-- `provider_subscription_id: text | null` — el `preapproval_id` de MP, usado para el binding del webhook.
+- `free_plan_used_at: timestamptz | null` — se setea cuando `/api/generate-plan`
+  genera + valida un plan con éxito.
+- `provider: 'stripe' | 'mercado_pago' | null` — el activo es `'stripe'`.
+- `status: 'active' | 'paused' | 'cancelled' | 'past_due' | 'pending' | null` — escrito por el webhook.
+- `current_period_end: timestamptz | null` — fecha de fin del período actual
+  (trial o anual).
+- `stripe_customer_id`, `stripe_subscription_id`, `stripe_price_id` — set por
+  checkout + webhook.
 
-Migración: [`supabase/migrations/0002_entitlements.sql`](supabase/migrations/0002_entitlements.sql) (idempotente).
+> Las columnas `provider_subscription_id`, `payer_email`, `amount_cents`,
+> `currency` quedan de MP por compatibilidad histórica pero las escrituras
+> nuevas no las usan.
+
+Migraciones:
+- [`0002_entitlements.sql`](supabase/migrations/0002_entitlements.sql) — tabla base.
+- [`0003_cleanup_legacy_constraints.sql`](supabase/migrations/0003_cleanup_legacy_constraints.sql) — drops legacy.
+- [`0004_stripe_fields.sql`](supabase/migrations/0004_stripe_fields.sql) — columnas Stripe.
 
 ### Helpers (`lib/entitlements.ts`)
 
 | Helper | Devuelve |
 |---|---|
-| `getEntitlement(userId)` | Fila completa. La crea vacía si no existe. |
+| `getEntitlement(userId)` | Fila completa, la crea vacía si no existe. |
 | `canGenerateFreePlan(userId)` | `true` si `free_plan_used_at === null`. |
-| `hasActiveSubscription(userId)` | `true` si `status ∈ {active, cancelled}` Y `current_period_end > now`. |
-| `freePlanExpiresAt(entitlement)` | `Date` (`free_plan_used_at + 30 días`) o `null`. |
-| `isWithinFreePlanWindow(userId)` | `true` si `freePlanExpiresAt > now`. |
-| `hasActivePlanAccess(userId)` | `true` si tiene suscripción activa O está dentro del mes gratis. |
-| `markFreePlanUsed(userId)` | Idempotente. Setea `free_plan_used_at = now()` solo si era null. |
-| `upsertEntitlementFromWebhook(...)` | Escribe el resultado de un evento de MP. |
+| `hasActiveSubscription(userId)` | `true` si `status ∈ {active, cancelled}` Y `current_period_end > now`. Cubre Stripe trialing (mapeado a `active`). |
+| `freePlanExpiresAt(entitlement)` | Fecha del `free_plan_used_at + 30 días`. |
+| `isWithinFreePlanWindow(userId)` | `true` si esa fecha sigue en el futuro. |
+| `hasActivePlanAccess(userId)` | Suscripción activa O dentro del mes gratis. |
+| `markFreePlanUsed(userId)` | Idempotente, post-éxito de generación. |
+| `mapStripeStatus(status)` | Stripe → enum interno. `trialing` y `active` ambos → `'active'`. |
+| `upsertStripeCustomer(userId, customerId)` | Set `provider='stripe'` + customer id. |
+| `upsertFromStripeSubscription(userId, sub)` | Escribe status/period_end/sub_id/price_id desde un evento de Stripe. |
+| `markStripeSubscriptionCancelled(subId)` | Status `cancelled` preservando period_end. |
+| `updateStripePeriodEnd(subId, unix)` | Bump del período tras `invoice.payment_succeeded`. |
+| `markStripePastDue(subId)` | Tras `invoice.payment_failed`. |
+| `findEntitlementByStripeCustomerId(id)` | Lookup para webhook sin metadata. |
 
 ### Gates (`lib/billing/gates.ts`)
 
@@ -54,8 +76,8 @@ Migración: [`supabase/migrations/0002_entitlements.sql`](supabase/migrations/00
 hasActiveSubscription(userId) || canGenerateFreePlan(userId)
 ```
 
-- `true` → genera el plan; tras validación de seguridad llama `markFreePlanConsumed(userId)`.
-- `false` → 402 `payment_required` "Ya usaste tu plan gratis…".
+- `true` → genera; tras validación de seguridad llama `markFreePlanConsumed`.
+- `false` → 402 `payment_required`.
 
 #### `/api/chat`
 
@@ -63,60 +85,84 @@ hasActiveSubscription(userId) || canGenerateFreePlan(userId)
 hasActivePlanAccess(userId)
 ```
 
-- `true` → permite el chat.
+- `true` → chat habilitado.
 - `false` + nunca generó plan → 402 `plan_required`.
-- `false` + ya consumió mes gratis → 402 `payment_required`.
+- `false` + mes gratis vencido → 402 `payment_required`.
 
-### Cookie HMAC (legacy, `lib/billing/subscription.ts`)
+### Endpoints de billing
 
-Quedó intacta pero **no se consulta más** desde los gates críticos. Sigue viva mientras `BillingSuccess.tsx` la usa para hacer polling en `/billing/success`. Se borra en una próxima sesión cuando esa pantalla se reescriba para leer `entitlements` directamente.
+| Ruta | Qué hace |
+|---|---|
+| `POST /api/billing/create-checkout-session` | Resuelve / crea el `stripe_customer_id`, crea la Checkout Session de suscripción y devuelve `{ checkoutUrl }`. |
+| `POST /api/billing/cancel-subscription` | Llama `stripe.subscriptions.update(id, { cancel_at_period_end: true })` server-side. El webhook confirma. |
+| `POST /api/webhooks/stripe` | Verifica firma con `constructEvent`, idempotencia con `webhook_events`, procesa 5 tipos de evento. |
 
-## Cómo se cancela
+### Suscripción inicial
 
-1. Usuario abre `/settings` → click en **Cancelar suscripción** (solo visible si `status === 'active'`).
-2. Modal de confirmación con la fecha hasta la que mantiene acceso.
-3. Click "Sí, cancelar" → POST a `/api/billing/cancel-subscription`.
-4. El endpoint:
-   - Verifica autenticación con Supabase.
-   - Lee `entitlement.provider_subscription_id`.
-   - Llama `cancelSubscriptionPreapproval(id)` → `PUT https://api.mercadopago.com/preapproval/{id}` con `{ status: 'cancelled' }`. **Server-side** — el access token nunca sale del servidor.
-   - Marca optimistamente `entitlement.status = 'cancelled'` (preservando `current_period_end`).
-5. Mercado Pago dispara webhook `subscription_preapproval.updated` con `status: 'cancelled'` → [`/api/webhooks/mercadopago/route.ts`](app/api/webhooks/mercadopago/route.ts) confirma la transición y persiste el estado.
+1. Usuario → `/subscribe` → ingresa email → POST a `/api/billing/create-checkout-session`.
+2. Endpoint crea (o reusa) Stripe Customer; crea Checkout Session con
+   `mode: subscription`, `subscription_data.metadata.supabase_user_id = userId`.
+3. Redirige a Stripe Checkout. Pago con tarjeta.
+4. Stripe redirige a `/billing/success` con `session_id`. La UI muestra
+   "Suscripción activada".
+5. Stripe dispara `checkout.session.completed` + `customer.subscription.created`
+   al webhook. El webhook resuelve userId desde `metadata.supabase_user_id` y
+   hace `upsertFromStripeSubscription` → status `active` (trialing colapsado),
+   period_end = fin del trial.
 
-## Flujo de suscripción inicial
+### Cancelación
 
-1. Usuario quiere generar segundo plan o vio que el mes gratis termina pronto → abre `/subscribe`.
-2. [`SubscribeCard`](components/billing/SubscribeCard.tsx) → POST a `/api/billing/create-checkout-session` con el email.
-3. El endpoint:
-   - Verifica autenticación.
-   - Pre-crea fila `entitlements` si no existía.
-   - Llama `createSubscriptionPreapproval({ email, userId, requestUrl })` → MP retorna `init_point` (URL de checkout) y `id` (preapproval_id).
-   - Pre-binding: upsert `entitlements` con `provider='mercado_pago'`, `provider_subscription_id=id`, `status='pending'`.
-4. Usuario redirigido a checkout de MP. Paga con tarjeta.
-5. MP redirige a `/billing/success` y dispara webhook `payment.created` / `payment.updated` con `status: 'approved'`.
-6. Webhook resuelve `external_reference = user.id` → upsert `status='active'`, `current_period_end = next_payment_date` (o now + frequency).
-7. UI de `/settings` muestra "Activa" en el próximo refresh.
+1. `/settings` → "Cancelar suscripción" → modal → "Sí, cancelar".
+2. POST a `/api/billing/cancel-subscription`. El endpoint llama
+   `stripe.subscriptions.update(id, { cancel_at_period_end: true })`.
+3. Optimistamente: `markStripeSubscriptionCancelled` → status `cancelled`,
+   period_end intacto.
+4. Stripe dispara `customer.subscription.updated` → webhook confirma.
+5. Al llegar `current_period_end`, Stripe ejecuta el cancel real y dispara
+   `customer.subscription.deleted` → preservamos el estado `cancelled`.
 
-## Banner UI
+### Trial de 30 días
 
-[`components/billing/FreePlanWindowBanner.tsx`](components/billing/FreePlanWindowBanner.tsx) se renderiza en el Dashboard y en `/plan` cuando:
-- `freePlanExpiresAt !== null`, Y
-- `hasActiveSubscription === false`, Y
-- `freePlanExpiresAt > now`.
+- Configurado en el **Price** de Stripe (`trial_period_days: 30`). Checkout
+  lo aplica automáticamente.
+- Durante el trial: Stripe expone status `trialing`. Nuestro mapper lo
+  colapsa a `'active'` en el DB → `hasActiveSubscription` retorna true.
+- `current_period_end` durante el trial = fecha de fin del trial.
+- Al terminar el trial Stripe intenta cobrar la primera factura. Si tiene
+  éxito → `customer.subscription.updated` con `status: 'active'` + nuevo
+  period_end un año adelante. Si falla → `invoice.payment_failed` →
+  `'past_due'`.
 
-Muestra la fecha de fin y, si quedan ≤ 7 días, un CTA "Suscribirme ahora" → `/subscribe`.
+## Knobs
 
-Datos vienen de `GET /api/auth/status` (que ya devuelve `billing.{status, hasActiveSubscription, freePlanUsedAt, freePlanExpiresAt, inFreePlanWindow}`).
+- **Precio**: `STRIPE_PRICE_ID` env var. Para cambiar precio creá un Price
+  nuevo en el dashboard y cambiá el env var. Sin deploy.
+- **Duración del trial**: cambiá `trial_period_days` del Price en el
+  dashboard de Stripe. Sin deploy.
+- **Duración del mes gratis (no-Stripe)**: `FREE_PLAN_WINDOW_MS` en
+  `lib/entitlements.ts`. Cambiar este sí necesita deploy.
 
 ## Casos límite
 
-- **Generar plan que falla validación de safety**: el reintento corre antes de marcar `free_plan_used_at`. Si el reintento también falla, la fila se queda con `free_plan_used_at = null` → no se consume el plan gratis.
-- **Suscripción activa + intento de generar plan**: pasa el gate por `hasActiveSubscription`. `markFreePlanConsumed` ya considera el caso y no marca `free_plan_used_at` si el usuario tiene suscripción activa.
-- **Reanudación tras cancelar**: el usuario puede volver a `/subscribe` y crear una nueva preapproval. El webhook hace upsert en la misma fila (clave única por `profile_id`) → `status` pasa de `cancelled` a `pending` → `active`.
-- **Webhook duplicado**: `webhook_events.request_id` es PK; el segundo POST devuelve `{ deduped: true }` sin tocar nada.
+- **Plan falla por safety + reintento también falla**: el `free_plan_used_at` no
+  se marca → no se consume el plan gratis.
+- **Webhook duplicado**: `webhook_events.request_id` es PK; `{ deduped: true }`.
+- **Usuario suscribe, cancela, vuelve a suscribirse**: nuevo checkout abre el
+  mismo Customer (lookup por `stripe_customer_id`). Stripe crea una nueva
+  Subscription; el webhook hace upsert sobre la misma fila de entitlements →
+  el `stripe_subscription_id` se reemplaza.
+- **`metadata.supabase_user_id` ausente** (raro): webhook cae a lookup por
+  `stripe_customer_id` y, si tampoco está, retrieve del Customer de Stripe y
+  lee su metadata. Si nada funciona → `ignored_missing_user_id` (logueado).
 
-## Cómo cambiar el precio o la duración del mes gratis
+## Mercado Pago legacy
 
-- Precio: `MERCADO_PAGO_SUBSCRIPTION_AMOUNT` en Vercel.
-- Moneda: `MERCADO_PAGO_CURRENCY`.
-- Duración del mes gratis: `FREE_PLAN_WINDOW_MS` en `lib/entitlements.ts` (constante exportada). Cambiala junto con los textos en `FreePlanWindowBanner` y los gates si el copy menciona "30 días".
+Marcado con `// TODO(legacy-mp): remove after Stripe validated` en:
+
+- `lib/billing/mercado-pago.ts`
+- `app/api/billing/create-subscription/route.ts` (re-export)
+- `app/api/webhooks/mercadopago/route.ts`
+- `lib/billing/subscription.ts` (cookie HMAC)
+
+Cuando Stripe lleve 1-2 meses estable en prod, se borra todo. Por ahora
+queda por si hay que volver de emergencia.

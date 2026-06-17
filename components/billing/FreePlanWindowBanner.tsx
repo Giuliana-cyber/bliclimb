@@ -6,7 +6,7 @@ type Props = {
   freePlanExpiresAt: string | null;
   /** Si tiene suscripción activa, no mostramos nada. */
   hasActiveSubscription: boolean;
-  /** Subscription amount label, ej. "$20 MXN/mes". Default: "$1/mes". */
+  /** Etiqueta de precio. Default: "$249 MXN/año". */
   priceLabel?: string;
 };
 
@@ -27,7 +27,7 @@ function daysRemaining(iso: string): number {
 export function FreePlanWindowBanner({
   freePlanExpiresAt,
   hasActiveSubscription,
-  priceLabel = '$1/mes'
+  priceLabel = '$249 MXN/año'
 }: Props) {
   if (hasActiveSubscription) return null;
   if (!freePlanExpiresAt) return null;

@@ -1,8 +1,11 @@
+// Cancelación de suscripción — server-side llama a Stripe con
+// cancel_at_period_end=true. El webhook customer.subscription.updated
+// confirma la transición y persiste el estado en entitlements.
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { cancelSubscriptionPreapproval } from '@/lib/billing/mercado-pago';
-import { getEntitlement, upsertEntitlementFromWebhook } from '@/lib/entitlements';
+import { getEntitlement, markStripeSubscriptionCancelled } from '@/lib/entitlements';
+import { getStripe } from '@/lib/billing/stripe';
 
 export const runtime = 'nodejs';
 
@@ -22,7 +25,7 @@ export async function POST() {
   const admin = createAdminClient();
   const entitlement = await getEntitlement(user.id, admin);
 
-  if (entitlement.status !== 'active' || !entitlement.provider_subscription_id) {
+  if (entitlement.status !== 'active' || !entitlement.stripe_subscription_id) {
     return NextResponse.json(
       {
         code: 'not_cancellable',
@@ -33,34 +36,25 @@ export async function POST() {
   }
 
   try {
-    await cancelSubscriptionPreapproval(entitlement.provider_subscription_id);
+    const stripe = getStripe();
+    await stripe.subscriptions.update(entitlement.stripe_subscription_id, {
+      cancel_at_period_end: true
+    });
   } catch (error) {
+    const detail = error instanceof Error ? error.message : 'unknown';
     return NextResponse.json(
       {
-        code: 'mp_cancel_failed',
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Mercado Pago rechazó la cancelación. Intentá de nuevo en unos minutos.'
+        code: 'payment_provider_error',
+        error: 'Stripe rechazó la cancelación.',
+        detail
       },
       { status: 502 }
     );
   }
 
-  // El webhook de MP va a confirmar y actualizar el row. Mientras tanto, dejamos
-  // la entitlement en 'cancelled' optimistamente para que /settings refleje el
-  // estado de inmediato. current_period_end NO se toca — el usuario sigue con
-  // acceso hasta esa fecha.
-  await upsertEntitlementFromWebhook(
-    {
-      profile_id: user.id,
-      provider_subscription_id: entitlement.provider_subscription_id,
-      payer_email: entitlement.payer_email,
-      status: 'cancelled',
-      current_period_end: entitlement.current_period_end
-    },
-    admin
-  );
+  // Optimistamente marcamos 'cancelled' (preservando current_period_end) para
+  // que /settings refleje el cambio de inmediato. El webhook confirma después.
+  await markStripeSubscriptionCancelled(entitlement.stripe_subscription_id, admin);
 
   return NextResponse.json({ ok: true, status: 'cancelled' });
 }
