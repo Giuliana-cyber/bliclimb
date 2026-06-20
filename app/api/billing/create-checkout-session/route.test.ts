@@ -143,7 +143,8 @@ vi.mock('@/lib/billing/stripe', () => ({
       }
     }
   }),
-  getStripePriceId: () => 'price_test'
+  getStripePriceId: (cycle: 'monthly' | 'annual' = 'annual') =>
+    cycle === 'monthly' ? 'price_test_monthly' : 'price_test_annual'
 }));
 
 // ---------- Tests ----------
@@ -214,10 +215,14 @@ describe('POST /api/billing/create-checkout-session', () => {
     const sessionArgs = stripeCalls.sessionsCreate.mock.calls[0][0];
     expect(sessionArgs.customer).toBe('cus_NEW');
     expect(sessionArgs.mode).toBe('subscription');
-    expect(sessionArgs.line_items).toEqual([{ price: 'price_test', quantity: 1 }]);
+    // default es annual cuando no se pasa billingCycle
+    expect(sessionArgs.line_items).toEqual([{ price: 'price_test_annual', quantity: 1 }]);
     expect(sessionArgs.success_url).toContain('https://app.test/billing/success');
     expect(sessionArgs.cancel_url).toBe('https://app.test/subscribe');
-    expect(sessionArgs.metadata).toEqual({ supabase_user_id: 'user-1' });
+    expect(sessionArgs.metadata).toEqual({
+      supabase_user_id: 'user-1',
+      billing_cycle: 'annual'
+    });
     expect(sessionArgs.subscription_data.metadata).toEqual({
       supabase_user_id: 'user-1'
     });
@@ -247,6 +252,43 @@ describe('POST /api/billing/create-checkout-session', () => {
     expect(response.status).toBe(200);
     expect(stripeCalls.customersCreate).not.toHaveBeenCalled();
     expect(stripeCalls.sessionsCreate.mock.calls[0][0].customer).toBe('cus_OLD');
+  });
+
+  it('billingCycle="monthly" usa el price mensual', async () => {
+    authedUser = { id: 'user-m' };
+    stripeCalls.customersCreate.mockResolvedValueOnce({ id: 'cus_M' });
+    stripeCalls.sessionsCreate.mockResolvedValueOnce({
+      id: 'cs_M',
+      url: 'https://checkout.stripe.com/c/m'
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('https://app.test/api/billing/create-checkout-session', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: 'pay@user.com', billingCycle: 'monthly' })
+      })
+    );
+    expect(response.status).toBe(200);
+    const sessionArgs = stripeCalls.sessionsCreate.mock.calls[0][0];
+    expect(sessionArgs.line_items).toEqual([{ price: 'price_test_monthly', quantity: 1 }]);
+    expect(sessionArgs.metadata.billing_cycle).toBe('monthly');
+  });
+
+  it('billingCycle inválido → 400 invalid_payload', async () => {
+    authedUser = { id: 'user-bad' };
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('https://app.test/api/billing/create-checkout-session', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: 'pay@user.com', billingCycle: 'weekly' })
+      })
+    );
+    expect(response.status).toBe(400);
+    const json = await response.json();
+    expect(json.error).toBe('invalid_payload');
   });
 
   it('502 cuando Stripe rechaza el create session', async () => {

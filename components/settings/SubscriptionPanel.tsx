@@ -11,6 +11,8 @@ export type SubscriptionPanelData = {
   currentPeriodEnd: string | null;
   freePlanUsedAt: string | null;
   hasActiveAccess: boolean;
+  /** Ciclo del plan actual, derivado del stripe_price_id. null = desconocido / sin plan. */
+  billingCycle?: 'monthly' | 'annual' | null;
 };
 
 function formatDateLong(iso: string | null): string | null {
@@ -183,6 +185,14 @@ export function SubscriptionPanel({ data }: { data: SubscriptionPanelData }) {
             </p>
             <p className="mt-1 text-base font-extrabold text-white">{copy.badge}</p>
             <p className="mt-1 text-sm leading-6 text-white/72">{copy.description}</p>
+            {data.billingCycle ? (
+              <p className="mt-2 text-xs font-bold text-white/55">
+                Plan{' '}
+                <span className="text-white">
+                  {data.billingCycle === 'monthly' ? 'Mensual · $29 MXN/mes' : 'Anual · $249 MXN/año'}
+                </span>
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -200,6 +210,11 @@ export function SubscriptionPanel({ data }: { data: SubscriptionPanelData }) {
               {data.status === 'cancelled' ? 'Volver a suscribirme' : 'Suscribirme'}
             </Button>
           )}
+          {canCancel && data.billingCycle === 'monthly' ? (
+            <Button href="/subscribe" className="w-full">
+              Cambiar a plan anual
+            </Button>
+          ) : null}
         </div>
 
         {error ? (

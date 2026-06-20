@@ -62,6 +62,31 @@ export const UserProfileSchema = z.object({
   planDuration: z.number().int().refine((n) => n === 4 || n === 8 || n === 12, {
     message: 'planDuration debe ser 4, 8 o 12 semanas'
   }),
+  // ---- Fuerza absoluta ----
+  // Los dos básicos (pullupsBodyweight y hangboard20mmSeconds) son los anclas
+  // que el usuario completa siempre. Si vienen null/undefined los aceptamos
+  // como `null` para no romper perfiles viejos generados antes de B1.
+  pullupsBodyweight: z.number().int().min(0).max(50).nullable().optional().default(null),
+  pullupsAddedWeight5Reps: z
+    .number()
+    .int()
+    .min(0)
+    .max(50)
+    .nullable()
+    .optional()
+    .default(null),
+  hangboard20mmSeconds: z.number().int().min(0).max(30).nullable().optional().default(null),
+  hangboard20mmAddedWeight7s: z
+    .number()
+    .int()
+    .min(0)
+    .max(50)
+    .nullable()
+    .optional()
+    .default(null),
+  benchPress1Rm: z.number().int().min(0).max(400).nullable().optional().default(null),
+  squat1Rm: z.number().int().min(0).max(400).nullable().optional().default(null),
+  deadlift1Rm: z.number().int().min(0).max(500).nullable().optional().default(null),
   createdAt: z.string(),
   updatedAt: z.string()
 });

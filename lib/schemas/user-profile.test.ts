@@ -69,6 +69,77 @@ describe('UserProfileSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  describe('fuerza (B1)', () => {
+    it('acepta números válidos en todos los campos de fuerza', () => {
+      const result = UserProfileSchema.safeParse({
+        ...minimalValidProfile,
+        pullupsBodyweight: 12,
+        pullupsAddedWeight5Reps: 15,
+        hangboard20mmSeconds: 18,
+        hangboard20mmAddedWeight7s: 10,
+        benchPress1Rm: 85,
+        squat1Rm: 120,
+        deadlift1Rm: 150
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.pullupsBodyweight).toBe(12);
+        expect(result.data.deadlift1Rm).toBe(150);
+      }
+    });
+
+    it('aplica null por default cuando los campos de fuerza no vienen', () => {
+      const result = UserProfileSchema.safeParse(minimalValidProfile);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.pullupsBodyweight).toBeNull();
+        expect(result.data.hangboard20mmSeconds).toBeNull();
+        expect(result.data.benchPress1Rm).toBeNull();
+      }
+    });
+
+    it('rechaza dominadas negativas', () => {
+      const result = UserProfileSchema.safeParse({
+        ...minimalValidProfile,
+        pullupsBodyweight: -3
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('rechaza dominadas > 50', () => {
+      const result = UserProfileSchema.safeParse({
+        ...minimalValidProfile,
+        pullupsBodyweight: 99
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('rechaza segundos negativos en hangboard', () => {
+      const result = UserProfileSchema.safeParse({
+        ...minimalValidProfile,
+        hangboard20mmSeconds: -1
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('rechaza 1RM negativo', () => {
+      const result = UserProfileSchema.safeParse({
+        ...minimalValidProfile,
+        benchPress1Rm: -10
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('acepta null explícito', () => {
+      const result = UserProfileSchema.safeParse({
+        ...minimalValidProfile,
+        pullupsBodyweight: null,
+        deadlift1Rm: null
+      });
+      expect(result.success).toBe(true);
+    });
+  });
 });
 
 describe('ChatRequestSchema', () => {

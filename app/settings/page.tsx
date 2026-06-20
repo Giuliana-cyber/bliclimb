@@ -25,11 +25,25 @@ async function loadSubscriptionData(): Promise<SubscriptionPanelData | null> {
     hasActiveSubscription(user.id, admin)
   ]);
 
+  // Resolver el ciclo de cobro a partir del price_id guardado.
+  const annualId =
+    process.env.STRIPE_ANNUAL_PRICE_ID ?? process.env.STRIPE_PRICE_ID ?? null;
+  const monthlyId = process.env.STRIPE_MONTHLY_PRICE_ID ?? null;
+  let billingCycle: 'monthly' | 'annual' | null = null;
+  if (entitlement.stripe_price_id) {
+    if (monthlyId && entitlement.stripe_price_id === monthlyId) {
+      billingCycle = 'monthly';
+    } else if (annualId && entitlement.stripe_price_id === annualId) {
+      billingCycle = 'annual';
+    }
+  }
+
   return {
     status: entitlement.status,
     currentPeriodEnd: entitlement.current_period_end,
     freePlanUsedAt: entitlement.free_plan_used_at,
-    hasActiveAccess: hasActive
+    hasActiveAccess: hasActive,
+    billingCycle
   };
 }
 

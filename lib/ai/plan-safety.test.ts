@@ -156,6 +156,13 @@ function makeProfile(overrides: Partial<UserProfile> = {}): UserProfile {
     injuryDescription: '',
     trainingHistory: 'informal',
     planDuration: 4,
+    pullupsBodyweight: null,
+    pullupsAddedWeight5Reps: null,
+    hangboard20mmSeconds: null,
+    hangboard20mmAddedWeight7s: null,
+    benchPress1Rm: null,
+    squat1Rm: null,
+    deadlift1Rm: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     ...overrides
@@ -293,6 +300,53 @@ describe('validatePlanSafety', () => {
           name: 'Rebotes en campus',
           description: 'Rebotes alcance máximo 3x3.'
         })
+      ]);
+      const result = validatePlanSafety(plan, profile);
+      expect(result.ok).toBe(true);
+    });
+  });
+
+  describe('R4: principiante sin peso colgado → no max hangs', () => {
+    it('rechaza max hangs cuando less1 + hangboard20mmAddedWeight7s = 0', () => {
+      const profile = makeProfile({
+        climbingTime: 'less1',
+        hangboard20mmAddedWeight7s: 0
+      });
+      const plan = makePlan([
+        makeExercise({
+          name: 'Max Hangs en regleta 20mm',
+          description: 'Suspensiones máximas 4x7 seg al 100% BW.'
+        })
+      ]);
+      const result = validatePlanSafety(plan, profile);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.violations.some((v) => v.rule === 'no_max_hangs_for_strength_novice')).toBe(
+          true
+        );
+      }
+    });
+
+    it('no aplica R4 si el atleta lleva 1+ años escalando aunque hangboard sea 0', () => {
+      const profile = makeProfile({
+        climbingTime: '1to3',
+        hangboard20mmAddedWeight7s: 0
+      });
+      const plan = makePlan([
+        makeExercise({ name: 'Max Hangs', description: 'Suspensiones máximas 4x7 seg.' })
+      ]);
+      const result = validatePlanSafety(plan, profile);
+      // R3 también pasa (no es principiante). R4 no aplica. R2 no aplica (sin dolor).
+      expect(result.ok).toBe(true);
+    });
+
+    it('no aplica R4 si hangboard20mmAddedWeight7s es null (dato desconocido)', () => {
+      const profile = makeProfile({
+        climbingTime: 'less1',
+        hangboard20mmAddedWeight7s: null
+      });
+      const plan = makePlan([
+        makeExercise({ name: 'Max Hangs', description: 'Suspensiones máximas.' })
       ]);
       const result = validatePlanSafety(plan, profile);
       expect(result.ok).toBe(true);

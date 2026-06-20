@@ -50,6 +50,15 @@ type OnboardingForm = {
   currentElbowPain: number;
   trainingAggressiveness: string;
   outdoorFrequency: string;
+  // ---- Fuerza (B1) — strings para evitar bugs de "input vacío == NaN" ----
+  pullupsBodyweight: string;
+  pullupsAddedWeight5Reps: string;
+  hangboard20mmSeconds: string;
+  hangboard20mmAddedWeight7s: string;
+  benchPress1Rm: string;
+  squat1Rm: string;
+  deadlift1Rm: string;
+  // -----------------------------------------------------------------------
   goals: string[];
   goalDescription: string;
   project: string;
@@ -90,6 +99,13 @@ const initialForm: OnboardingForm = {
   currentElbowPain: 0,
   trainingAggressiveness: 'balanced',
   outdoorFrequency: '',
+  pullupsBodyweight: '',
+  pullupsAddedWeight5Reps: '',
+  hangboard20mmSeconds: '',
+  hangboard20mmAddedWeight7s: '',
+  benchPress1Rm: '',
+  squat1Rm: '',
+  deadlift1Rm: '',
   goals: [],
   goalDescription: '',
   project: '',
@@ -299,6 +315,13 @@ function toOptionalNumber(value: string) {
   return Number.isFinite(parsedValue) && value.trim() !== '' ? parsedValue : null;
 }
 
+function toOptionalInt(value: string): number | null {
+  if (!value.trim()) return null;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 0) return null;
+  return parsed;
+}
+
 function createId() {
   if (typeof window !== 'undefined' && window.crypto?.randomUUID) {
     return window.crypto.randomUUID();
@@ -457,6 +480,13 @@ export default function OnboardingPage() {
       wantsConservativePlan: form.trainingAggressiveness === 'conservative',
       trainingAggressiveness: form.trainingAggressiveness,
       outdoorFrequency: form.outdoorFrequency || 'unknown',
+      pullupsBodyweight: toOptionalInt(form.pullupsBodyweight),
+      pullupsAddedWeight5Reps: toOptionalInt(form.pullupsAddedWeight5Reps),
+      hangboard20mmSeconds: toOptionalInt(form.hangboard20mmSeconds),
+      hangboard20mmAddedWeight7s: toOptionalInt(form.hangboard20mmAddedWeight7s),
+      benchPress1Rm: toOptionalInt(form.benchPress1Rm),
+      squat1Rm: toOptionalInt(form.squat1Rm),
+      deadlift1Rm: toOptionalInt(form.deadlift1Rm),
       goal: goals[0],
       goals,
       goalDescription: form.goalDescription.trim(),
@@ -925,6 +955,8 @@ export default function OnboardingPage() {
             </OptionGrid>
           </FieldGroup>
 
+          <StrengthFields form={form} setForm={setForm} />
+
           <FieldGroup title="Qué tan agresivo quieres el plan">
             <OptionGrid columns={3}>
               {trainingAggressivenessOptions.map((option) => (
@@ -1200,12 +1232,14 @@ function InputField({
   optional,
   value,
   inputMode,
+  placeholder,
   onChange
 }: {
   label: string;
   optional?: boolean;
   value: string;
   inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
+  placeholder?: string;
   onChange: (value: string) => void;
 }) {
   return (
@@ -1221,6 +1255,7 @@ function InputField({
       <input
         value={value}
         inputMode={inputMode}
+        placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
         className="h-12 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 text-white outline-none transition placeholder:text-white/30 focus:border-brand-cyan/60 focus:bg-white/[0.05]"
       />
@@ -1258,6 +1293,108 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
     <div className="grid grid-cols-[7.5rem_1fr] items-baseline gap-3 border-b border-white/[0.06] pb-3 last:border-b-0 last:pb-0">
       <dt className="text-xs font-bold uppercase tracking-[0.08em] text-white/45">{label}</dt>
       <dd className="text-sm font-bold text-white/86">{value}</dd>
+    </div>
+  );
+}
+
+// ---- B1: sub-sección "Fuerza actual" (montada dentro del paso 5) ----
+
+function StrengthFields({
+  form,
+  setForm
+}: {
+  form: OnboardingForm;
+  setForm: React.Dispatch<React.SetStateAction<OnboardingForm>>;
+}) {
+  return (
+    <div className="space-y-5 rounded-2xl border border-brand-cyan/15 bg-brand-cyan/[0.04] p-5">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-cyan">
+          Fuerza actual
+        </p>
+        <p className="mt-2 text-sm leading-6 text-white/72">
+          Estos datos ayudan a Bill y Senda a calcular intensidades reales para tu plan. Si
+          no sabes alguno, déjalo en blanco — lo iremos calibrando con tus check-ins.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <p className="text-sm font-extrabold text-white">Dominadas</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <InputField
+            label="A peso corporal (máx reps)"
+            value={form.pullupsBodyweight}
+            inputMode="numeric"
+            placeholder="ej. 12 dominadas"
+            onChange={(value) => setForm((current) => ({ ...current, pullupsBodyweight: value }))}
+          />
+          <InputField
+            label="Peso extra para 5 reps (kg)"
+            optional
+            value={form.pullupsAddedWeight5Reps}
+            inputMode="numeric"
+            placeholder="ej. 15 kg"
+            onChange={(value) =>
+              setForm((current) => ({ ...current, pullupsAddedWeight5Reps: value }))
+            }
+          />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <p className="text-sm font-extrabold text-white">Suspensión en regleta de 20mm</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <InputField
+            label="Segundos a peso corporal"
+            value={form.hangboard20mmSeconds}
+            inputMode="numeric"
+            placeholder="ej. 15 seg"
+            onChange={(value) =>
+              setForm((current) => ({ ...current, hangboard20mmSeconds: value }))
+            }
+          />
+          <InputField
+            label="Peso extra para 7 seg (kg)"
+            optional
+            value={form.hangboard20mmAddedWeight7s}
+            inputMode="numeric"
+            placeholder="ej. 10 kg"
+            onChange={(value) =>
+              setForm((current) => ({ ...current, hangboard20mmAddedWeight7s: value }))
+            }
+          />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <p className="text-sm font-extrabold text-white">Pesas (opcional)</p>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <InputField
+            label="Press banca 1RM (kg)"
+            optional
+            value={form.benchPress1Rm}
+            inputMode="numeric"
+            placeholder="ej. 80"
+            onChange={(value) => setForm((current) => ({ ...current, benchPress1Rm: value }))}
+          />
+          <InputField
+            label="Sentadilla 1RM (kg)"
+            optional
+            value={form.squat1Rm}
+            inputMode="numeric"
+            placeholder="ej. 110"
+            onChange={(value) => setForm((current) => ({ ...current, squat1Rm: value }))}
+          />
+          <InputField
+            label="Peso muerto 1RM (kg)"
+            optional
+            value={form.deadlift1Rm}
+            inputMode="numeric"
+            placeholder="ej. 140"
+            onChange={(value) => setForm((current) => ({ ...current, deadlift1Rm: value }))}
+          />
+        </div>
+      </div>
     </div>
   );
 }

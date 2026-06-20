@@ -20,7 +20,8 @@ import { getStripe, getStripePriceId } from '@/lib/billing/stripe';
 export const runtime = 'nodejs';
 
 const BodySchema = z.object({
-  email: z.string().email()
+  email: z.string().email(),
+  billingCycle: z.enum(['monthly', 'annual']).optional().default('annual')
 });
 
 type LogPayload = Record<string, unknown>;
@@ -111,6 +112,7 @@ export async function POST(request: Request) {
     );
   }
   const email = parsed.data.email;
+  const billingCycle = parsed.data.billingCycle;
 
   // 3. Resolve/Create Stripe customer + checkout session
   let stripe: Stripe;
@@ -131,10 +133,27 @@ export async function POST(request: Request) {
 
   try {
     const customerId = await resolveStripeCustomerId(stripe, user.id, email);
+    let priceId: string;
+    try {
+      priceId = getStripePriceId(billingCycle);
+    } catch (envError) {
+      log({
+        event: 'price_id_missing',
+        billingCycle,
+        message: envError instanceof Error ? envError.message : 'unknown'
+      });
+      return NextResponse.json(
+        {
+          error: 'payment_provider_misconfigured',
+          detail: envError instanceof Error ? envError.message : 'price id missing'
+        },
+        { status: 500 }
+      );
+    }
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
-      line_items: [{ price: getStripePriceId(), quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
         // El trial de 30 días vive en el Price de Stripe (configurado en el
         // dashboard como `trial_period_days: 30`). Stripe lo aplica al
@@ -145,7 +164,7 @@ export async function POST(request: Request) {
       },
       success_url: `${appBase}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appBase}/subscribe`,
-      metadata: { supabase_user_id: user.id },
+      metadata: { supabase_user_id: user.id, billing_cycle: billingCycle },
       allow_promotion_codes: true
     });
 
@@ -161,7 +180,9 @@ export async function POST(request: Request) {
       event: 'session_created',
       userId: user.id,
       customerId,
-      sessionId: session.id
+      sessionId: session.id,
+      billingCycle,
+      priceId
     });
 
     return NextResponse.json({ checkoutUrl: session.url });

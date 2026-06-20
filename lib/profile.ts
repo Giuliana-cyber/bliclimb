@@ -51,6 +51,15 @@ export interface UserProfile {
   injuryDescription: string;
   trainingHistory: string;
   planDuration: number; // 4 | 8 | 12
+  // ---- Fuerza absoluta (B1 — strength). Todos opcionales menos los dos básicos. ----
+  pullupsBodyweight: number | null; // 0-50
+  pullupsAddedWeight5Reps: number | null; // kg adicionales a 5 reps, 0-50
+  hangboard20mmSeconds: number | null; // segundos a BW en regleta 20mm, 0-30
+  hangboard20mmAddedWeight7s: number | null; // kg adicionales para 7s en regleta 20mm
+  benchPress1Rm: number | null; // 1RM press de banca en kg
+  squat1Rm: number | null;
+  deadlift1Rm: number | null;
+  // -------------------------------------------------------------------------------
   createdAt: string;
   updatedAt: string;
 }
@@ -133,7 +142,22 @@ function normalizeProfile(profile: UserProfile | null) {
     injuryNotes,
     injuryDescription: injuryNotes,
     previousTraining,
-    trainingHistory: previousTraining
+    trainingHistory: previousTraining,
+    pullupsBodyweight:
+      typeof profile.pullupsBodyweight === 'number' ? profile.pullupsBodyweight : null,
+    pullupsAddedWeight5Reps:
+      typeof profile.pullupsAddedWeight5Reps === 'number'
+        ? profile.pullupsAddedWeight5Reps
+        : null,
+    hangboard20mmSeconds:
+      typeof profile.hangboard20mmSeconds === 'number' ? profile.hangboard20mmSeconds : null,
+    hangboard20mmAddedWeight7s:
+      typeof profile.hangboard20mmAddedWeight7s === 'number'
+        ? profile.hangboard20mmAddedWeight7s
+        : null,
+    benchPress1Rm: typeof profile.benchPress1Rm === 'number' ? profile.benchPress1Rm : null,
+    squat1Rm: typeof profile.squat1Rm === 'number' ? profile.squat1Rm : null,
+    deadlift1Rm: typeof profile.deadlift1Rm === 'number' ? profile.deadlift1Rm : null
   };
 }
 

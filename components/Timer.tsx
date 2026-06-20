@@ -1,7 +1,14 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pause, Play, RotateCcw } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Pause, Play, RotateCcw, Volume2, VolumeX } from 'lucide-react';
+import {
+  isTimerSoundEnabled,
+  playCountdownBeep,
+  playFinishBeep,
+  playStartBeep,
+  setTimerSoundEnabled
+} from '@/lib/audio/timer-sounds';
 
 type TimerProps = {
   initialSeconds: number;
@@ -15,49 +22,28 @@ function formatTime(totalSeconds: number) {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-function playDoneSound() {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-
-  if (!AudioContext) {
-    return;
-  }
-
-  const context = new AudioContext();
-  const oscillator = context.createOscillator();
-  const gain = context.createGain();
-
-  oscillator.type = 'sine';
-  oscillator.frequency.setValueAtTime(720, context.currentTime);
-  gain.gain.setValueAtTime(0.001, context.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.18, context.currentTime + 0.02);
-  gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.35);
-
-  oscillator.connect(gain);
-  gain.connect(context.destination);
-  oscillator.start();
-  oscillator.stop(context.currentTime + 0.38);
-}
-
 export function Timer({ initialSeconds, label = 'Timer' }: TimerProps) {
   const safeInitialSeconds = Math.max(0, Math.floor(initialSeconds));
   const [remainingSeconds, setRemainingSeconds] = useState(safeInitialSeconds);
   const [running, setRunning] = useState(false);
+  const [soundOn, setSoundOn] = useState(true);
   const completedRef = useRef(false);
+  const previousRemainingRef = useRef(safeInitialSeconds);
+
+  // Cargar preferencia persistida al montar.
+  useEffect(() => {
+    setSoundOn(isTimerSoundEnabled());
+  }, []);
 
   useEffect(() => {
     setRemainingSeconds(safeInitialSeconds);
     setRunning(false);
     completedRef.current = false;
+    previousRemainingRef.current = safeInitialSeconds;
   }, [safeInitialSeconds]);
 
   useEffect(() => {
-    if (!running) {
-      return undefined;
-    }
+    if (!running) return undefined;
 
     const interval = window.setInterval(() => {
       setRemainingSeconds((current) => Math.max(0, current - 1));
@@ -66,30 +52,58 @@ export function Timer({ initialSeconds, label = 'Timer' }: TimerProps) {
     return () => window.clearInterval(interval);
   }, [running]);
 
+  // Cuenta regresiva: cuando running, en los últimos 5 segundos disparamos
+  // un countdown beep por cada tick (5, 4, 3, 2, 1). Lo hacemos comparando
+  // el valor previo para que no suene en pausas.
   useEffect(() => {
-    if (remainingSeconds > 0 || completedRef.current) {
+    if (!running) {
+      previousRemainingRef.current = remainingSeconds;
       return;
     }
+    const previous = previousRemainingRef.current;
+    if (
+      previous !== remainingSeconds &&
+      remainingSeconds > 0 &&
+      remainingSeconds <= 5
+    ) {
+      playCountdownBeep();
+    }
+    previousRemainingRef.current = remainingSeconds;
+  }, [running, remainingSeconds]);
 
+  useEffect(() => {
+    if (remainingSeconds > 0 || completedRef.current) return;
     if (running) {
       setRunning(false);
       completedRef.current = true;
-      playDoneSound();
+      playFinishBeep();
     }
   }, [remainingSeconds, running]);
 
   const progress = useMemo(() => {
-    if (safeInitialSeconds === 0) {
-      return 100;
-    }
-
+    if (safeInitialSeconds === 0) return 100;
     return ((safeInitialSeconds - remainingSeconds) / safeInitialSeconds) * 100;
   }, [remainingSeconds, safeInitialSeconds]);
+
+  const handleToggleRun = useCallback(() => {
+    setRunning((current) => {
+      const next = !current;
+      if (next) playStartBeep();
+      return next;
+    });
+  }, []);
 
   function resetTimer() {
     setRunning(false);
     setRemainingSeconds(safeInitialSeconds);
     completedRef.current = false;
+    previousRemainingRef.current = safeInitialSeconds;
+  }
+
+  function toggleSound() {
+    const next = !soundOn;
+    setSoundOn(next);
+    setTimerSoundEnabled(next);
   }
 
   return (
@@ -105,7 +119,23 @@ export function Timer({ initialSeconds, label = 'Timer' }: TimerProps) {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setRunning((current) => !current)}
+            onClick={toggleSound}
+            className="grid size-10 place-items-center rounded-md border border-white/10 text-white/68 transition hover:border-white/24 hover:text-white"
+            aria-label={
+              soundOn ? 'Desactivar sonido del temporizador' : 'Activar sonido del temporizador'
+            }
+            aria-pressed={soundOn}
+            title={soundOn ? 'Silenciar' : 'Activar sonido'}
+          >
+            {soundOn ? (
+              <Volume2 aria-hidden="true" size={17} strokeWidth={2.4} />
+            ) : (
+              <VolumeX aria-hidden="true" size={17} strokeWidth={2.4} />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={handleToggleRun}
             disabled={safeInitialSeconds === 0}
             className="grid size-10 place-items-center rounded-md bg-brand-cyan text-brand-dark transition hover:bg-brand-cyan/90 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/36"
             aria-label={running ? 'Pausar timer' : 'Iniciar timer'}
