@@ -17,6 +17,30 @@ function summarizeProfile(profile: UserProfile | null) {
   if (profile.equipment?.length) parts.push(`Equipo: ${profile.equipment.join(', ')}`);
   if (profile.daysPerWeek) parts.push(`Días/sem: ${profile.daysPerWeek}`);
   if (profile.sessionDuration) parts.push(`Duración sesión: ${profile.sessionDuration}min`);
+  // Fuerza absoluta (B1) — Bill/Senda los usan para prescribir RPE/series sin inventar.
+  const strength: string[] = [];
+  if (profile.pullupsBodyweight !== null && profile.pullupsBodyweight !== undefined) {
+    strength.push(`dominadas BW ${profile.pullupsBodyweight}`);
+  }
+  if (
+    profile.pullupsAddedWeight5Reps !== null &&
+    profile.pullupsAddedWeight5Reps !== undefined
+  ) {
+    strength.push(`dominadas 5RM +${profile.pullupsAddedWeight5Reps}kg`);
+  }
+  if (profile.hangboard20mmSeconds !== null && profile.hangboard20mmSeconds !== undefined) {
+    strength.push(`regleta 20mm BW ${profile.hangboard20mmSeconds}s`);
+  }
+  if (
+    profile.hangboard20mmAddedWeight7s !== null &&
+    profile.hangboard20mmAddedWeight7s !== undefined
+  ) {
+    strength.push(`regleta 20mm 7s +${profile.hangboard20mmAddedWeight7s}kg`);
+  }
+  if (profile.benchPress1Rm) strength.push(`banca ${profile.benchPress1Rm}kg`);
+  if (profile.squat1Rm) strength.push(`sentadilla ${profile.squat1Rm}kg`);
+  if (profile.deadlift1Rm) strength.push(`peso muerto ${profile.deadlift1Rm}kg`);
+  if (strength.length) parts.push(`Fuerza: ${strength.join(' · ')}`);
   if (profile.injuries?.length && !profile.injuries.includes('none')) {
     parts.push(`Lesiones: ${profile.injuries.join(', ')}`);
   }

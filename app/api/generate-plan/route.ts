@@ -72,9 +72,41 @@ function profileToPrompt(profile: UserProfile) {
   if (profile.equipment?.length) lines.push(`Equipo: ${profile.equipment.join(', ')}`);
   if (profile.equipmentNotes) lines.push(`Setup: ${profile.equipmentNotes}`);
   if (profile.previousTraining) lines.push(`Plan anterior: ${profile.previousTraining}`);
-  if (profile.pullUpAbility) lines.push(`Dominadas: ${profile.pullUpAbility}`);
+  if (profile.pullUpAbility) lines.push(`Dominadas (categoría): ${profile.pullUpAbility}`);
   if (profile.fingerTrainingExperience)
     lines.push(`Exp. dedos: ${profile.fingerTrainingExperience}`);
+
+  // ---- Fuerza absoluta (B1) — datos que el coach usa para fijar intensidades
+  // reales, no inventadas. Si vienen null se omiten para no inducir al modelo
+  // a usar el valor cero como "cap" real.
+  const strengthLines: string[] = [];
+  if (profile.pullupsBodyweight !== null && profile.pullupsBodyweight !== undefined) {
+    strengthLines.push(`Dominadas BW máx reps: ${profile.pullupsBodyweight}`);
+  }
+  if (
+    profile.pullupsAddedWeight5Reps !== null &&
+    profile.pullupsAddedWeight5Reps !== undefined
+  ) {
+    strengthLines.push(`Dominadas con peso para 5 reps: +${profile.pullupsAddedWeight5Reps} kg`);
+  }
+  if (profile.hangboard20mmSeconds !== null && profile.hangboard20mmSeconds !== undefined) {
+    strengthLines.push(`Regleta 20mm BW: ${profile.hangboard20mmSeconds} seg`);
+  }
+  if (
+    profile.hangboard20mmAddedWeight7s !== null &&
+    profile.hangboard20mmAddedWeight7s !== undefined
+  ) {
+    strengthLines.push(
+      `Regleta 20mm con peso para 7 seg: +${profile.hangboard20mmAddedWeight7s} kg`
+    );
+  }
+  if (profile.benchPress1Rm) strengthLines.push(`Press banca 1RM: ${profile.benchPress1Rm} kg`);
+  if (profile.squat1Rm) strengthLines.push(`Sentadilla 1RM: ${profile.squat1Rm} kg`);
+  if (profile.deadlift1Rm) strengthLines.push(`Peso muerto 1RM: ${profile.deadlift1Rm} kg`);
+  if (strengthLines.length) {
+    lines.push('Fuerza (USAR para calibrar intensidades reales, no inventar):');
+    for (const item of strengthLines) lines.push(`  ${item}`);
+  }
   if (profile.campusExperience) lines.push(`Exp. campus: ${profile.campusExperience}`);
   if (profile.outdoorFrequency) lines.push(`Frecuencia roca: ${profile.outdoorFrequency}`);
   lines.push(`Agresividad: ${profile.trainingAggressiveness ?? 'balanced'}`);

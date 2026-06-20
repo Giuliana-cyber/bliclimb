@@ -2,7 +2,11 @@ import type { Session, TrainingPlan, Week, Exercise } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
 
 export type SafetyViolation = {
-  rule: 'no_finger_load_minors' | 'no_max_hangs_with_pain' | 'no_campus_for_beginners';
+  rule:
+    | 'no_finger_load_minors'
+    | 'no_max_hangs_with_pain'
+    | 'no_campus_for_beginners'
+    | 'no_max_hangs_for_strength_novice';
   reason: string;
   // Para que el reintento le diga al modelo qué eliminar
   forbiddenKeywords: string[];
@@ -175,6 +179,28 @@ export function validatePlanSafety(plan: TrainingPlan, profile: UserProfile): Sa
         reason:
           'El atleta lleva menos de 1 año escalando. El campus board exige tejido conectivo y patrón neuromuscular que aún no está desarrollado a ese nivel; usarlo prematuramente predispone a lesión de poleas y codos.',
         forbiddenKeywords: CAMPUS_KEYWORDS,
+        triggerExercise: hit
+      });
+    }
+  }
+
+  // R4 — principiante con fuerza real de dedos sin desarrollar: si reporta
+  // 0 kg adicionales en 7 seg a regleta 20mm Y lleva <1 año escalando, no
+  // recomendamos suspensiones máximas. Refuerza R2 con datos de fuerza
+  // absolutos en vez de depender solo del dolor reportado.
+  const isStrengthNoviceOnHangboard =
+    isBeginner &&
+    profile.hangboard20mmAddedWeight7s !== null &&
+    profile.hangboard20mmAddedWeight7s !== undefined &&
+    profile.hangboard20mmAddedWeight7s <= 0;
+  if (isStrengthNoviceOnHangboard) {
+    const hit = findForbidden(plan, MAX_HANG_KEYWORDS);
+    if (hit) {
+      violations.push({
+        rule: 'no_max_hangs_for_strength_novice',
+        reason:
+          'El atleta lleva menos de 1 año escalando y reporta no poder colgar peso adicional en regleta de 20mm. Las suspensiones máximas (max hangs, % alto de BW, fallo en regleta) están fuera de su ventana de adaptación segura.',
+        forbiddenKeywords: MAX_HANG_KEYWORDS,
         triggerExercise: hit
       });
     }
