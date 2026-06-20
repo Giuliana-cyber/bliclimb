@@ -155,11 +155,11 @@ export async function POST(request: Request) {
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
-        // El trial de 30 días vive en el Price de Stripe (configurado en el
-        // dashboard como `trial_period_days: 30`). Stripe lo aplica al
-        // checkout automáticamente sin necesidad de `trial_from_plan` (que
-        // está deprecado en versiones nuevas del SDK). Si quisiéramos forzar
-        // un trial distinto desde código, usaríamos `trial_period_days` acá.
+        // Trial explícito de 30 días — ya estaba configurado en el Price de
+        // Stripe, pero lo dejamos también en el código como fuente única
+        // de verdad. Si los dos coinciden, Stripe usa el del checkout sin
+        // duplicarlo.
+        trial_period_days: 30,
         metadata: { supabase_user_id: user.id }
       },
       success_url: `${appBase}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
