@@ -65,11 +65,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         className="pointer-events-none fixed inset-0 -z-10 bg-gradient-glow"
       />
 
-      <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-brand-dark/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 w-full max-w-3xl items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2" aria-label="BilClimb.ai inicio">
+      <header className="sticky top-0 z-30 overflow-hidden border-b border-white/[0.06] bg-brand-dark/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 w-full max-w-3xl items-center justify-between gap-2 px-4">
+          <Link
+            href="/"
+            className="flex min-w-0 shrink items-center gap-2"
+            aria-label="BilClimb.ai inicio"
+          >
             <BrandLogo size={28} />
-            <span className="text-base font-extrabold tracking-tight text-white">
+            {/* En viewports muy chicos (< 400px) ocultamos el wordmark para que los íconos no se corten. */}
+            <span className="hidden truncate text-base font-extrabold tracking-tight text-white min-[400px]:inline">
               BilClimb<span className="text-brand-cyan">.ai</span>
             </span>
           </Link>
