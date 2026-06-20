@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   Activity,
@@ -117,6 +117,9 @@ function buildGuide(exercise: Exercise) {
 export function ExerciseGuide({ exercise, contextLabel }: ExerciseGuideProps) {
   const [open, setOpen] = useState(false);
   const [character, setCharacter] = useState<'bill' | 'senda'>('bill');
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+  const titleId = useId();
 
   useEffect(() => {
     const profile = loadProfile();
@@ -124,6 +127,48 @@ export function ExerciseGuide({ exercise, contextLabel }: ExerciseGuideProps) {
       setCharacter(profile.character);
     }
   }, []);
+
+  // Bloquear scroll del body + ESC + focus trap mientras el modal está abierto.
+  useEffect(() => {
+    if (!open || typeof document === 'undefined') return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        setOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusables = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((el) => !el.hasAttribute('disabled'));
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener('keydown', handleKey);
+    // Foco inicial en el botón de cerrar (target seguro y obvio).
+    closeBtnRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [open]);
 
   const characterName = character === 'senda' ? 'Senda' : 'Bill';
   const params = new URLSearchParams({
@@ -146,33 +191,54 @@ export function ExerciseGuide({ exercise, contextLabel }: ExerciseGuideProps) {
       </button>
 
       {open ? (
+        // Overlay full-screen — el click sobre el overlay cierra; el contenido
+        // del modal hace stopPropagation. inset-0 + position fixed garantiza
+        // que cubra toda la pantalla sin importar el scroll del contenedor.
         <div
-          className="fixed inset-0 z-50 flex items-end bg-black/64 p-3 sm:items-center sm:justify-center"
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Guía de ${exercise.name}`}
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-3 sm:items-center"
         >
-          <div className="max-h-[88vh] w-full overflow-y-auto rounded-lg border border-white/10 bg-brand-dark p-4 shadow-2xl sm:max-w-xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            onClick={(e) => e.stopPropagation()}
+            // max-h con 100dvh para que el viewport dinámico de mobile no
+            // recorte el footer; padding-bottom respeta la safe-area de la
+            // nav inferior cuando el modal está en una pantalla con barra
+            // de gestos / home indicator.
+            className="flex w-full flex-col overflow-hidden rounded-lg border border-white/10 bg-brand-dark shadow-2xl sm:max-w-xl"
+            style={{ maxHeight: 'calc(100dvh - 24px)' }}
+          >
+            <div className="flex items-start justify-between gap-3 border-b border-white/[0.06] p-4">
+              <div className="min-w-0">
                 <p className="text-sm font-semibold text-brand-cyan">Guía de ejercicio</p>
-                <h2 className="mt-1 text-2xl font-bold">{exercise.name}</h2>
+                <h2 id={titleId} className="mt-1 text-2xl font-bold">
+                  {exercise.name}
+                </h2>
                 {contextLabel ? (
                   <p className="mt-1 text-xs font-semibold text-white/46">{contextLabel}</p>
                 ) : null}
               </div>
               <button
+                ref={closeBtnRef}
                 type="button"
                 onClick={() => setOpen(false)}
-                className="grid size-9 shrink-0 place-items-center rounded-md border border-white/12 text-white/70 transition hover:bg-white/[0.06] hover:text-white"
+                // Touch target 44×44px en mobile (recomendación WCAG),
+                // escala a 40 en pantallas grandes (más densas).
+                className="grid size-11 shrink-0 place-items-center rounded-md border border-white/12 text-white/70 transition hover:bg-white/[0.06] hover:text-white sm:size-10"
                 aria-label="Cerrar guía"
                 title="Cerrar"
               >
-                <X aria-hidden="true" size={18} />
+                <X aria-hidden="true" size={20} />
               </button>
             </div>
 
-            <div className="mt-5 space-y-4">
+            <div
+              className="flex-1 space-y-4 overflow-y-auto p-4"
+              style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}
+            >
               <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
                 <GuideMetric label="Series" value={exercise.sets ? String(exercise.sets) : null} />
                 <GuideMetric label="Reps / tiempo" value={exercise.reps ?? exercise.duration ?? null} />

@@ -29,33 +29,33 @@ export function AuthHeaderActions() {
     router.refresh();
   }
 
+  // Touch target ≥ 36px en mobile (size-9), 40px desde 400px arriba (size-10).
+  // gap-2 = 8px exacto, shrink-0 para que los íconos nunca se compriman.
+  const iconClass =
+    'grid size-9 shrink-0 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/76 transition hover:border-brand-cyan/60 hover:text-brand-cyan min-[400px]:size-10';
+
   return (
-    <div className="flex items-center gap-2">
-      <Link
-        href="/settings"
-        className="grid size-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/76 transition hover:border-brand-cyan/60 hover:text-brand-cyan"
-        aria-label="Abrir ajustes"
-        title="Ajustes"
-      >
-        <Settings aria-hidden="true" size={19} strokeWidth={2.2} />
+    <div className="flex shrink-0 items-center gap-2">
+      <Link href="/settings" className={iconClass} aria-label="Abrir ajustes" title="Ajustes">
+        <Settings aria-hidden="true" size={18} strokeWidth={2.2} />
       </Link>
       <Link
         href="/subscribe"
-        className="grid size-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/76 transition hover:border-brand-cyan/60 hover:text-brand-cyan"
+        className={iconClass}
         aria-label="Abrir suscripción"
         title="Suscripción"
       >
-        <CreditCard aria-hidden="true" size={19} strokeWidth={2.2} />
+        <CreditCard aria-hidden="true" size={18} strokeWidth={2.2} />
       </Link>
       <div className="relative">
         <button
           type="button"
           onClick={() => setOpen((value) => !value)}
-          className="grid size-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/76 transition hover:border-brand-mustard/70 hover:text-brand-mustard"
+          className="grid size-9 shrink-0 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/76 transition hover:border-brand-mustard/70 hover:text-brand-mustard min-[400px]:size-10"
           aria-label="Abrir perfil"
           aria-expanded={open}
         >
-          <UserRound aria-hidden="true" size={19} strokeWidth={2.2} />
+          <UserRound aria-hidden="true" size={18} strokeWidth={2.2} />
         </button>
         {open ? (
           <div
