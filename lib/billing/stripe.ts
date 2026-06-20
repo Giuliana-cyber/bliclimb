@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 
-const DEFAULT_PRICE_ID = 'price_1TjA6IBfS6NSxetgqzfZsoWm';
+const DEFAULT_ANNUAL_PRICE_ID = 'price_1TjA6IBfS6NSxetgqzfZsoWm';
 
 /**
  * Cliente Stripe singleton. Lo creamos lazy para no crashear módulos en
@@ -25,12 +25,37 @@ export function getStripe(): Stripe {
   return cached;
 }
 
+export type BillingCycle = 'monthly' | 'annual';
+
 /**
- * Price ID del plan anual ($249 MXN / año + 30 días de trial).
- * Configurable por env var para poder rotar precios sin redeploy.
+ * Price ID por ciclo. Soporta tanto el nombre nuevo (`STRIPE_ANNUAL_PRICE_ID`)
+ * como el legacy `STRIPE_PRICE_ID` para no romper deploys actuales.
+ *
+ * Annual: $249 MXN/año + 30 días trial (configurado en el Price).
+ * Monthly: $29 MXN/mes + 30 días trial.
  */
-export function getStripePriceId(): string {
-  return process.env.STRIPE_PRICE_ID?.trim() || DEFAULT_PRICE_ID;
+export function getStripePriceId(cycle: BillingCycle = 'annual'): string {
+  if (cycle === 'monthly') {
+    const monthly = process.env.STRIPE_MONTHLY_PRICE_ID?.trim();
+    if (!monthly) {
+      throw new Error(
+        'STRIPE_MONTHLY_PRICE_ID no está configurado. Setea la env var para habilitar plan mensual.'
+      );
+    }
+    return monthly;
+  }
+  return (
+    process.env.STRIPE_ANNUAL_PRICE_ID?.trim() ||
+    process.env.STRIPE_PRICE_ID?.trim() ||
+    DEFAULT_ANNUAL_PRICE_ID
+  );
+}
+
+/**
+ * Etiqueta de precio user-facing por ciclo.
+ */
+export function getPriceLabel(cycle: BillingCycle): string {
+  return cycle === 'monthly' ? '$29 MXN/mes' : '$249 MXN/año';
 }
 
 export function getStripeWebhookSecret(): string {
