@@ -198,6 +198,57 @@ export async function removeClient(
 }
 
 /**
+ * Aplica la suscripción del coach: setea `profiles.role='coach'` y graba
+ * `entitlements.coach_tier` + `coach_max_clients` según el tier comprado.
+ * Lo invoca el webhook de Stripe al detectar un price_id de coach.
+ */
+export async function applyCoachSubscription(
+  userId: string,
+  tier: CoachTier,
+  client: CoachClientsClient = defaultClient()
+): Promise<void> {
+  const maxClients = COACH_TIER_LIMITS[tier];
+
+  const { error: profileErr } = await client
+    .from('profiles')
+    .update({ role: 'coach' })
+    .eq('id', userId);
+  if (profileErr) throw new Error(`applyCoachSubscription profile failed: ${profileErr.message}`);
+
+  const { error: entErr } = await client
+    .from('entitlements')
+    .update({ coach_tier: tier, coach_max_clients: maxClients })
+    .eq('profile_id', userId);
+  if (entErr) throw new Error(`applyCoachSubscription entitlement failed: ${entErr.message}`);
+}
+
+/**
+ * Revoca la suscripción del coach: vuelve `profiles.role='athlete'` y limpia
+ * `entitlements.coach_tier`/`coach_max_clients`. Lo invoca el webhook en
+ * `customer.subscription.deleted`.
+ *
+ * No toca `coach_clients` ni `coach_plans` — esas filas quedan para que el
+ * coach pueda recuperar acceso si vuelve a suscribirse. Los planes ya
+ * publicados siguen vivos en el dashboard del cliente.
+ */
+export async function clearCoachSubscription(
+  userId: string,
+  client: CoachClientsClient = defaultClient()
+): Promise<void> {
+  const { error: profileErr } = await client
+    .from('profiles')
+    .update({ role: 'athlete' })
+    .eq('id', userId);
+  if (profileErr) throw new Error(`clearCoachSubscription profile failed: ${profileErr.message}`);
+
+  const { error: entErr } = await client
+    .from('entitlements')
+    .update({ coach_tier: null, coach_max_clients: null })
+    .eq('profile_id', userId);
+  if (entErr) throw new Error(`clearCoachSubscription entitlement failed: ${entErr.message}`);
+}
+
+/**
  * Devuelve el coach activo (`status='accepted'`) de un cliente, o null.
  * Útil para el banner "Entrenando con [coach]" en el dashboard del cliente.
  */

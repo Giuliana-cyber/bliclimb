@@ -58,6 +58,55 @@ export function getPriceLabel(cycle: BillingCycle): string {
   return cycle === 'monthly' ? '$29 MXN/mes' : '$249 MXN/año';
 }
 
+// ---------- Coach tiers ----------
+
+export type CoachTier = 'starter' | 'pro' | 'gym';
+
+/**
+ * Price ID por tier de coach. Las env vars se configuran en Vercel una vez
+ * que los productos están creados en Stripe Dashboard.
+ */
+export function getStripeCoachPriceId(tier: CoachTier): string {
+  const envVar =
+    tier === 'starter'
+      ? 'STRIPE_COACH_STARTER_PRICE_ID'
+      : tier === 'pro'
+      ? 'STRIPE_COACH_PRO_PRICE_ID'
+      : 'STRIPE_COACH_GYM_PRICE_ID';
+  const value = process.env[envVar]?.trim();
+  if (!value) {
+    throw new Error(`${envVar} no está configurado.`);
+  }
+  return value;
+}
+
+/**
+ * Resuelve tier dado un price_id. Devuelve `null` si el price_id no
+ * corresponde a un tier de coach (es atleta o desconocido). El webhook usa
+ * esto para decidir si actualizar `profiles.role` + `entitlements.coach_tier`.
+ */
+export function coachTierFromPriceId(priceId: string | null | undefined): CoachTier | null {
+  if (!priceId) return null;
+  const starter = process.env.STRIPE_COACH_STARTER_PRICE_ID?.trim();
+  const pro = process.env.STRIPE_COACH_PRO_PRICE_ID?.trim();
+  const gym = process.env.STRIPE_COACH_GYM_PRICE_ID?.trim();
+  if (starter && priceId === starter) return 'starter';
+  if (pro && priceId === pro) return 'pro';
+  if (gym && priceId === gym) return 'gym';
+  return null;
+}
+
+export function getCoachTierLabel(tier: CoachTier): string {
+  switch (tier) {
+    case 'starter':
+      return 'Starter — $199 MXN/mes · hasta 5 clientes';
+    case 'pro':
+      return 'Pro — $499 MXN/mes · hasta 15 clientes';
+    case 'gym':
+      return 'Gym — $999 MXN/mes · clientes ilimitados';
+  }
+}
+
 export function getStripeWebhookSecret(): string {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) {

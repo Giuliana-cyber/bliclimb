@@ -15,7 +15,8 @@ import {
   upsertStripeCustomer,
   type StripeSubscriptionLike
 } from '@/lib/entitlements';
-import { getStripe, getStripeWebhookSecret } from '@/lib/billing/stripe';
+import { coachTierFromPriceId, getStripe, getStripeWebhookSecret } from '@/lib/billing/stripe';
+import { applyCoachSubscription, clearCoachSubscription } from '@/lib/coach';
 
 export const runtime = 'nodejs';
 
@@ -25,9 +26,12 @@ type Outcome = {
     | 'ignored_missing_user_id'
     | 'customer_attached'
     | 'subscription_synced'
+    | 'coach_subscription_synced'
     | 'subscription_cancelled'
+    | 'coach_subscription_cancelled'
     | 'period_extended'
     | 'marked_past_due';
+  coach_tier?: 'starter' | 'pro' | 'gym';
   user_id?: string;
   stripe_customer_id?: string;
   stripe_subscription_id?: string;
@@ -153,6 +157,22 @@ async function handleSubscriptionUpsert(
   }
 
   await upsertFromStripeSubscription(userId, subscription as unknown as StripeSubscriptionLike);
+
+  // Si el price_id corresponde a un tier de coach, además del entitlement
+  // standard hay que setear profiles.role='coach' y entitlements.coach_*.
+  const priceId = subscription.items?.data?.[0]?.price?.id ?? null;
+  const coachTier = coachTierFromPriceId(priceId);
+  if (coachTier) {
+    await applyCoachSubscription(userId, coachTier);
+    return {
+      action_taken: 'coach_subscription_synced',
+      user_id: userId,
+      stripe_customer_id: customerId ?? undefined,
+      stripe_subscription_id: subscription.id,
+      coach_tier: coachTier
+    };
+  }
+
   return {
     action_taken: 'subscription_synced',
     user_id: userId,
@@ -162,10 +182,34 @@ async function handleSubscriptionUpsert(
 }
 
 async function handleSubscriptionDeleted(
+  stripe: Stripe,
   event: Stripe.CustomerSubscriptionDeletedEvent
 ): Promise<Outcome> {
   const subscription = event.data.object;
   await markStripeSubscriptionCancelled(subscription.id);
+
+  // Si era una suscripción de coach, revertir role + tier.
+  const priceId = subscription.items?.data?.[0]?.price?.id ?? null;
+  const coachTier = coachTierFromPriceId(priceId);
+  if (coachTier) {
+    const customerId = getCustomerIdString(subscription.customer);
+    const userId = await resolveUserId(
+      stripe,
+      subscription.metadata ?? null,
+      customerId
+    );
+    if (userId) {
+      await clearCoachSubscription(userId);
+      return {
+        action_taken: 'coach_subscription_cancelled',
+        user_id: userId,
+        stripe_subscription_id: subscription.id,
+        stripe_customer_id: customerId ?? undefined,
+        coach_tier: coachTier
+      };
+    }
+  }
+
   return {
     action_taken: 'subscription_cancelled',
     stripe_subscription_id: subscription.id,
@@ -279,7 +323,7 @@ export async function POST(request: Request) {
         outcome = await handleSubscriptionUpsert(stripe, event);
         break;
       case 'customer.subscription.deleted':
-        outcome = await handleSubscriptionDeleted(event);
+        outcome = await handleSubscriptionDeleted(stripe, event);
         break;
       case 'invoice.payment_succeeded':
         outcome = await handleInvoicePaymentSucceeded(event);

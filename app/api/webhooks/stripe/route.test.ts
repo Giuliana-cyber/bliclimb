@@ -145,7 +145,14 @@ const stripeStub = {
 
 vi.mock('@/lib/billing/stripe', () => ({
   getStripe: () => stripeStub,
-  getStripeWebhookSecret: () => 'whsec_test'
+  getStripeWebhookSecret: () => 'whsec_test',
+  // Los tests existentes solo cubren flujos de atleta — coachTier siempre null.
+  coachTierFromPriceId: () => null
+}));
+
+vi.mock('@/lib/coach', () => ({
+  applyCoachSubscription: vi.fn(),
+  clearCoachSubscription: vi.fn()
 }));
 
 // ---------- Tests ----------

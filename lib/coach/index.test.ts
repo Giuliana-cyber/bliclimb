@@ -1,7 +1,9 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import {
   acceptInvite,
+  applyCoachSubscription,
   canAddClient,
+  clearCoachSubscription,
   COACH_TIER_LIMITS,
   getClientCoach,
   getCoachClientCount,
@@ -358,6 +360,30 @@ describe('removeClient', () => {
     const { client, tables } = createFakeClient({ coach_clients: [seed] });
     await removeClient('c1', 'u1', client);
     expect(tables.coach_clients[0].status).toBe('removed');
+  });
+});
+
+describe('applyCoachSubscription', () => {
+  it('setea role=coach y graba tier+max según el tier comprado', async () => {
+    const { client, tables } = createFakeClient({
+      profiles: [{ id: 'u1', role: 'athlete' }],
+      entitlements: [{ profile_id: 'u1', coach_max_clients: null }]
+    });
+    await applyCoachSubscription('u1', 'pro', client);
+    expect(tables.profiles[0].role).toBe('coach');
+    expect(tables.entitlements[0].coach_max_clients).toBe(15);
+  });
+});
+
+describe('clearCoachSubscription', () => {
+  it('revierte role=athlete y limpia tier', async () => {
+    const { client, tables } = createFakeClient({
+      profiles: [{ id: 'u1', role: 'coach' }],
+      entitlements: [{ profile_id: 'u1', coach_max_clients: 5 }]
+    });
+    await clearCoachSubscription('u1', client);
+    expect(tables.profiles[0].role).toBe('athlete');
+    expect(tables.entitlements[0].coach_max_clients).toBeNull();
   });
 });
 
