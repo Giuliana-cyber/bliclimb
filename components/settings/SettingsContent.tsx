@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Sparkles,
   Trash2,
+  Users,
   UserRound
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
@@ -127,6 +128,12 @@ export function SettingsContent({ subscriptionPanel }: SettingsContentProps = {}
           icon={UserRound}
           label="Editar mi perfil"
           description="Nivel, objetivo, lesiones, disponibilidad, equipo"
+        />
+        <SettingsLink
+          href="/coach/upgrade"
+          icon={Users}
+          label="¿Eres entrenador?"
+          description="Usa BilClimb con tus clientes desde un panel dedicado"
         />
         {subscriptionPanel}
       </Section>

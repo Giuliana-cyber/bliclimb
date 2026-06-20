@@ -37,7 +37,12 @@ const routesWithoutShell = [
   '/billing/success',
   '/sign-in',
   '/sign-up',
-  '/auth'
+  '/auth',
+  // Panel del coach trae su propio sidebar; /coach/upgrade sí muestra el shell
+  // estándar para que cualquier atleta lo descubra.
+  '/coach/dashboard',
+  '/coach/clients',
+  '/coach/plans'
 ];
 
 function isActive(pathname: string, href: string) {
