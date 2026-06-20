@@ -29,6 +29,7 @@ import { MountainBackdrop } from '@/components/ui/MountainBackdrop';
 import { CharacterAvatar } from '@/components/ui/CharacterAvatar';
 import { FreePlanWindowBanner } from '@/components/billing/FreePlanWindowBanner';
 import { useBillingStatus } from '@/lib/hooks/useBillingStatus';
+import { MyCoachBanner } from '@/components/coach/MyCoachBanner';
 
 function formatRelativeDate(value: string) {
   const date = new Date(value);
@@ -154,6 +155,8 @@ export function Dashboard() {
         </p>
         <h1 className="text-[2.05rem] font-extrabold leading-tight">Tu sesión de hoy</h1>
       </header>
+
+      <MyCoachBanner />
 
       <TodaySessionCard todayState={todayState} hasPlan={Boolean(plan)} checkIns={checkIns} />
 
