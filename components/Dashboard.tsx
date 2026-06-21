@@ -29,6 +29,7 @@ import { MountainBackdrop } from '@/components/ui/MountainBackdrop';
 import { CharacterAvatar } from '@/components/ui/CharacterAvatar';
 import { FreePlanWindowBanner } from '@/components/billing/FreePlanWindowBanner';
 import { StreakBadge } from '@/components/StreakBadge';
+import { PushOptIn } from '@/components/PushOptIn';
 import { useBillingStatus } from '@/lib/hooks/useBillingStatus';
 import { MyCoachBanner } from '@/components/coach/MyCoachBanner';
 
@@ -158,6 +159,8 @@ export function Dashboard() {
       </header>
 
       <StreakBadge />
+
+      <PushOptIn />
 
       <MyCoachBanner />
 
