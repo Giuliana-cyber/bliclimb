@@ -405,14 +405,65 @@ export function PlanTimeline() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Button variant="secondary" href="/generating-plan" icon={<RefreshCw size={17} />}>
-          Regenerar plan
-        </Button>
+        <PlanRegenButton planRegen={billing?.planRegen} />
         <Button variant="secondary" href="/profile">
           Editar objetivo
         </Button>
       </div>
     </motion.section>
+  );
+}
+
+function formatResetShort(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getUTCDate()}/${d.getUTCMonth() + 1}`;
+}
+
+function PlanRegenButton({
+  planRegen
+}: {
+  planRegen?: { count: number; max: number; resetAt: string };
+}) {
+  if (!planRegen) {
+    // Sin info de billing todavía — botón habilitado, contador oculto.
+    return (
+      <Button variant="secondary" href="/generating-plan" icon={<RefreshCw size={17} />}>
+        Regenerar plan
+      </Button>
+    );
+  }
+
+  const exhausted = planRegen.count >= planRegen.max;
+  const resetShort = formatResetShort(planRegen.resetAt);
+
+  if (exhausted) {
+    return (
+      <div className="flex flex-col items-stretch gap-1">
+        <span
+          aria-disabled="true"
+          title={`Disponible nuevamente el ${resetShort}`}
+          className="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-bold text-white/45"
+        >
+          <RefreshCw size={17} aria-hidden="true" />
+          Regenerar plan
+        </span>
+        <p className="text-center text-[0.7rem] font-bold text-white/55">
+          {planRegen.max}/{planRegen.max} — disponible el {resetShort}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-stretch gap-1">
+      <Button variant="secondary" href="/generating-plan" icon={<RefreshCw size={17} />}>
+        Regenerar plan
+      </Button>
+      <p className="text-center text-[0.7rem] font-bold text-white/55">
+        Planes este mes: {planRegen.count}/{planRegen.max}
+      </p>
+    </div>
   );
 }
 

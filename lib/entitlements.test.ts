@@ -1,12 +1,15 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import {
   canGenerateFreePlan,
+  canRegeneratePlan,
   findEntitlementByStripeCustomerId,
   findEntitlementBySubscriptionId,
   freePlanExpiresAt,
   getEntitlement,
+  getPlanRegenStatus,
   hasActivePlanAccess,
   hasActiveSubscription,
+  incrementPlanCount,
   isWithinFreePlanWindow,
   mapStripeStatus,
   markFreePlanUsed,
@@ -32,6 +35,8 @@ type Row = {
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   stripe_price_id: string | null;
+  plans_generated_this_month: number;
+  plan_month_reset_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -49,6 +54,8 @@ function makeRow(profileId: string): Row {
     stripe_customer_id: null,
     stripe_subscription_id: null,
     stripe_price_id: null,
+    plans_generated_this_month: 0,
+    plan_month_reset_at: now,
     created_at: now,
     updated_at: now
   };
@@ -291,6 +298,8 @@ describe('freePlanExpiresAt / isWithinFreePlanWindow / hasActivePlanAccess', () 
       stripe_customer_id: null,
       stripe_subscription_id: null,
       stripe_price_id: null,
+      plans_generated_this_month: 0,
+      plan_month_reset_at: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     });
@@ -310,6 +319,8 @@ describe('freePlanExpiresAt / isWithinFreePlanWindow / hasActivePlanAccess', () 
       stripe_customer_id: null,
       stripe_subscription_id: null,
       stripe_price_id: null,
+      plans_generated_this_month: 0,
+      plan_month_reset_at: null,
       created_at: usedAt.toISOString(),
       updated_at: usedAt.toISOString()
     });
@@ -590,5 +601,110 @@ describe('findEntitlementByStripeCustomerId', () => {
     await upsertStripeCustomer(USER_ID, 'cus_found', client);
     const found = await findEntitlementByStripeCustomerId('cus_found', client);
     expect(found?.profile_id).toBe(USER_ID);
+  });
+});
+
+describe('canRegeneratePlan + incrementPlanCount', () => {
+  it('true cuando el contador es 0', async () => {
+    const client = createFakeClient();
+    await getEntitlement(USER_ID, client); // crea la fila
+    expect(await canRegeneratePlan(USER_ID, client)).toBe(true);
+  });
+
+  it('true cuando el contador es 1', async () => {
+    const client = createFakeClient();
+    await getEntitlement(USER_ID, client);
+    await incrementPlanCount(USER_ID, client);
+    expect(await canRegeneratePlan(USER_ID, client)).toBe(true);
+  });
+
+  it('false cuando el contador llega a 2', async () => {
+    const client = createFakeClient();
+    await getEntitlement(USER_ID, client);
+    await incrementPlanCount(USER_ID, client);
+    await incrementPlanCount(USER_ID, client);
+    expect(await canRegeneratePlan(USER_ID, client)).toBe(false);
+  });
+
+  it('incrementa el contador en 1 por llamada', async () => {
+    const client = createFakeClient();
+    await getEntitlement(USER_ID, client);
+    await incrementPlanCount(USER_ID, client);
+    const ent1 = await getEntitlement(USER_ID, client);
+    expect(ent1.plans_generated_this_month).toBe(1);
+    await incrementPlanCount(USER_ID, client);
+    const ent2 = await getEntitlement(USER_ID, client);
+    expect(ent2.plans_generated_this_month).toBe(2);
+  });
+
+  it('resetea contador a 0 cuando plan_month_reset_at es de un mes anterior', async () => {
+    const client = createFakeClient();
+    // Forzar fila con reset_at en el mes anterior + contador maxed.
+    await getEntitlement(USER_ID, client);
+    const now = new Date(Date.UTC(2026, 6, 15)); // 15 julio 2026
+    const prevMonth = new Date(Date.UTC(2026, 5, 10)).toISOString(); // 10 junio 2026
+    await client
+      .from('entitlements')
+      .update({ plans_generated_this_month: 2, plan_month_reset_at: prevMonth })
+      .eq('profile_id', USER_ID);
+
+    const allowed = await canRegeneratePlan(USER_ID, client, now);
+    expect(allowed).toBe(true);
+
+    // La fila quedó reseteada y se puede leer.
+    const ent = await getEntitlement(USER_ID, client);
+    expect(ent.plans_generated_this_month).toBe(0);
+    expect(ent.plan_month_reset_at).toBe(now.toISOString());
+  });
+
+  it('no resetea si plan_month_reset_at es del mismo mes', async () => {
+    const client = createFakeClient();
+    await getEntitlement(USER_ID, client);
+    const now = new Date(Date.UTC(2026, 6, 28));
+    const sameMonth = new Date(Date.UTC(2026, 6, 1)).toISOString();
+    await client
+      .from('entitlements')
+      .update({ plans_generated_this_month: 2, plan_month_reset_at: sameMonth })
+      .eq('profile_id', USER_ID);
+
+    expect(await canRegeneratePlan(USER_ID, client, now)).toBe(false);
+    const ent = await getEntitlement(USER_ID, client);
+    expect(ent.plans_generated_this_month).toBe(2);
+  });
+});
+
+describe('getPlanRegenStatus', () => {
+  it('reporta count actual + resetAt = primer día del mes siguiente', async () => {
+    const client = createFakeClient();
+    await getEntitlement(USER_ID, client);
+    const now = new Date(Date.UTC(2026, 6, 15));
+    // Anclamos el reset al mes actual del test para que count no se "expire".
+    await client
+      .from('entitlements')
+      .update({
+        plans_generated_this_month: 1,
+        plan_month_reset_at: new Date(Date.UTC(2026, 6, 1)).toISOString()
+      })
+      .eq('profile_id', USER_ID);
+
+    const status = await getPlanRegenStatus(USER_ID, client, now);
+    expect(status.count).toBe(1);
+    expect(status.max).toBe(2);
+    // Primer día de agosto 2026 UTC
+    expect(status.resetAt).toBe(new Date(Date.UTC(2026, 7, 1)).toISOString());
+  });
+
+  it('reporta count=0 cuando ya pasó el mes (lectura sin escribir)', async () => {
+    const client = createFakeClient();
+    await getEntitlement(USER_ID, client);
+    const prevMonth = new Date(Date.UTC(2026, 5, 10)).toISOString();
+    await client
+      .from('entitlements')
+      .update({ plans_generated_this_month: 2, plan_month_reset_at: prevMonth })
+      .eq('profile_id', USER_ID);
+
+    const now = new Date(Date.UTC(2026, 6, 15));
+    const status = await getPlanRegenStatus(USER_ID, client, now);
+    expect(status.count).toBe(0);
   });
 });

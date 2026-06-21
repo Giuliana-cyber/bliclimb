@@ -14,6 +14,8 @@ export type Entitlement = {
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   stripe_price_id: string | null;
+  plans_generated_this_month: number;
+  plan_month_reset_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -29,6 +31,8 @@ type RawRow = {
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   stripe_price_id: string | null;
+  plans_generated_this_month: number | null;
+  plan_month_reset_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -46,6 +50,8 @@ function rowToEntitlement(row: RawRow): Entitlement {
     stripe_customer_id: row.stripe_customer_id ?? null,
     stripe_subscription_id: row.stripe_subscription_id ?? null,
     stripe_price_id: row.stripe_price_id ?? null,
+    plans_generated_this_month: row.plans_generated_this_month ?? 0,
+    plan_month_reset_at: row.plan_month_reset_at ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at
   };
@@ -506,4 +512,121 @@ export async function findEntitlementByStripeCustomerId(
     throw new Error(`findEntitlementByStripeCustomerId failed: ${error.message}`);
   }
   return data ? rowToEntitlement(data as RawRow) : null;
+}
+
+// ---------- Límite de planes generados por mes ----------
+
+/**
+ * Cupo mensual de generaciones de plan (gratis + regeneración pagada cuentan
+ * juntos contra este número).
+ */
+export const PLAN_REGEN_MONTHLY_LIMIT = 2;
+
+/**
+ * `true` si el reset timestamp pertenece a un mes calendario anterior al
+ * actual (UTC). En ese caso el caller debe poner el contador a 0 y avanzar
+ * `plan_month_reset_at` a `now()`.
+ *
+ * Usar UTC para que el reset sea determinístico sin importar la TZ del server.
+ */
+export function isPreviousMonth(resetAt: string | null, now: Date = new Date()): boolean {
+  if (!resetAt) return false;
+  const reset = new Date(resetAt);
+  if (Number.isNaN(reset.getTime())) return false;
+  if (reset.getUTCFullYear() < now.getUTCFullYear()) return true;
+  if (reset.getUTCFullYear() > now.getUTCFullYear()) return false;
+  return reset.getUTCMonth() < now.getUTCMonth();
+}
+
+/**
+ * Fecha de la próxima renovación del cupo: primer día del mes siguiente al
+ * de `resetAt`. Si `resetAt` es null, asume "ahora" como punto de partida.
+ */
+export function nextPlanMonthResetAt(resetAt: string | null, now: Date = new Date()): Date {
+  const base = resetAt ? new Date(resetAt) : now;
+  const ref = Number.isNaN(base.getTime()) ? now : base;
+  return new Date(Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth() + 1, 1));
+}
+
+/**
+ * `true` si el usuario puede generar otro plan este mes.
+ * Si `plan_month_reset_at` cayó en un mes anterior, resetea el contador a 0
+ * y avanza el timestamp antes de evaluar (idempotente: dos llamadas paralelas
+ * que disparen el reset son seguras porque escribimos siempre el mismo valor).
+ */
+export async function canRegeneratePlan(
+  userId: string,
+  client: EntitlementsClient = defaultClient(),
+  now: Date = new Date()
+): Promise<boolean> {
+  let entitlement = await getEntitlement(userId, client);
+
+  if (isPreviousMonth(entitlement.plan_month_reset_at, now)) {
+    const { data, error } = await client
+      .from('entitlements')
+      .update({
+        plans_generated_this_month: 0,
+        plan_month_reset_at: now.toISOString()
+      })
+      .eq('profile_id', userId)
+      .select('*')
+      .single();
+    if (error) {
+      throw new Error(`canRegeneratePlan reset failed: ${error.message}`);
+    }
+    entitlement = rowToEntitlement(data as RawRow);
+  }
+
+  return entitlement.plans_generated_this_month < PLAN_REGEN_MONTHLY_LIMIT;
+}
+
+/**
+ * Incrementa el contador del mes en 1. Llamar SOLO después de que el plan
+ * se generó exitosamente (igual que `markFreePlanUsed`).
+ *
+ * No corre el reset por mes — eso ya lo hizo `canRegeneratePlan` antes de
+ * autorizar. Si por alguna razón se llama sin pasar antes por el gate, el
+ * contador puede quedar más alto pero el reset de fin de mes lo corrige.
+ */
+export async function incrementPlanCount(
+  userId: string,
+  client: EntitlementsClient = defaultClient()
+): Promise<void> {
+  const entitlement = await getEntitlement(userId, client);
+  const next = entitlement.plans_generated_this_month + 1;
+  const { error } = await client
+    .from('entitlements')
+    .update({ plans_generated_this_month: next })
+    .eq('profile_id', userId);
+  if (error) {
+    throw new Error(`incrementPlanCount failed: ${error.message}`);
+  }
+}
+
+export type PlanRegenStatus = {
+  count: number;
+  max: number;
+  resetAt: string; // ISO de la fecha de la próxima renovación
+};
+
+/**
+ * Snapshot del estado del cupo mensual para mostrar en la UI. NO resetea
+ * el contador — usar `canRegeneratePlan` para eso. Esta función solo lee.
+ */
+export async function getPlanRegenStatus(
+  userId: string,
+  client: EntitlementsClient = defaultClient(),
+  now: Date = new Date()
+): Promise<PlanRegenStatus> {
+  const entitlement = await getEntitlement(userId, client);
+  // Si caemos en el caso "ya pasó el mes", reportamos count=0 a la UI aunque
+  // la fila no se haya reseteado todavía (next gate lo va a normalizar).
+  const expired = isPreviousMonth(entitlement.plan_month_reset_at, now);
+  const count = expired ? 0 : entitlement.plans_generated_this_month;
+  const reference = expired ? now.toISOString() : entitlement.plan_month_reset_at;
+  return {
+    count,
+    max: PLAN_REGEN_MONTHLY_LIMIT,
+    resetAt: nextPlanMonthResetAt(reference, now).toISOString()
+  };
 }

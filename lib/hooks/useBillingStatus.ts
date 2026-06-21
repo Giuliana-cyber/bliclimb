@@ -2,12 +2,19 @@
 
 import { useEffect, useState } from 'react';
 
+export type PlanRegenStatus = {
+  count: number;
+  max: number;
+  resetAt: string;
+};
+
 export type BillingStatus = {
   status: 'active' | 'paused' | 'cancelled' | 'past_due' | 'pending' | null;
   hasActiveSubscription: boolean;
   freePlanUsedAt: string | null;
   freePlanExpiresAt: string | null;
   inFreePlanWindow: boolean;
+  planRegen?: PlanRegenStatus;
 };
 
 type AuthStatusResponse = {
