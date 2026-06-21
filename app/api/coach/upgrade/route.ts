@@ -128,6 +128,9 @@ export async function POST(request: Request) {
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
+        // Trial explícito de 30 días para que el coach pruebe el panel
+        // antes del primer cobro.
+        trial_period_days: 30,
         metadata: { supabase_user_id: user.id, coach_tier: tier }
       },
       success_url: `${appBase}/coach/dashboard?welcome=1`,
