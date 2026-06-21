@@ -1,5 +1,5 @@
-import { PlanTimeline } from '@/components/PlanTimeline';
+import { PlanJourneyMap } from '@/components/PlanJourneyMap';
 
 export default function PlanPage() {
-  return <PlanTimeline />;
+  return <PlanJourneyMap />;
 }

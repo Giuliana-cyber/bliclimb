@@ -7,6 +7,7 @@ import {
   getPlanRegenStatus,
   hasActiveSubscription
 } from '@/lib/entitlements';
+import { calculateStreak } from '@/lib/streaks';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -49,16 +50,20 @@ export async function GET() {
   }
 
   const admin = createAdminClient();
-  const [entitlement, hasActive, planRegen] = await Promise.all([
+  const [entitlement, hasActive, planRegen, profileRes, currentStreak] = await Promise.all([
     getEntitlement(user.id, admin),
     hasActiveSubscription(user.id, admin),
-    getPlanRegenStatus(user.id, admin)
+    getPlanRegenStatus(user.id, admin),
+    admin.from('profiles').select('longest_streak').eq('id', user.id).maybeSingle(),
+    calculateStreak(user.id, admin)
   ]);
   const expiresAt = freePlanExpiresAt(entitlement);
   const inFreeWindow =
     !hasActive &&
     expiresAt !== null &&
     expiresAt.getTime() > Date.now();
+  const longestStreak =
+    (profileRes.data as { longest_streak?: number } | null)?.longest_streak ?? 0;
 
   return NextResponse.json({
     supabaseConfigured: true,
@@ -72,6 +77,10 @@ export async function GET() {
       freePlanExpiresAt: expiresAt?.toISOString() ?? null,
       inFreePlanWindow: inFreeWindow,
       planRegen
+    },
+    streak: {
+      current: currentStreak,
+      longest: longestStreak
     }
   });
 }
