@@ -112,11 +112,15 @@ export async function POST(request: Request) {
     );
   }
 
-  // timeout: 30s. Si OpenAI tarda más, el SDK aborta y atajamos en el catch
-  // de abajo para devolver 504 en vez de colgar la Vercel function.
+  // timeout: 120s — consistente con generate-plan ahora que estamos en
+  // Vercel Pro (maxDuration 300s). El chat es streaming, así que el
+  // primer token suele llegar en < 5s; 120s solo aplica si OpenAI se
+  // queda colgada antes del primer token o entre chunks. Si tarda más,
+  // el SDK aborta y atajamos en el catch de abajo para emitir un evento
+  // upstream_timeout en lugar de colgar la function.
   const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
-    timeout: 30_000
+    timeout: 120_000
   });
   const encoder = new TextEncoder();
 
