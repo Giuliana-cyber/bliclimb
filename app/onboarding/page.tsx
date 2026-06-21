@@ -17,7 +17,7 @@ import { saveProfile, type UserProfile } from '@/lib/profile';
 import { Card } from '@/components/ui/Card';
 import { CharacterAvatar } from '@/components/ui/CharacterAvatar';
 
-type DurationChoice = '' | '4' | '8' | '12' | 'starter';
+type DurationChoice = '' | '2' | '3' | '4' | 'starter';
 
 type OnboardingForm = {
   character: UserProfile['character'];
@@ -283,9 +283,9 @@ const goalOptions: Option[] = [
 ];
 
 const durationOptions: Array<{ label: string; value: DurationChoice }> = [
+  { label: '2 semanas', value: '2' },
+  { label: '3 semanas', value: '3' },
   { label: '4 semanas', value: '4' },
-  { label: '8 semanas', value: '8' },
-  { label: '12 semanas', value: '12' },
   { label: 'Solo quiero empezar', value: 'starter' }
 ];
 
