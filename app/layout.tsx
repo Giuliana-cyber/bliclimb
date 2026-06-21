@@ -11,7 +11,7 @@ const dmSans = DM_Sans({
   variable: '--font-dm-sans'
 });
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://bilclimb.app';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://bilclimb.vercel.app';
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),

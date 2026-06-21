@@ -32,7 +32,17 @@ function defaultClient(): CoachClientsClient {
 }
 
 function appBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://bilclimb.app';
+  const env = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (env) return env;
+  // En producción la env DEBE estar seteada — sin ella, los links de
+  // invitación al coach saldrían apuntando a un dominio que el usuario
+  // no usa y cada cliente recibiría un link roto. Mejor falla rápida.
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'NEXT_PUBLIC_APP_URL debe estar configurado en producción para generar links de invitación.'
+    );
+  }
+  return 'https://bilclimb.vercel.app';
 }
 
 // ---------- Helpers ----------
