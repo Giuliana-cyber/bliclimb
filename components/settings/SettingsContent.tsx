@@ -27,6 +27,7 @@ import { CharacterAvatar } from '@/components/ui/CharacterAvatar';
 import { createClient } from '@/lib/supabase/client';
 import { clearLocalSession, loadLocalSession, type LocalSession } from '@/lib/session';
 import { loadProfile, saveProfile, type UserProfile } from '@/lib/profile';
+import { NotificationSettings } from '@/components/settings/NotificationSettings';
 
 type SettingsContentProps = {
   /**
@@ -136,6 +137,10 @@ export function SettingsContent({ subscriptionPanel }: SettingsContentProps = {}
           description="Usa BilClimb con tus clientes desde un panel dedicado"
         />
         {subscriptionPanel}
+      </Section>
+
+      <Section title="Notificaciones">
+        <NotificationSettings />
       </Section>
 
       {/* Coach */}
