@@ -34,6 +34,7 @@ const routesWithoutShell = [
   '/onboarding',
   '/generating-plan',
   '/subscribe',
+  '/resumen-semanal',
   // Páginas de resultado de Stripe — públicas, sin AuthGate. Si la sesión
   // del usuario todavía no está sincronizada cuando Stripe redirige, el
   // shell normal lo mandaba a "Inicia sesión" en vez de mostrar el estado
