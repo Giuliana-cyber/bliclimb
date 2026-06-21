@@ -657,11 +657,14 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  // timeout: 30s. Si OpenAI tarda más el SDK aborta y devolvemos 504
-  // upstream_timeout en el catch general en vez de colgar la function.
+  // timeout: 120s. Ahora estamos en Vercel Pro (maxDuration=300s) y
+  // una generación de plan puede involucrar varias llamadas paralelas
+  // que en cola de OpenAI pueden tardar > 30s individualmente. 30s
+  // cortaba semanas válidas y forzaba reintentos. 120s deja margen
+  // cómodo sin acercarnos al límite de la function.
   const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
-    timeout: 30_000
+    timeout: 120_000
   });
   // gpt-4o-mini por defecto — la estructura de plan no necesita la
   // potencia de gpt-4o y mini es ~5-10x más rápido. En Hobby de Vercel
