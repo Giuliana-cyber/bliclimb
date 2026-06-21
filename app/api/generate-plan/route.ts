@@ -491,14 +491,14 @@ Devuelve la semana con weekNumber=${weekMeta.weekNumber}.`
     messages.push({ role: 'user' as const, content: retryCorrection });
   }
 
-  // 4000 alcanza para una semana con 3-5 sesiones completas (warmup +
-  // main + cooldown + notas). 2500 cortaba el JSON antes de cerrarlo y
-  // el parser tiraba "length limit was reached".
-  // 8000 (original) es excesivo y casi duplicaba la latencia.
+  // 8000: el modelo default es gpt-4o-mini (rápido), así que techo alto
+  // no agrega latencia notable — solo asegura que el JSON nunca se trunque
+  // en planes densos (sesiones con muchos ejercicios + notas largas).
+  // 4000 cortaba algunos casos border; 2500 cortaba demasiado seguido.
   const completion = await client.chat.completions
     .parse({
       model,
-      max_tokens: 4000,
+      max_tokens: 8000,
       response_format: zodResponseFormat(FastWeekSchema, 'week'),
       messages
     })
