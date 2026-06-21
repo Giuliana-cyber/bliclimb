@@ -437,7 +437,7 @@ export default function OnboardingPage() {
   const durationLabel =
     durationOptions.find((option) => option.value === form.durationChoice)?.label ?? 'Pendiente';
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!canSubmit) return;
 
     const now = new Date().toISOString();
@@ -502,6 +502,80 @@ export default function OnboardingPage() {
     };
 
     saveProfile(profile);
+
+    // Persist to Supabase. saveProfile() solo escribe a localStorage; sin
+    // este POST, public.profiles queda con todos los campos en null y los
+    // gates/RAG/coach panel no ven nada del onboarding.
+    //
+    // Esperamos a que termine (con timeout corto) para no perder datos
+    // si el usuario tiene red lenta y la página de generating-plan
+    // empieza a leer el perfil server-side. Si falla, navegamos igual
+    // — localStorage está intacto y el reconciliador puede reintentar.
+    const dbPayload = {
+      character: profile.character,
+      name: profile.name,
+      age: profile.age,
+      climbingTime: profile.climbingTime,
+      level: profile.level,
+      goals: profile.goals,
+      goalDescription: profile.goalDescription,
+      project: profile.project,
+      projectDescription: profile.projectDescription,
+      trainingHistory: profile.trainingHistory,
+      previousTraining: profile.previousTraining,
+      equipment: profile.equipment,
+      equipmentNotes: profile.equipmentNotes,
+      daysPerWeek: profile.daysPerWeek,
+      sessionDuration: profile.sessionDuration,
+      planDuration: profile.planDuration,
+      injuries: profile.injuries,
+      injuryDescription: profile.injuryDescription,
+      injuryNotes: profile.injuryNotes,
+      currentFingerPain: profile.currentFingerPain,
+      currentShoulderPain: profile.currentShoulderPain,
+      currentElbowPain: profile.currentElbowPain,
+      wantsConservativePlan: profile.wantsConservativePlan,
+      trainingAggressiveness: profile.trainingAggressiveness,
+      energyLevel: profile.energyLevel,
+      energy: profile.energy,
+      sleepQuality: profile.sleepQuality,
+      sleep: profile.sleep,
+      pullupsBodyweight: profile.pullupsBodyweight,
+      pullupsAddedWeight5Reps: profile.pullupsAddedWeight5Reps,
+      hangboard20mmSeconds: profile.hangboard20mmSeconds,
+      hangboard20mmAddedWeight7s: profile.hangboard20mmAddedWeight7s,
+      benchPress1Rm: profile.benchPress1Rm,
+      squat1Rm: profile.squat1Rm,
+      deadlift1Rm: profile.deadlift1Rm
+    };
+    try {
+      // eslint-disable-next-line no-console
+      console.log('[onboarding] POST /api/profile', {
+        fields: Object.keys(dbPayload).filter(
+          (k) => (dbPayload as Record<string, unknown>)[k] !== undefined
+        ).length
+      });
+      const res = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dbPayload),
+        keepalive: true
+      });
+      // eslint-disable-next-line no-console
+      console.log('[onboarding] /api/profile response', {
+        status: res.status,
+        ok: res.ok
+      });
+      if (!res.ok) {
+        const errBody = await res.text().catch(() => '');
+        // eslint-disable-next-line no-console
+        console.warn('[onboarding] /api/profile failed', errBody);
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.warn('[onboarding] /api/profile threw', error);
+    }
+
     router.push('/generating-plan');
   }
 
