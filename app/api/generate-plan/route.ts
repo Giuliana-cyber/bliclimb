@@ -336,15 +336,40 @@ function buildPlan(
   };
 }
 
-const GROUNDING_PROMPT = `Eres un asistente que consulta una biblioteca de fuentes profesionales de entrenamiento de escalada (Eva López, Eric Hörst, Power Company, Lattice, Climb Strong, investigación RED-S, etc).
+const GROUNDING_PROMPT = `Eres un asistente que consulta DOS fuentes para extraer el conocimiento aplicable al plan de un escalador:
+1. La biblioteca local (file_search en vector store) — papers, libros y blog posts ya curados.
+2. La web (web_search_preview) — solo los sitios profesionales listados abajo.
 
-Tu trabajo: para el perfil de escalador dado, extraer de la biblioteca los principios, protocolos y prescripciones aplicables al diseño de su mesociclo.
+Tu trabajo: para el perfil de escalador dado, extraer de ambas fuentes los principios, protocolos y prescripciones aplicables al diseño de su mesociclo.
+
+FUENTES WEB PERMITIDAS (busca SOLO en estas):
+- PubMed / Google Scholar: estudios sobre finger flexor training, climbing performance, periodization
+- Lattice Training blog (latticetraining.com)
+- Hooper's Beta (hoopersbeta.com)
+- Climbing Doctor / Tyler Nelson (climbingdoctor.org)
+- Power Company Climbing (powercompanyclimbing.com)
+- Eva López blog / research papers
+- Steve Bechtel / Climb Strong (climbstrong.com)
+- Dave MacLeod (davemacleod.com)
+- Eric Hörst (trainingforclimbing.com)
+
+FUENTES WEB PROHIBIDAS (jamás cites de acá):
+- Reddit, foros, opiniones anónimas
+- Blogs de fitness genérico (Men's Health, bodybuilding.com)
+- YouTube thumbnails o títulos sin contenido técnico
+- Cualquier fuente sin autor identificable
+
+Cuando busques en web, formula queries específicas como:
+- "finger flexor max hangs protocol climbing PubMed"
+- "climbing periodization mesocycle Lattice Training"
+- "antagonist training climbers Tyler Nelson"
 
 Responde:
 - En bullets concisos. No prosa larga.
 - Cita ejercicios y protocolos específicos cuando aparezcan en las fuentes (ej. "Eva López — Maximum Hangs en 10 segundos al límite").
+- Cuando uses una fuente, deja el nombre entre paréntesis al final del bullet: "(Lattice Training)", "(Eva López, Sport Sciences 2019)".
 - Si la fuente discute precauciones (dedos, RED-S, menores, lesiones), inclúyelas EXPLÍCITAS.
-- Si la biblioteca no tiene información relevante para una pregunta específica, dilo. NO inventes.
+- Si NI la biblioteca NI la web (en las fuentes permitidas) tienen información relevante para una pregunta específica, dilo. NO inventes.
 
 Devuelve un brief de máximo 12 bullets.`;
 
@@ -398,12 +423,19 @@ Perfil:
 ${profileToPrompt(profile)}`
         }
       ],
+      // web_search_preview habilita búsquedas web en vivo en la
+      // Responses API. El GROUNDING_PROMPT acota a fuentes profesionales
+      // listadas explícitamente; el modelo descarta resultados que no
+      // sean de esa allowlist. El cast del array sortea que el union
+      // de tipos del SDK no exporta el shape literal "web_search_preview"
+      // (depende de la versión instalada).
       tools: [
         {
           type: 'file_search',
           vector_store_ids: [vectorStoreId]
-        }
-      ]
+        },
+        { type: 'web_search_preview' }
+      ] as Parameters<typeof client.responses.create>[0]['tools']
     });
 
     const context = extractResponsesText(response);
@@ -468,7 +500,8 @@ async function generateWeek(
   model: string,
   profile: UserProfile,
   weekMeta: FastPlanMetadata['weekThemes'][number],
-  retryCorrection: string | null = null
+  retryCorrection: string | null = null,
+  groundingContext = ''
 ): Promise<FastWeek> {
   const equipment = profile.equipment?.length ? profile.equipment : ['home'];
   const equipmentLines = equipment
@@ -496,7 +529,7 @@ Contexto de la semana:
 Debe tener EXACTAMENTE ${profile.daysPerWeek} sesiones (campo "sessions" con ${profile.daysPerWeek} elementos), una por cada día disponible.
 
 Perfil completo:
-${profileToPrompt(profile)}
+${profileToPrompt(profile)}${groundingContext ? `\n\nBRIEF DE BIBLIOTECA Y FUENTES (usa esto para diseñar ejercicios y protocolos reales):\n${groundingContext}` : ''}
 
 Devuelve la semana con weekNumber=${weekMeta.weekNumber}.`
     }
@@ -727,18 +760,16 @@ export async function POST(request: Request) {
     // y bloqueaba la generación de metadata aunque ésta ya estaba lista
     // para arrancar con solo el profile. Ahora ambas corren juntas.
     //
-    // Trade-off: la metadata pierde el contexto de la biblioteca al
-    // diseñar áreas de foco / safetyRules. Las WEEKS no usaban grounding
-    // de cualquier forma (comentario abajo en `Promise.all(themes...)`).
-    // La biblioteca sigue presente en `traceability` para el badge
-    // "Plan basado en biblioteca BilClimb" en la UI.
-    //
-    // Si la calidad cae demasiado, podemos pasar groundingContext a las
-    // weeks (asíncrono: usar el resultado del grounding cuando llegue).
-    const [{ traceability }, metadata] = await Promise.all([
+    // Trade-off: la metadata corre sin groundingContext para paralelizarse
+    // con el grounding (esa decisión vale toda la latencia que ganamos).
+    // Pero el groundingContext SÍ se inyecta en cada generateWeek de
+    // abajo — donde más impacta para que los ejercicios sean específicos
+    // y las fuentes sean trazables.
+    const [grounding, metadata] = await Promise.all([
       groundFromLibrary(client, model, profile),
       generateMetadata(client, model, profile, '')
     ]);
+    const { context: groundingContext, traceability } = grounding;
 
     // Si la metadata trajo menos o más semanas, ajustamos a planDuration
     const themes = metadata.weekThemes
@@ -757,9 +788,13 @@ export async function POST(request: Request) {
       });
     }
 
-    // 3. Generar todas las semanas EN PARALELO (sin RAG — la velocidad importa).
+    // 3. Generar todas las semanas EN PARALELO. Cada semana recibe el
+    //    groundingContext para que los ejercicios y protocolos vengan
+    //    anclados en biblioteca + web (allowlist).
     let fastWeeks = await Promise.all(
-      themes.map((theme) => generateWeek(client, model, profile, theme))
+      themes.map((theme) =>
+        generateWeek(client, model, profile, theme, null, groundingContext)
+      )
     );
     let plan = buildPlan(metadata, fastWeeks, profile, traceability);
 
@@ -780,7 +815,14 @@ export async function POST(request: Request) {
       const regenerated = await Promise.all(
         themes.map(async (theme) => {
           if (offendingWeekNumbers.size === 0 || offendingWeekNumbers.has(theme.weekNumber)) {
-            return generateWeek(client, model, profile, theme, correction);
+            return generateWeek(
+              client,
+              model,
+              profile,
+              theme,
+              correction,
+              groundingContext
+            );
           }
           return fastWeeks.find((w) => w.weekNumber === theme.weekNumber)!;
         })
