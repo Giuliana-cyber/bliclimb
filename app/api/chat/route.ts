@@ -112,7 +112,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  // timeout: 30s. Si OpenAI tarda más, el SDK aborta y atajamos en el catch
+  // de abajo para devolver 504 en vez de colgar la Vercel function.
+  const client = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+    timeout: 30_000
+  });
   const encoder = new TextEncoder();
 
   function sse(event: string, data: unknown) {
@@ -160,7 +165,25 @@ export async function POST(request: Request) {
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unable to answer chat message.';
-        controller.enqueue(sse('error', { message }));
+        // Si OpenAI superó el timeout de 30s o cerró la conexión, mandamos
+        // un evento upstream_timeout para que la UI pueda mostrar un mensaje
+        // específico ("el servicio de IA tardó demasiado") en vez de un
+        // genérico "algo falló".
+        const isTimeout =
+          error instanceof Error &&
+          (error.name === 'APIConnectionTimeoutError' ||
+            error.name === 'APIConnectionError' ||
+            /timeout|aborted/i.test(error.message));
+        if (isTimeout) {
+          controller.enqueue(
+            sse('error', {
+              code: 'upstream_timeout',
+              message: 'El servicio de IA tardó demasiado. Intentá de nuevo.'
+            })
+          );
+        } else {
+          controller.enqueue(sse('error', { message }));
+        }
       } finally {
         controller.close();
       }
