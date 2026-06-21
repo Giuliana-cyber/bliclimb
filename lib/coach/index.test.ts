@@ -291,6 +291,17 @@ describe('inviteClient', () => {
     expect(tables.coach_clients[0].status).toBe('pending');
     expect(tables.coach_clients[0].invite_email).toBe('alice@example.com');
   });
+
+  it('NO toca auth.admin (no dispara emails de Supabase)', async () => {
+    // El client mock no expone `auth`. Si inviteClient intentara llamar
+    // a auth.admin.inviteUserByEmail / generateLink / signUp, tiraría
+    // TypeError y el test fallaría. Esto blinda el contrato del flujo
+    // de invitación: solo insert en coach_clients + URL, nada más.
+    const { client } = createFakeClient();
+    await expect(
+      inviteClient('c1', 'bob@example.com', client, () => 'tok')
+    ).resolves.toMatchObject({ inviteToken: 'tok' });
+  });
 });
 
 describe('acceptInvite', () => {

@@ -223,10 +223,61 @@ export async function isWithinFreePlanWindow(
 }
 
 /**
+ * true si el atleta tiene asignado un coach con `status='accepted'` Y ese
+ * coach tiene una suscripción de coach vigente (coach_tier no nulo,
+ * status active/cancelled-en-período, current_period_end > now).
+ *
+ * Cuando esto es true el cliente entra a la app sin paywall: el coach
+ * ya paga por él. Si el coach se da de baja, el cliente vuelve al gate
+ * normal (sub propia o plan gratis).
+ */
+export async function hasActiveCoachAssignment(
+  userId: string,
+  client: EntitlementsClient = defaultClient()
+): Promise<boolean> {
+  const { data: rel, error: relErr } = await client
+    .from('coach_clients')
+    .select('coach_id')
+    .eq('client_id', userId)
+    .eq('status', 'accepted')
+    .maybeSingle();
+  if (relErr) {
+    throw new Error(`hasActiveCoachAssignment rel failed: ${relErr.message}`);
+  }
+  if (!rel) return false;
+  const coachId = (rel as { coach_id: string }).coach_id;
+
+  const { data: ent, error: entErr } = await client
+    .from('entitlements')
+    .select('coach_tier, status, current_period_end')
+    .eq('profile_id', coachId)
+    .maybeSingle();
+  if (entErr) {
+    throw new Error(`hasActiveCoachAssignment ent failed: ${entErr.message}`);
+  }
+  if (!ent) return false;
+
+  const row = ent as {
+    coach_tier: string | null;
+    status: string | null;
+    current_period_end: string | null;
+  };
+  if (!row.coach_tier) return false;
+  // 'cancelled' con período vigente todavía cuenta — el coach pagó por este
+  // ciclo aunque haya cancelado renovación.
+  if (row.status !== 'active' && row.status !== 'cancelled') return false;
+  if (!row.current_period_end) return false;
+  const periodEnd = Date.parse(row.current_period_end);
+  if (!Number.isFinite(periodEnd) || periodEnd <= Date.now()) return false;
+  return true;
+}
+
+/**
  * true si el usuario puede usar features que dependen de tener un plan
  * "vivo" (chat, sesión, check-ins). Devuelve true cuando:
  *   - tiene suscripción activa O cancelada con período vigente, O
- *   - está dentro de la ventana de mes gratis (post-primer-plan).
+ *   - está dentro de la ventana de mes gratis (post-primer-plan), O
+ *   - tiene un coach asignado con suscripción de coach vigente.
  *
  * Nota: si el usuario nunca generó un plan, esta función devuelve false —
  * el chat no debería ser usable sin contexto de plan.
@@ -235,11 +286,12 @@ export async function hasActivePlanAccess(
   userId: string,
   client: EntitlementsClient = defaultClient()
 ): Promise<boolean> {
-  const [activeSub, withinFreeWindow] = await Promise.all([
+  const [activeSub, withinFreeWindow, coachedAccess] = await Promise.all([
     hasActiveSubscription(userId, client),
-    isWithinFreePlanWindow(userId, client)
+    isWithinFreePlanWindow(userId, client),
+    hasActiveCoachAssignment(userId, client)
   ]);
-  return activeSub || withinFreeWindow;
+  return activeSub || withinFreeWindow || coachedAccess;
 }
 
 // ---------- Helpers para B3 (webhook) ----------

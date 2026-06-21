@@ -122,7 +122,7 @@ export default async function CoachDashboardPage() {
                 className="flex items-center justify-between gap-3 p-3 transition hover:bg-white/[0.03]"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-white">{c.name || 'Sin nombre'}</p>
+                  <p className="truncate text-sm font-bold text-white">{c.name || c.email || 'Cliente sin datos'}</p>
                   <p className="text-[0.7rem] text-white/55">
                     {c.level || 'nivel —'} ·{' '}
                     {c.hasActivePlan ? 'plan activo' : 'sin plan'} · último check-in{' '}

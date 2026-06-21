@@ -64,16 +64,33 @@ const TIERS: TierSpec[] = [
 
 export default function CoachUpgradePage() {
   const [email, setEmail] = useState('');
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [loadingTier, setLoadingTier] = useState<CoachTier | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    // Local session refleja una sesión Supabase válida cuando existe — si
+    // no hay nada en localStorage, asumimos que el visitante no tiene
+    // cuenta todavía y le ofrecemos signup en vez de checkout directo.
     const session = loadLocalSession();
-    if (session?.email) setEmail(session.email);
+    if (session?.email) {
+      setEmail(session.email);
+      setSignedIn(true);
+    } else {
+      setSignedIn(false);
+    }
   }, []);
 
-  async function startCheckout(tier: CoachTier) {
+  async function handleTierClick(tier: CoachTier) {
     setError('');
+    // Sin sesión → mandamos a sign-up y memorizamos el tier para que cuando
+    // vuelva pueda completar el checkout en un click.
+    if (signedIn === false) {
+      window.location.href = `/sign-up?next=${encodeURIComponent(
+        `/coach/upgrade?tier=${tier}`
+      )}`;
+      return;
+    }
     if (!email) {
       setError('Necesitamos tu email para crear la cuenta de Stripe.');
       return;
@@ -87,7 +104,9 @@ export default function CoachUpgradePage() {
       });
       const data = (await response.json()) as { checkoutUrl?: string; error?: string };
       if (response.status === 401) {
-        window.location.href = '/sign-in?next=/coach/upgrade';
+        window.location.href = `/sign-in?next=${encodeURIComponent(
+          `/coach/upgrade?tier=${tier}`
+        )}`;
         return;
       }
       if (!response.ok || !data.checkoutUrl) {
@@ -166,8 +185,8 @@ export default function CoachUpgradePage() {
                 ))}
               </ul>
               <Button
-                onClick={() => startCheckout(tier.id)}
-                disabled={loadingTier !== null}
+                onClick={() => handleTierClick(tier.id)}
+                disabled={loadingTier !== null || signedIn === null}
                 variant={tier.highlight ? 'primary' : 'secondary'}
                 className="w-full"
               >
@@ -176,6 +195,8 @@ export default function CoachUpgradePage() {
                     <Loader2 size={14} className="animate-spin" />
                     Redirigiendo...
                   </span>
+                ) : signedIn === false ? (
+                  `Crear cuenta como ${tier.name}`
                 ) : (
                   `Elegir ${tier.name}`
                 )}

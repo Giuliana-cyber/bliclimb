@@ -614,7 +614,12 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  // timeout: 30s. Si OpenAI tarda más el SDK aborta y devolvemos 504
+  // upstream_timeout en el catch general en vez de colgar la function.
+  const client = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+    timeout: 30_000
+  });
   // gpt-4o por defecto — mucha mejor calidad de coaching que gpt-4o-mini.
   // Costo justificado por la suscripción de $1/mes (1 generación cada N días).
   const model = process.env.OPENAI_PLAN_MODEL ?? 'gpt-4o';
@@ -715,6 +720,21 @@ export async function POST(request: Request) {
       message.toLowerCase().includes('rate limit') ||
       message.toLowerCase().includes('429') ||
       message.toLowerCase().includes('tokens per min');
+    const isTimeout =
+      caughtError instanceof Error &&
+      (caughtError.name === 'APIConnectionTimeoutError' ||
+        caughtError.name === 'APIConnectionError' ||
+        /timeout|aborted/i.test(message));
+
+    if (isTimeout) {
+      return NextResponse.json(
+        {
+          code: 'upstream_timeout',
+          error: 'El servicio de IA tardó demasiado. Intentá de nuevo.'
+        },
+        { status: 504 }
+      );
+    }
 
     return NextResponse.json(
       {

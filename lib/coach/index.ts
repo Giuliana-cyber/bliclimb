@@ -32,7 +32,17 @@ function defaultClient(): CoachClientsClient {
 }
 
 function appBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://bilclimb.app';
+  const env = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (env) return env;
+  // En producción la env DEBE estar seteada — sin ella, los links de
+  // invitación al coach saldrían apuntando a un dominio que el usuario
+  // no usa y cada cliente recibiría un link roto. Mejor falla rápida.
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'NEXT_PUBLIC_APP_URL debe estar configurado en producción para generar links de invitación.'
+    );
+  }
+  return 'https://bilclimb.vercel.app';
 }
 
 // ---------- Helpers ----------
@@ -112,6 +122,12 @@ export async function canAddClient(
 /**
  * Crea una invitación: genera token único, guarda la fila con
  * `status='pending'` y devuelve la URL que el coach comparte con su cliente.
+ *
+ * IMPORTANTE: esta función NO dispara emails. No llama a
+ * `supabase.auth.admin.inviteUserByEmail` ni a ningún método de auth que
+ * genere correos. El flujo diseñado es: el coach copia el link y lo manda
+ * por WhatsApp / canal externo. Si en el futuro quisiéramos email, hay
+ * que hacerlo desde acá explícitamente.
  *
  * `tokenGenerator` se inyecta en tests; default = crypto.randomUUID().
  */

@@ -40,7 +40,11 @@ export default async function NewPlanPage({
         </p>
       </header>
       <NewPlanForm
-        clients={clients.map((c) => ({ id: c.clientId, name: c.name }))}
+        clients={clients.map((c) => ({
+          id: c.clientId,
+          name: c.name,
+          email: c.email
+        }))}
         preselectedClientId={preselected}
       />
     </div>

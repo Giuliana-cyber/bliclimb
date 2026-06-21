@@ -6,7 +6,17 @@ import { Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
-type Client = { id: string; name: string | null };
+type Client = { id: string; name: string | null; email: string | null };
+
+function clientLabel(c: Client): string {
+  // Mostramos "Nombre (email)" — si no hay nombre todavía (cliente que acaba
+  // de aceptar la invitación pero no completó onboarding) usamos solo el
+  // email. Nunca el UUID.
+  if (c.name && c.email) return `${c.name} (${c.email})`;
+  if (c.name) return c.name;
+  if (c.email) return c.email;
+  return 'Cliente sin datos';
+}
 
 export function NewPlanForm({
   clients,
@@ -54,7 +64,7 @@ export function NewPlanForm({
         >
           {clients.map((c) => (
             <option key={c.id} value={c.id}>
-              {c.name || c.id.slice(0, 8)}
+              {clientLabel(c)}
             </option>
           ))}
         </select>

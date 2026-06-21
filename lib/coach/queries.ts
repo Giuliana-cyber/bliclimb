@@ -7,6 +7,7 @@ export type ClientSummary = {
   relationId: string;
   clientId: string;
   name: string | null;
+  email: string | null;
   level: string | null;
   acceptedAt: string;
   lastCheckInAt: string | null;
@@ -74,7 +75,7 @@ export async function getCoachClientSummaries(coachId: string): Promise<ClientSu
 
   const clientIds = rows.map((r) => r.client_id);
 
-  const [profiles, lastCheckIns, activePlans] = await Promise.all([
+  const [profiles, lastCheckIns, activePlans, emails] = await Promise.all([
     admin.from('profiles').select('id, name, level').in('id', clientIds),
     admin
       .from('check_ins')
@@ -85,13 +86,26 @@ export async function getCoachClientSummaries(coachId: string): Promise<ClientSu
       .from('plans')
       .select('profile_id')
       .in('profile_id', clientIds)
-      .eq('status', 'active')
+      .eq('status', 'active'),
+    // El email vive en auth.users — el admin client lo resuelve por id.
+    // Lo necesitamos para mostrarlo cuando profiles.name está vacío (el
+    // cliente aún no completó onboarding).
+    Promise.all(
+      clientIds.map((id) =>
+        admin.auth.admin
+          .getUserById(id)
+          .then((res) => ({ id, email: res.data?.user?.email ?? null }))
+          .catch(() => ({ id, email: null }))
+      )
+    )
   ]);
 
   const profileById = new Map<string, { name: string | null; level: string | null }>();
   for (const p of (profiles.data ?? []) as Array<{ id: string; name: string | null; level: string | null }>) {
     profileById.set(p.id, { name: p.name, level: p.level });
   }
+  const emailById = new Map<string, string | null>();
+  for (const e of emails) emailById.set(e.id, e.email);
   const lastCheckByClient = new Map<string, string>();
   for (const c of (lastCheckIns.data ?? []) as Array<{ profile_id: string; date: string }>) {
     if (!lastCheckByClient.has(c.profile_id)) lastCheckByClient.set(c.profile_id, c.date);
@@ -106,6 +120,7 @@ export async function getCoachClientSummaries(coachId: string): Promise<ClientSu
       relationId: row.id,
       clientId: row.client_id,
       name: p?.name ?? null,
+      email: emailById.get(row.client_id) ?? null,
       level: p?.level ?? null,
       acceptedAt: row.accepted_at ?? '',
       lastCheckInAt: lastCheckByClient.get(row.client_id) ?? null,

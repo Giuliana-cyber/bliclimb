@@ -331,12 +331,12 @@ export function SettingsContent({ subscriptionPanel }: SettingsContentProps = {}
             </li>
             <li>
               <span className="font-bold text-white">Datos a terceros:</span> usamos OpenAI
-              (para IA), Supabase (para storage y auth) y Mercado Pago (para suscripción).
+              (para IA), Supabase (para storage y auth) y Stripe (para suscripción).
               Lee sus políticas si te interesa.
             </li>
             <li>
               <span className="font-bold text-white">Cancelación:</span> puedes cancelar tu
-              suscripción cuando quieras desde Mercado Pago.
+              suscripción cuando quieras desde el panel de Stripe.
             </li>
             <li>
               <span className="font-bold text-white">Borrar tu cuenta:</span> usa la opción

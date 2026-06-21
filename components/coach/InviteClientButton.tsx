@@ -88,8 +88,12 @@ export function InviteClientButton() {
             {inviteUrl ? (
               <div className="mt-4 space-y-3">
                 <p className="text-sm text-white/72">
-                  Compartí este link con <span className="font-bold text-white">{email}</span>.
-                  Al abrirlo, va a quedar vinculado a tu panel.
+                  Copiá el link y mandáselo a{' '}
+                  <span className="font-bold text-white">{email}</span> por WhatsApp o el
+                  canal que prefieras. Al abrirlo, va a quedar vinculado a tu panel.
+                </p>
+                <p className="text-[0.7rem] text-white/45">
+                  BilClimb no envía emails de invitación: vos lo compartís cuando querés.
                 </p>
                 <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] p-2">
                   <code className="min-w-0 flex-1 truncate text-xs text-white/85">{inviteUrl}</code>
