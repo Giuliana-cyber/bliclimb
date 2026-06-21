@@ -68,7 +68,7 @@ export default async function CoachClientsPage() {
             >
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold text-white">
-                  {c.name || 'Sin nombre'}
+                  {c.name || c.email || 'Cliente sin datos'}
                 </p>
                 <p className="text-[0.7rem] text-white/55">
                   {c.level || 'nivel —'} · {c.hasActivePlan ? 'plan activo' : 'sin plan'} · check-in{' '}
