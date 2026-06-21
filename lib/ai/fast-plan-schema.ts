@@ -9,7 +9,13 @@ export const FastExerciseSchema = z.object({
   intensity: z.string().nullable(),
   notes: z.string().nullable(),
   alternative: z.string().nullable(),
-  equipment: z.string().nullable()
+  equipment: z.string().nullable(),
+  // Instrucciones técnicas reales — el modelo DEBE rellenarlos. Si vienen
+  // vacíos la UI muestra vacío (no rompe). El prompt en WEEK_PROMPT pide
+  // 3-5 pasos para howTo, 2-3 para cues, 1-2 para commonMistakes.
+  howTo: z.array(z.string()),
+  cues: z.array(z.string()),
+  commonMistakes: z.array(z.string())
 });
 
 export const FastSessionSchema = z.object({

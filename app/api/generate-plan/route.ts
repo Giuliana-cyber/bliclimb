@@ -179,7 +179,20 @@ MÍNIMOS POR SESIÓN:
 - 4 ejercicios en mainBlock (la sustancia: dedos, potencia, proyecto, resistencia, fuerza, según el día)
 - 2 ejercicios en cooldown (acondicionamiento: core, antagonistas, espalda baja, yoga)
 
-NO uses ejercicios genéricos de gym ("sentadillas para piernas", "flexiones para tren superior"). USA nomenclatura real de escalada.`;
+NO uses ejercicios genéricos de gym ("sentadillas para piernas", "flexiones para tren superior"). USA nomenclatura real de escalada.
+
+PARA CADA EJERCICIO INCLUYE OBLIGATORIAMENTE:
+- howTo: array de 3-5 pasos CONCRETOS de ejecución. Específicos, accionables, en imperativo.
+  Buenos: "Agarra la tabla con los dedos en la segunda falange (open hand o half crimp según la regleta)", "Mantén los hombros activos y separados de las orejas", "Cuelga 7 segundos y descansa 3 minutos antes de la siguiente serie".
+  Malos: "Hacer el ejercicio bien", "Tener buena técnica".
+- cues: array de 2-3 señales de sensación corporal — qué TIENE que sentir el atleta para saber que está ejecutando bien.
+  Buenos: "Debes sentir el esfuerzo en los flexores de los dedos, no en las articulaciones", "El hombro debe sentirse activado, no colgando del trapecio", "Si sentís dolor punzante en codo o muñeca, parar y bajar carga".
+  Malos: "Sentir el músculo trabajar".
+- commonMistakes: array de 1-2 errores frecuentes a evitar en ESTE ejercicio.
+  Buenos: "Apurar la serie y perder técnica de agarre en el último segundo", "Hombro adelantado y elevado durante el hang — busca silla activa".
+  Malos: "No hacer bien el ejercicio".
+
+Estos tres arrays son LA DIFERENCIA entre un plan útil y uno que solo lista nombres. Nunca devuelvas arrays vacíos.`;
 
 const SCHEMA_FIELD_NAMES = new Set([
   'safetyNotes',
@@ -229,9 +242,11 @@ function toExercise(fast: FastExercise): Exercise {
     tempo: null,
     notes: fast.notes,
     timerSeconds: null,
-    howTo: null,
-    feelCues: null,
-    commonMistakes: null,
+    howTo: fast.howTo.length > 0 ? fast.howTo : null,
+    // El campo interno del Exercise se llama `feelCues`; el del schema
+    // OpenAI es `cues`. Lo mapeamos acá para no romper consumers.
+    feelCues: fast.cues.length > 0 ? fast.cues : null,
+    commonMistakes: fast.commonMistakes.length > 0 ? fast.commonMistakes : null,
     stopIf: null,
     regressions: fast.alternative ? [fast.alternative] : null,
     progressions: null,
