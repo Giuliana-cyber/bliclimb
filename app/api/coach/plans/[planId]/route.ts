@@ -8,6 +8,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { isCoach } from '@/lib/coach';
 import { CoachPlanDataSchema } from '@/lib/coach/plan-data';
 import { materializeCoachPlan } from '@/lib/coach/publish';
+import { sendPushToUser } from '@/lib/push/send';
 
 export const runtime = 'nodejs';
 
@@ -123,6 +124,35 @@ export async function POST(request: Request, { params }: { params: { planId: str
           published_plan_id: publishedPlanId
         })
         .eq('id', params.planId);
+
+      // Push al cliente: "tu coach publicó un nuevo plan". Fire-and-forget;
+      // si falla no rompemos la publicación. Respeta notification_preferences
+      // .coachUpdates (default true vía el default jsonb de la migración).
+      try {
+        const { data: clientProfile } = await admin
+          .from('profiles')
+          .select('notification_preferences')
+          .eq('id', clientId)
+          .maybeSingle();
+        const optedIn =
+          (clientProfile as { notification_preferences?: { coachUpdates?: boolean } } | null)
+            ?.notification_preferences?.coachUpdates !== false;
+        if (optedIn) {
+          await sendPushToUser(
+            clientId,
+            {
+              title: 'Tu coach publicó un nuevo plan',
+              body: `${title}. Tap para verlo.`,
+              url: '/plan',
+              tag: `coach-plan-${publishedPlanId}`
+            },
+            admin
+          );
+        }
+      } catch {
+        // ignore — la publicación ya quedó hecha
+      }
+
       return NextResponse.json({ ok: true, status: 'published', publishedPlanId });
     } catch (error) {
       return NextResponse.json(
