@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import {
   canGenerateFreePlan,
   findEntitlementByStripeCustomerId,
+  hasActiveCoachAssignment,
   findEntitlementBySubscriptionId,
   freePlanExpiresAt,
   getEntitlement,
@@ -54,11 +55,38 @@ function makeRow(profileId: string): Row {
   };
 }
 
-function createFakeClient(): EntitlementsClient {
+type CoachClientRow = {
+  coach_id: string;
+  client_id: string;
+  status: 'pending' | 'accepted' | 'removed';
+};
+
+function createFakeClient(
+  seed: { coach_clients?: CoachClientRow[] } = {}
+): EntitlementsClient {
   const rows: Row[] = [];
+  const coachClientRows: CoachClientRow[] = seed.coach_clients ?? [];
 
   // Builder estilo Supabase: from(table).select|insert|update|...
   const from = (table: string) => {
+    // Tabla coach_clients: sólo soporta select+eq+maybeSingle (lo único
+    // que usa hasActiveCoachAssignment).
+    if (table === 'coach_clients') {
+      const ccFilters: Array<{ col: string; value: string }> = [];
+      const ccBuilder: any = {};
+      ccBuilder.select = () => ccBuilder;
+      ccBuilder.eq = (col: string, value: string) => {
+        ccFilters.push({ col, value });
+        return ccBuilder;
+      };
+      const ccExec = () =>
+        coachClientRows.filter((r) =>
+          ccFilters.every((f) => (r as any)[f.col] === f.value)
+        );
+      ccBuilder.maybeSingle = async () => ({ data: ccExec()[0] ?? null, error: null });
+      return ccBuilder;
+    }
+
     if (table !== 'entitlements') {
       throw new Error(`Tabla inesperada: ${table}`);
     }
@@ -590,5 +618,68 @@ describe('findEntitlementByStripeCustomerId', () => {
     await upsertStripeCustomer(USER_ID, 'cus_found', client);
     const found = await findEntitlementByStripeCustomerId('cus_found', client);
     expect(found?.profile_id).toBe(USER_ID);
+  });
+});
+
+describe('hasActiveCoachAssignment', () => {
+  const COACH_ID = '99999999-1111-2222-3333-444444444444';
+  const futurePeriod = new Date(Date.now() + 86_400_000).toISOString();
+  const pastPeriod = new Date(Date.now() - 86_400_000).toISOString();
+
+  it('true cuando el cliente tiene coach accepted con sub de coach activa', async () => {
+    const client = createFakeClient({
+      coach_clients: [{ coach_id: COACH_ID, client_id: USER_ID, status: 'accepted' }]
+    });
+    await getEntitlement(COACH_ID, client);
+    await client
+      .from('entitlements')
+      .update({ coach_tier: 'gym', status: 'active', current_period_end: futurePeriod })
+      .eq('profile_id', COACH_ID);
+    expect(await hasActiveCoachAssignment(USER_ID, client)).toBe(true);
+  });
+
+  it('false cuando el cliente no tiene coach asignado', async () => {
+    const client = createFakeClient();
+    expect(await hasActiveCoachAssignment(USER_ID, client)).toBe(false);
+  });
+
+  it('false cuando el coach está vencido (current_period_end en el pasado)', async () => {
+    const client = createFakeClient({
+      coach_clients: [{ coach_id: COACH_ID, client_id: USER_ID, status: 'accepted' }]
+    });
+    await getEntitlement(COACH_ID, client);
+    await client
+      .from('entitlements')
+      .update({ coach_tier: 'pro', status: 'active', current_period_end: pastPeriod })
+      .eq('profile_id', COACH_ID);
+    expect(await hasActiveCoachAssignment(USER_ID, client)).toBe(false);
+  });
+
+  it('false cuando la relación está pending (todavía no aceptó)', async () => {
+    const client = createFakeClient({
+      coach_clients: [{ coach_id: COACH_ID, client_id: USER_ID, status: 'pending' }]
+    });
+    await getEntitlement(COACH_ID, client);
+    await client
+      .from('entitlements')
+      .update({ coach_tier: 'gym', status: 'active', current_period_end: futurePeriod })
+      .eq('profile_id', COACH_ID);
+    expect(await hasActiveCoachAssignment(USER_ID, client)).toBe(false);
+  });
+
+  it('false cuando el coach tiene tier pero status no es active/cancelled', async () => {
+    const client = createFakeClient({
+      coach_clients: [{ coach_id: COACH_ID, client_id: USER_ID, status: 'accepted' }]
+    });
+    await getEntitlement(COACH_ID, client);
+    await client
+      .from('entitlements')
+      .update({
+        coach_tier: 'gym',
+        status: 'past_due',
+        current_period_end: futurePeriod
+      })
+      .eq('profile_id', COACH_ID);
+    expect(await hasActiveCoachAssignment(USER_ID, client)).toBe(false);
   });
 });

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import {
   canGenerateFreePlan,
   getEntitlement,
+  hasActiveCoachAssignment,
   hasActivePlanAccess,
   hasActiveSubscription,
   markFreePlanUsed as dbMarkFreePlanUsed
@@ -105,12 +106,15 @@ export async function gatePlanGeneration(): Promise<PlanGateDecision> {
   // Migración suave del estado del cookie legacy a entitlements
   await backfillFromLegacyCookie(userId);
 
-  const [activeSub, freeAvailable] = await Promise.all([
+  const [activeSub, freeAvailable, coachedAccess] = await Promise.all([
     hasActiveSubscription(userId),
-    canGenerateFreePlan(userId)
+    canGenerateFreePlan(userId),
+    // Si el cliente tiene un coach con suscripción de coach activa, el
+    // coach paga por él — no le pedimos nada para generar planes.
+    hasActiveCoachAssignment(userId)
   ]);
 
-  if (activeSub || freeAvailable) {
+  if (activeSub || freeAvailable || coachedAccess) {
     return { allowed: true, userId };
   }
 
@@ -165,7 +169,12 @@ export async function gateChat(): Promise<ChatGateDecision> {
 export async function markFreePlanConsumed(userId: string): Promise<void> {
   if (process.env.REQUIRE_SUBSCRIPTION !== 'true') return;
   if (userId === 'dev-anon') return;
-  const activeSub = await hasActiveSubscription(userId);
-  if (activeSub) return;
+  // Si tiene sub propia o coach activo no consume su plan gratis — el
+  // pago no salió de su bolsillo.
+  const [activeSub, coachedAccess] = await Promise.all([
+    hasActiveSubscription(userId),
+    hasActiveCoachAssignment(userId)
+  ]);
+  if (activeSub || coachedAccess) return;
   await dbMarkFreePlanUsed(userId);
 }
