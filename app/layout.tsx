@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { DM_Sans } from 'next/font/google';
 import { AppShell } from '@/components/AppShell';
+import { AppOpenPing } from '@/components/AppOpenPing';
 import { PWARegister } from '@/components/pwa/PWARegister';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import './globals.css';
@@ -55,6 +56,7 @@ export default function RootLayout({
     <html lang="es" className={dmSans.variable}>
       <body className="font-sans antialiased">
         <AppShell>{children}</AppShell>
+        <AppOpenPing />
         <PWARegister />
         <InstallPrompt />
       </body>

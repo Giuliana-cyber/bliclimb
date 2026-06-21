@@ -33,6 +33,7 @@ import {
 export function TodaySessionView() {
   const [sessionContext, setSessionContext] = useState<SessionWithContext | null>(null);
   const [completedExercises, setCompletedExercises] = useState<string[]>([]);
+  const [finishing, setFinishing] = useState(false);
 
   useEffect(() => {
     const storedPlan = loadTrainingPlan();
@@ -215,7 +216,25 @@ export function TodaySessionView() {
       <div className="grid gap-3 sm:grid-cols-2">
         {allExercisesComplete ? (
           <Button
-            href={`/checkin?week=${week.weekNumber}&day=${session.dayNumber}&sessionId=${encodeURIComponent(sessionContext.sessionId)}`}
+            disabled={finishing}
+            onClick={async () => {
+              setFinishing(true);
+              const target = `/checkin?week=${week.weekNumber}&day=${session.dayNumber}&sessionId=${encodeURIComponent(sessionContext.sessionId)}`;
+              // Marcamos la sesión completa server-side antes de navegar.
+              // El endpoint también dispara recordDailyActivity y devuelve
+              // info de milestone que la UI podría mostrar a futuro. Si la
+              // llamada falla (red, sesión vencida) seguimos al check-in
+              // de todas formas — no queremos bloquear al usuario.
+              try {
+                await fetch(
+                  `/api/sessions/${encodeURIComponent(sessionContext.sessionId)}/complete`,
+                  { method: 'POST' }
+                );
+              } catch {
+                // ignore
+              }
+              window.location.href = target;
+            }}
             size="lg"
             icon={<CheckCircle2 size={18} />}
             className="w-full"
