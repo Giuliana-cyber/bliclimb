@@ -31,7 +31,11 @@ import type { TrainingPlan, Week, Session, Exercise } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+// Vercel Pro permite hasta 300s. Subimos al máximo para que la
+// generación nunca timeoute aunque OpenAI tarde en una semana puntual.
+// El timeout de 30s del cliente OpenAI sigue protegiendo cada llamada
+// individual contra cuelgues.
+export const maxDuration = 300;
 
 // Compatibilidad: el endpoint también valida con Zod (UserProfileSchema)
 // y devuelve 400 con detalle si falla. Esta función queda como tipo guard
