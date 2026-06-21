@@ -2,6 +2,11 @@ import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
 import { zodResponseFormat } from 'openai/helpers/zod';
 import { gatePlanGeneration, markFreePlanConsumed } from '@/lib/billing/gates';
+import {
+  canRegeneratePlan,
+  getPlanRegenStatus,
+  incrementPlanCount
+} from '@/lib/entitlements';
 import { enforceRateLimit } from '@/lib/rate-limit';
 import {
   FastPlanMetadataSchema,
@@ -542,6 +547,26 @@ export async function POST(request: Request) {
   if (!gate.allowed) return gate.response;
   const userId = gate.userId;
 
+  // Límite mensual: 2 generaciones (gratis + regeneración pagada cuentan
+  // juntos). Si ya consumió las 2, devolvemos 429 con la fecha de reset
+  // para que la UI pueda mostrarla.
+  if (userId !== 'dev-anon') {
+    const allowed = await canRegeneratePlan(userId);
+    if (!allowed) {
+      const status = await getPlanRegenStatus(userId);
+      const resetDate = new Date(status.resetAt);
+      const formattedReset = `${resetDate.getUTCDate()}/${resetDate.getUTCMonth() + 1}`;
+      return NextResponse.json(
+        {
+          error: 'plan_limit_reached',
+          message: `Solo puedes generar 2 planes por mes. Tu límite se renueva el ${formattedReset}.`,
+          status
+        },
+        { status: 429 }
+      );
+    }
+  }
+
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
       { error: 'OPENAI_API_KEY is required to generate a training plan.' },
@@ -677,6 +702,11 @@ export async function POST(request: Request) {
     // Solo consumir el plan gratis si el plan pasó safety. Si el reintento falló,
     // la función ya retornó 422 arriba y no llegamos acá.
     await markFreePlanConsumed(userId);
+    // El plan gratis cuenta como 1 de los 2 del mes. Si después paga, le
+    // quedará 1 regeneración disponible en el mismo período.
+    if (userId !== 'dev-anon') {
+      await incrementPlanCount(userId);
+    }
     return NextResponse.json({ plan });
   } catch (caughtError) {
     const message =

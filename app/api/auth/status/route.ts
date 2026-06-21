@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import {
   freePlanExpiresAt,
   getEntitlement,
+  getPlanRegenStatus,
   hasActiveSubscription
 } from '@/lib/entitlements';
 
@@ -48,9 +49,10 @@ export async function GET() {
   }
 
   const admin = createAdminClient();
-  const [entitlement, hasActive] = await Promise.all([
+  const [entitlement, hasActive, planRegen] = await Promise.all([
     getEntitlement(user.id, admin),
-    hasActiveSubscription(user.id, admin)
+    hasActiveSubscription(user.id, admin),
+    getPlanRegenStatus(user.id, admin)
   ]);
   const expiresAt = freePlanExpiresAt(entitlement);
   const inFreeWindow =
@@ -68,7 +70,8 @@ export async function GET() {
       hasActiveSubscription: hasActive,
       freePlanUsedAt: entitlement.free_plan_used_at,
       freePlanExpiresAt: expiresAt?.toISOString() ?? null,
-      inFreePlanWindow: inFreeWindow
+      inFreePlanWindow: inFreeWindow,
+      planRegen
     }
   });
 }
