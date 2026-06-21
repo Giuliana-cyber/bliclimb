@@ -29,11 +29,27 @@ import {
   withDerivedCurrentWeek,
   type SessionWithContext
 } from '@/lib/training/current-session';
+import { loadProfile } from '@/lib/profile';
+import {
+  SessionCompleteModal,
+  markSessionCelebrated,
+  wasSessionCelebrated
+} from '@/components/SessionCompleteModal';
+import type { CharacterKey } from '@/lib/celebrations/messages';
+
+type CelebrationState = {
+  sessionId: string;
+  character: CharacterKey;
+  milestone: 7 | 14 | 30 | 60 | 100 | null;
+  variant: 'modal' | 'toast';
+  pendingNavigation: string | null;
+};
 
 export function TodaySessionView() {
   const [sessionContext, setSessionContext] = useState<SessionWithContext | null>(null);
   const [completedExercises, setCompletedExercises] = useState<string[]>([]);
   const [finishing, setFinishing] = useState(false);
+  const [celebration, setCelebration] = useState<CelebrationState | null>(null);
 
   useEffect(() => {
     const storedPlan = loadTrainingPlan();
@@ -220,20 +236,53 @@ export function TodaySessionView() {
             onClick={async () => {
               setFinishing(true);
               const target = `/checkin?week=${week.weekNumber}&day=${session.dayNumber}&sessionId=${encodeURIComponent(sessionContext.sessionId)}`;
-              // Marcamos la sesión completa server-side antes de navegar.
-              // El endpoint también dispara recordDailyActivity y devuelve
-              // info de milestone que la UI podría mostrar a futuro. Si la
-              // llamada falla (red, sesión vencida) seguimos al check-in
-              // de todas formas — no queremos bloquear al usuario.
+              const sid = sessionContext.sessionId;
+
+              // ¿Ya celebramos esta sesión? Si sí, navegamos directo.
+              if (wasSessionCelebrated(sid)) {
+                window.location.href = target;
+                return;
+              }
+
+              // POST al endpoint complete. Devuelve { streak: { current,
+              // previous, milestone } }. Si falla seguimos sin bloquear UX.
+              type CompleteResponse = {
+                streak?: { milestone?: 7 | 14 | 30 | 60 | 100 | null };
+              };
+              let milestone: CelebrationState['milestone'] = null;
               try {
-                await fetch(
-                  `/api/sessions/${encodeURIComponent(sessionContext.sessionId)}/complete`,
+                const res = await fetch(
+                  `/api/sessions/${encodeURIComponent(sid)}/complete`,
                   { method: 'POST' }
                 );
+                if (res.ok) {
+                  const data = (await res.json()) as CompleteResponse;
+                  milestone = data.streak?.milestone ?? null;
+                }
               } catch {
                 // ignore
               }
-              window.location.href = target;
+
+              // Decidir variant: si esta sesión es la primera completada de
+              // la semana → modal full; si ya hay otra → toast.
+              const completedSameWeek = sessionContext.week.sessions.filter(
+                (s) => s.completed
+              ).length;
+              const variant = completedSameWeek === 0 || milestone ? 'modal' : 'toast';
+
+              const profile = loadProfile();
+              const character: CharacterKey =
+                profile?.character === 'senda' ? 'senda' : 'bill';
+
+              markSessionCelebrated(sid);
+              setCelebration({
+                sessionId: sid,
+                character,
+                milestone,
+                variant,
+                pendingNavigation: target
+              });
+              setFinishing(false);
             }}
             size="lg"
             icon={<CheckCircle2 size={18} />}
@@ -250,6 +299,20 @@ export function TodaySessionView() {
           Volver al plan
         </Button>
       </div>
+
+      {celebration ? (
+        <SessionCompleteModal
+          sessionId={celebration.sessionId}
+          character={celebration.character}
+          milestone={celebration.milestone}
+          variant={celebration.variant}
+          onClose={() => {
+            const target = celebration.pendingNavigation;
+            setCelebration(null);
+            if (target) window.location.href = target;
+          }}
+        />
+      ) : null}
     </motion.section>
   );
 }
