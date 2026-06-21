@@ -489,7 +489,10 @@ Devuelve la semana con weekNumber=${weekMeta.weekNumber}.`
 
   const completion = await client.chat.completions.parse({
     model,
-    max_tokens: 8000,
+    // 2500 alcanza para una semana con 3-5 sesiones completas (warmup + main
+    // + cooldown + notas). Antes había 8000 — inflaba latencia 2-3x sin
+    // mejorar la calidad porque el schema obliga a estructura compacta.
+    max_tokens: 2500,
     response_format: zodResponseFormat(FastWeekSchema, 'week'),
     messages
   });
@@ -620,21 +623,35 @@ export async function POST(request: Request) {
     apiKey: process.env.OPENAI_API_KEY,
     timeout: 30_000
   });
-  // gpt-4o por defecto — mucha mejor calidad de coaching que gpt-4o-mini.
-  // Costo justificado por la suscripción de $1/mes (1 generación cada N días).
-  const model = process.env.OPENAI_PLAN_MODEL ?? 'gpt-4o';
+  // gpt-4o-mini por defecto — la estructura de plan no necesita la
+  // potencia de gpt-4o y mini es ~5-10x más rápido. En Hobby de Vercel
+  // (60s timeout) gpt-4o + 4 semanas en paralelo se acerca peligrosamente
+  // al límite; mini deja margen cómodo.
+  //
+  // Si en el futuro la calidad sufre, podemos volver setando
+  // OPENAI_PLAN_MODEL=gpt-4o en producción (override env).
+  const model = process.env.OPENAI_PLAN_MODEL ?? 'gpt-4o-mini';
 
   try {
-    // 1. Grounding desde la biblioteca (File Search vía Responses API).
-    //    Solo se hace UNA vez por plan, no por semana, para no inflar latencia.
-    const { context: groundingContext, traceability } = await groundFromLibrary(
-      client,
-      model,
-      profile
-    );
-
-    // 2. Metadata estructurada (con el grounding como contexto adicional).
-    const metadata = await generateMetadata(client, model, profile, groundingContext);
+    // 1+2. Grounding y metadata corren EN PARALELO.
+    //
+    // Antes: grounding → metadata → weeks (secuencial los 2 primeros).
+    // El grounding (file_search vía Responses API) suele tardar 8-15s,
+    // y bloqueaba la generación de metadata aunque ésta ya estaba lista
+    // para arrancar con solo el profile. Ahora ambas corren juntas.
+    //
+    // Trade-off: la metadata pierde el contexto de la biblioteca al
+    // diseñar áreas de foco / safetyRules. Las WEEKS no usaban grounding
+    // de cualquier forma (comentario abajo en `Promise.all(themes...)`).
+    // La biblioteca sigue presente en `traceability` para el badge
+    // "Plan basado en biblioteca BilClimb" en la UI.
+    //
+    // Si la calidad cae demasiado, podemos pasar groundingContext a las
+    // weeks (asíncrono: usar el resultado del grounding cuando llegue).
+    const [{ traceability }, metadata] = await Promise.all([
+      groundFromLibrary(client, model, profile),
+      generateMetadata(client, model, profile, '')
+    ]);
 
     // Si la metadata trajo menos o más semanas, ajustamos a planDuration
     const themes = metadata.weekThemes

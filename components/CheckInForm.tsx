@@ -175,6 +175,17 @@ export function CheckInForm() {
       });
     }
 
+    // Persistir a Supabase + actualizar racha. Fire-and-forget: si el POST
+    // falla, el check-in queda guardado igual en localStorage y el sync
+    // ocurrirá en la próxima visita (cuando agreguemos el reconciliador).
+    void fetch('/api/checkins', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(checkIn)
+    }).catch(() => {
+      // ignore — UX no se bloquea por esto
+    });
+
     setSavedCheckIn(checkIn);
     setAlerts(getCheckInAlerts(checkIn, previousCheckIns));
   }

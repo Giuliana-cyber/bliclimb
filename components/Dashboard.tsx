@@ -28,6 +28,8 @@ import { Banner } from '@/components/ui/Banner';
 import { MountainBackdrop } from '@/components/ui/MountainBackdrop';
 import { CharacterAvatar } from '@/components/ui/CharacterAvatar';
 import { FreePlanWindowBanner } from '@/components/billing/FreePlanWindowBanner';
+import { StreakBadge } from '@/components/StreakBadge';
+import { PushOptIn } from '@/components/PushOptIn';
 import { useBillingStatus } from '@/lib/hooks/useBillingStatus';
 import { MyCoachBanner } from '@/components/coach/MyCoachBanner';
 
@@ -155,6 +157,10 @@ export function Dashboard() {
         </p>
         <h1 className="text-[2.05rem] font-extrabold leading-tight">Tu sesión de hoy</h1>
       </header>
+
+      <StreakBadge />
+
+      <PushOptIn />
 
       <MyCoachBanner />
 
