@@ -487,17 +487,53 @@ Devuelve la semana con weekNumber=${weekMeta.weekNumber}.`
     messages.push({ role: 'user' as const, content: retryCorrection });
   }
 
-  const completion = await client.chat.completions.parse({
-    model,
-    // 2500 alcanza para una semana con 3-5 sesiones completas (warmup + main
-    // + cooldown + notas). Antes había 8000 — inflaba latencia 2-3x sin
-    // mejorar la calidad porque el schema obliga a estructura compacta.
-    max_tokens: 2500,
-    response_format: zodResponseFormat(FastWeekSchema, 'week'),
-    messages
-  });
+  // 4000 alcanza para una semana con 3-5 sesiones completas (warmup +
+  // main + cooldown + notas). 2500 cortaba el JSON antes de cerrarlo y
+  // el parser tiraba "length limit was reached".
+  // 8000 (original) es excesivo y casi duplicaba la latencia.
+  const completion = await client.chat.completions
+    .parse({
+      model,
+      max_tokens: 4000,
+      response_format: zodResponseFormat(FastWeekSchema, 'week'),
+      messages
+    })
+    .catch((error: unknown) => {
+      const message = error instanceof Error ? error.message : 'unknown';
+      // El SDK lanza con mensajes específicos según la causa: length cap,
+      // refusal de safety, schema inválido. Detectamos y devolvemos un
+      // texto utilizable por el usuario en lugar del genérico "Could not
+      // parse response content".
+      if (/length.*limit|max_tokens|cut off|truncated/i.test(message)) {
+        throw new Error(
+          `La semana ${weekMeta.weekNumber} salió truncada de OpenAI (se cortó por límite de tokens). Intentá de nuevo en unos segundos.`
+        );
+      }
+      if (/refus|safety|policy/i.test(message)) {
+        throw new Error(
+          `OpenAI rechazó generar la semana ${weekMeta.weekNumber} por su política de contenido. Revisá la descripción de tu objetivo y reintentá.`
+        );
+      }
+      if (/schema|invalid.*json|parse/i.test(message)) {
+        throw new Error(
+          `OpenAI devolvió un JSON inválido para la semana ${weekMeta.weekNumber}. Reintentá; suele resolverse en el segundo intento.`
+        );
+      }
+      throw new Error(
+        `Fallo generando la semana ${weekMeta.weekNumber}: ${message}`
+      );
+    });
 
-  const week = completion.choices[0]?.message.parsed;
+  // Si el modelo se cortó por longitud finish_reason='length', el SDK
+  // puede devolver `parsed` igual con un JSON parcial — chequeo explícito
+  // por las dudas.
+  const choice = completion.choices[0];
+  if (choice?.finish_reason === 'length') {
+    throw new Error(
+      `La semana ${weekMeta.weekNumber} salió truncada de OpenAI (finish_reason=length). Intentá de nuevo.`
+    );
+  }
+  const week = choice?.message.parsed;
   if (!week) {
     throw new Error(`OpenAI no devolvió la semana ${weekMeta.weekNumber}.`);
   }
