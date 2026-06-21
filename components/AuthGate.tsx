@@ -64,7 +64,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
               <p className="text-sm font-semibold text-brand-cyan">BilClimb.ai</p>
               <h1 className="mt-2 text-3xl font-bold leading-tight">Inicia sesión</h1>
               <p className="mt-3 text-sm leading-6 text-white/68">
-                Necesitas estar logueada para usar BilClimb.
+                Necesitas iniciar sesión para usar BilClimb.
               </p>
             </div>
           </div>

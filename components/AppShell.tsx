@@ -34,15 +34,26 @@ const routesWithoutShell = [
   '/onboarding',
   '/generating-plan',
   '/subscribe',
+  // Páginas de resultado de Stripe — públicas, sin AuthGate. Si la sesión
+  // del usuario todavía no está sincronizada cuando Stripe redirige, el
+  // shell normal lo mandaba a "Inicia sesión" en vez de mostrar el estado
+  // real del pago.
   '/billing/success',
+  '/billing/failure',
+  '/billing/pending',
   '/sign-in',
   '/sign-up',
   '/auth',
-  // Panel del coach trae su propio sidebar; /coach/upgrade sí muestra el shell
-  // estándar para que cualquier atleta lo descubra.
+  // Invitación de coach: el cliente típicamente abre el link sin sesión
+  // todavía. La página ya maneja signed-in / not-signed-in internamente.
+  '/invite',
+  // Panel del coach trae su propio sidebar y guard; /coach/upgrade es
+  // público para que cualquier atleta (logueado o no) descubra los tiers
+  // y precios.
   '/coach/dashboard',
   '/coach/clients',
-  '/coach/plans'
+  '/coach/plans',
+  '/coach/upgrade'
 ];
 
 function isActive(pathname: string, href: string) {
