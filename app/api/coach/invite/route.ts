@@ -1,5 +1,13 @@
 // POST /api/coach/invite — el coach genera un link de invitación para un email.
 // Valida: auth + role=coach + cupo del tier.
+//
+// Comportamiento garantizado: este endpoint NO envía emails. Solo inserta
+// una fila en `coach_clients` (status='pending') y devuelve la URL para
+// que el coach la comparta manualmente por WhatsApp u otro canal externo.
+// Si alguna vez se quiere agregar envío automático de email, hay que
+// hacerlo explícitamente acá llamando a un proveedor (Resend/Postmark);
+// nunca disparar `supabase.auth.admin.inviteUserByEmail` para esto porque
+// activa el template de Supabase con branding ajeno.
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';

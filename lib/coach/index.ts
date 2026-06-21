@@ -123,6 +123,12 @@ export async function canAddClient(
  * Crea una invitación: genera token único, guarda la fila con
  * `status='pending'` y devuelve la URL que el coach comparte con su cliente.
  *
+ * IMPORTANTE: esta función NO dispara emails. No llama a
+ * `supabase.auth.admin.inviteUserByEmail` ni a ningún método de auth que
+ * genere correos. El flujo diseñado es: el coach copia el link y lo manda
+ * por WhatsApp / canal externo. Si en el futuro quisiéramos email, hay
+ * que hacerlo desde acá explícitamente.
+ *
  * `tokenGenerator` se inyecta en tests; default = crypto.randomUUID().
  */
 export async function inviteClient(
