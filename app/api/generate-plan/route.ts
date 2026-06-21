@@ -506,57 +506,86 @@ Devuelve la semana con weekNumber=${weekMeta.weekNumber}.`
     messages.push({ role: 'user' as const, content: retryCorrection });
   }
 
-  // 8000: el modelo default es gpt-4o-mini (rápido), así que techo alto
-  // no agrega latencia notable — solo asegura que el JSON nunca se trunque
-  // en planes densos (sesiones con muchos ejercicios + notas largas).
-  // 4000 cortaba algunos casos border; 2500 cortaba demasiado seguido.
-  const completion = await client.chat.completions
-    .parse({
-      model,
-      max_tokens: 8000,
-      response_format: zodResponseFormat(FastWeekSchema, 'week'),
-      messages
-    })
-    .catch((error: unknown) => {
-      const message = error instanceof Error ? error.message : 'unknown';
-      // El SDK lanza con mensajes específicos según la causa: length cap,
-      // refusal de safety, schema inválido. Detectamos y devolvemos un
-      // texto utilizable por el usuario en lugar del genérico "Could not
-      // parse response content".
-      if (/length.*limit|max_tokens|cut off|truncated/i.test(message)) {
+  // Helper interno: una llamada parse + chequeo de truncación. Si se
+  // corta, mapea el error a algo descriptivo y lo tira.
+  const attempt = async (maxTokens: number, label: string) => {
+    const completion = await client.chat.completions
+      .parse({
+        model,
+        max_tokens: maxTokens,
+        response_format: zodResponseFormat(FastWeekSchema, 'week'),
+        messages
+      })
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : 'unknown';
+        // El SDK lanza con mensajes específicos según la causa: length
+        // cap, refusal de safety, schema inválido. Marcamos truncación
+        // con un prefijo reconocible para que el caller decida si
+        // reintentar con cap más alto.
+        if (/length.*limit|max_tokens|cut off|truncated/i.test(message)) {
+          throw new Error(`TRUNCATION_${label}: ${message}`);
+        }
+        if (/refus|safety|policy/i.test(message)) {
+          throw new Error(
+            `OpenAI rechazó generar la semana ${weekMeta.weekNumber} por su política de contenido. Revisá la descripción de tu objetivo y reintentá.`
+          );
+        }
+        if (/schema|invalid.*json|parse/i.test(message)) {
+          throw new Error(
+            `OpenAI devolvió un JSON inválido para la semana ${weekMeta.weekNumber}. Reintentá; suele resolverse en el segundo intento.`
+          );
+        }
         throw new Error(
-          `La semana ${weekMeta.weekNumber} salió truncada de OpenAI (se cortó por límite de tokens). Intentá de nuevo en unos segundos.`
+          `Fallo generando la semana ${weekMeta.weekNumber}: ${message}`
         );
-      }
-      if (/refus|safety|policy/i.test(message)) {
-        throw new Error(
-          `OpenAI rechazó generar la semana ${weekMeta.weekNumber} por su política de contenido. Revisá la descripción de tu objetivo y reintentá.`
-        );
-      }
-      if (/schema|invalid.*json|parse/i.test(message)) {
-        throw new Error(
-          `OpenAI devolvió un JSON inválido para la semana ${weekMeta.weekNumber}. Reintentá; suele resolverse en el segundo intento.`
-        );
-      }
-      throw new Error(
-        `Fallo generando la semana ${weekMeta.weekNumber}: ${message}`
-      );
-    });
+      });
 
-  // Si el modelo se cortó por longitud finish_reason='length', el SDK
-  // puede devolver `parsed` igual con un JSON parcial — chequeo explícito
-  // por las dudas.
-  const choice = completion.choices[0];
-  if (choice?.finish_reason === 'length') {
-    throw new Error(
-      `La semana ${weekMeta.weekNumber} salió truncada de OpenAI (finish_reason=length). Intentá de nuevo.`
+    // El SDK a veces devuelve `parsed` con JSON parcial cuando hubo
+    // truncación — chequeo defensivo.
+    const choice = completion.choices[0];
+    if (choice?.finish_reason === 'length') {
+      throw new Error(`TRUNCATION_${label}: finish_reason=length`);
+    }
+    const week = choice?.message.parsed;
+    if (!week) {
+      throw new Error(`OpenAI no devolvió la semana ${weekMeta.weekNumber}.`);
+    }
+    return week;
+  };
+
+  // 12000: el modelo default es gpt-4o-mini (rápido), techo alto no
+  // agrega latencia notable — solo asegura que el JSON nunca se trunque
+  // en planes densos (sesiones con muchos ejercicios + notas largas).
+  // Histórico: 2500 → 4000 → 8000 → 12000 según casos border reales.
+  try {
+    return await attempt(12_000, '12k');
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '';
+    if (!message.startsWith('TRUNCATION_')) {
+      throw err;
+    }
+    // Retry automático con 16k. Logueamos para tracking de cuán seguido
+    // pasa esto en producción.
+    console.log(
+      JSON.stringify({
+        kind: 'plan_week_retry_truncation',
+        weekNumber: weekMeta.weekNumber,
+        firstAttemptError: message
+      })
     );
+    try {
+      return await attempt(16_000, '16k');
+    } catch (retryErr) {
+      const retryMessage = retryErr instanceof Error ? retryErr.message : 'unknown';
+      // Después del retry, presentamos un mensaje limpio al cliente.
+      if (retryMessage.startsWith('TRUNCATION_')) {
+        throw new Error(
+          `La semana ${weekMeta.weekNumber} salió truncada de OpenAI incluso con 16k tokens. Reintentá; si persiste, simplificá tu objetivo o equipo.`
+        );
+      }
+      throw retryErr;
+    }
   }
-  const week = choice?.message.parsed;
-  if (!week) {
-    throw new Error(`OpenAI no devolvió la semana ${weekMeta.weekNumber}.`);
-  }
-  return week;
 }
 
 function logSafetyViolations(
@@ -779,11 +808,13 @@ export async function POST(request: Request) {
       }
     }
 
-    // Solo consumir el plan gratis si el plan pasó safety. Si el reintento falló,
-    // la función ya retornó 422 arriba y no llegamos acá.
+    // CONTRATO IMPORTANTE: los contadores (markFreePlanConsumed +
+    // incrementPlanCount) SOLO se mueven cuando el plan termina exitoso
+    // y safety lo aprobó. Si OpenAI falla, trunca, o el reintento de
+    // safety no resuelve, los `throw` lanzados arriba saltan al `catch`
+    // global de abajo y este bloque NO se ejecuta. El usuario no paga
+    // intentos fallidos.
     await markFreePlanConsumed(userId);
-    // El plan gratis cuenta como 1 de los 2 del mes. Si después paga, le
-    // quedará 1 regeneración disponible en el mismo período.
     if (userId !== 'dev-anon') {
       await incrementPlanCount(userId);
     }
@@ -791,6 +822,17 @@ export async function POST(request: Request) {
   } catch (caughtError) {
     const message =
       caughtError instanceof Error ? caughtError.message : 'No pudimos generar tu plan.';
+    // Log explícito para auditoría: cuando llegamos acá, NO se incrementó
+    // el contador mensual ni se consumió el plan gratis (el código de
+    // arriba nunca se ejecutó). Si alguna vez detectás que se cobra un
+    // intento fallido, mirá este log para confirmar que llegó acá.
+    console.log(
+      JSON.stringify({
+        kind: 'plan_generation_failed_counter_not_consumed',
+        userId,
+        message: message.slice(0, 200)
+      })
+    );
     const isRateLimit =
       message.toLowerCase().includes('rate limit') ||
       message.toLowerCase().includes('429') ||
