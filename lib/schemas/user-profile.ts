@@ -59,8 +59,8 @@ export const UserProfileSchema = z.object({
   energyLevel: z.string().optional().default(''),
   injuryDescription: z.string().optional().default(''),
   trainingHistory: z.string().optional().default(''),
-  planDuration: z.number().int().refine((n) => n === 4 || n === 8 || n === 12, {
-    message: 'planDuration debe ser 4, 8 o 12 semanas'
+  planDuration: z.number().int().refine((n) => n === 2 || n === 3 || n === 4, {
+    message: 'planDuration debe ser 2, 3 o 4 semanas'
   }),
   // ---- Fuerza absoluta ----
   // Los dos básicos (pullupsBodyweight y hangboard20mmSeconds) son los anclas

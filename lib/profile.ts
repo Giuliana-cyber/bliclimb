@@ -50,7 +50,7 @@ export interface UserProfile {
   energyLevel: string;
   injuryDescription: string;
   trainingHistory: string;
-  planDuration: number; // 4 | 8 | 12
+  planDuration: number; // 2 | 3 | 4
   // ---- Fuerza absoluta (B1 — strength). Todos opcionales menos los dos básicos. ----
   pullupsBodyweight: number | null; // 0-50
   pullupsAddedWeight5Reps: number | null; // kg adicionales a 5 reps, 0-50
