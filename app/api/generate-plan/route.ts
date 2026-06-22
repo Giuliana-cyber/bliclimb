@@ -7,7 +7,7 @@ import {
   getPlanRegenStatus,
   incrementPlanCount
 } from '@/lib/entitlements';
-import { enforceRateLimit } from '@/lib/rate-limit';
+import { checkRateLimit, commitRateLimit } from '@/lib/rate-limit';
 import {
   FastPlanMetadataSchema,
   FastWeekSchema,
@@ -648,21 +648,13 @@ function logSafetyViolations(
 }
 
 export async function POST(request: Request) {
-  const limit = await enforceRateLimit('plan');
-  if (!limit.ok) {
-    return NextResponse.json(
-      {
-        code: 'rate_limited',
-        error: limit.userMessage,
-        resetSeconds: limit.resetSeconds
-      },
-      {
-        status: 429,
-        headers: { 'Retry-After': String(limit.resetSeconds) }
-      }
-    );
-  }
-
+  // Orden: auth → validaciones baratas (gate, canRegenerate, body parse,
+  // schema) → checkRateLimit → OpenAI → commitRateLimit → return.
+  // El rate limit solo se "gasta" cuando la request es válida y va a
+  // tirar trabajo real contra OpenAI; los 4xx tempranos no cuentan.
+  // Las fallas 5xx (OpenAI throw, truncación, safety unrecoverable)
+  // saltan al catch global y NUNCA llaman a commitRateLimit, así que
+  // tampoco cuentan.
   const gate = await gatePlanGeneration();
   if (!gate.allowed) return gate.response;
   const userId = gate.userId;
@@ -734,6 +726,26 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+
+  // Check rate limit (no incrementa). Va acá porque todas las
+  // validaciones 4xx baratas ya pasaron: solo "gastamos" la chequera
+  // si el request es realmente válido y vamos a tirar trabajo contra
+  // OpenAI. El commit ocurre al final del path de éxito.
+  const rl = await checkRateLimit('plan');
+  if (!rl.ok) {
+    return NextResponse.json(
+      {
+        code: 'rate_limited',
+        error: rl.userMessage,
+        resetSeconds: rl.retryAfter
+      },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(rl.retryAfter) }
+      }
+    );
+  }
+
   // timeout: 120s. Ahora estamos en Vercel Pro (maxDuration=300s) y
   // una generación de plan puede involucrar varias llamadas paralelas
   // que en cola de OpenAI pueden tardar > 30s individualmente. 30s
@@ -850,16 +862,17 @@ export async function POST(request: Request) {
       }
     }
 
-    // CONTRATO IMPORTANTE: los contadores (markFreePlanConsumed +
-    // incrementPlanCount) SOLO se mueven cuando el plan termina exitoso
-    // y safety lo aprobó. Si OpenAI falla, trunca, o el reintento de
-    // safety no resuelve, los `throw` lanzados arriba saltan al `catch`
-    // global de abajo y este bloque NO se ejecuta. El usuario no paga
-    // intentos fallidos.
+    // CONTRATO IMPORTANTE: TODOS los contadores se mueven solo en éxito.
+    //   - markFreePlanConsumed + incrementPlanCount: el plan mensual
+    //   - commitRateLimit: el sliding window del rate limiter
+    // Si OpenAI falla, trunca, o el reintento de safety no resuelve, los
+    // `throw` saltan al `catch` global y este bloque NO se ejecuta.
+    // El usuario no paga intentos fallidos en NINGUNO de los contadores.
     await markFreePlanConsumed(userId);
     if (userId !== 'dev-anon') {
       await incrementPlanCount(userId);
     }
+    await commitRateLimit('plan');
     return NextResponse.json({ plan });
   } catch (caughtError) {
     const message =

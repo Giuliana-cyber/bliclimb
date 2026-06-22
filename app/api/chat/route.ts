@@ -4,7 +4,7 @@ import type { CheckIn } from '@/lib/checkin';
 import type { TrainingPlan } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
 import { gateChat } from '@/lib/billing/gates';
-import { enforceRateLimit } from '@/lib/rate-limit';
+import { checkRateLimit, commitRateLimit } from '@/lib/rate-limit';
 import { buildCoachSystemPrompt } from '@/lib/prompts/coach-system';
 import { extractLibraryTraceability } from '@/lib/ai/response-sources';
 import { CHAT_MAX_OUTPUT_TOKENS } from '@/lib/ai/token-budget';
@@ -39,21 +39,10 @@ function isChatMessage(value: unknown): value is ChatMessage {
 }
 
 export async function POST(request: Request) {
-  const limit = await enforceRateLimit('chat');
-  if (!limit.ok) {
-    return NextResponse.json(
-      {
-        code: 'rate_limited',
-        error: limit.userMessage,
-        resetSeconds: limit.resetSeconds
-      },
-      {
-        status: 429,
-        headers: { 'Retry-After': String(limit.resetSeconds) }
-      }
-    );
-  }
-
+  // Orden: gateChat (auth + sub) → validaciones baratas (body parse,
+  // schema, mensajes presentes) → checkRateLimit → OpenAI → commitRateLimit.
+  // El rate limit se gasta solo cuando el request es válido y vamos a
+  // tirar trabajo real contra OpenAI.
   const gate = await gateChat();
   if (!gate.allowed) return gate.response;
 
@@ -112,6 +101,24 @@ export async function POST(request: Request) {
     );
   }
 
+  // Check rate limit (no incrementa). Todas las validaciones 4xx baratas
+  // pasaron; el commit ocurre adentro del stream una vez que OpenAI nos
+  // confirmó la apertura.
+  const rl = await checkRateLimit('chat');
+  if (!rl.ok) {
+    return NextResponse.json(
+      {
+        code: 'rate_limited',
+        error: rl.userMessage,
+        resetSeconds: rl.retryAfter
+      },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(rl.retryAfter) }
+      }
+    );
+  }
+
   // timeout: 120s — consistente con generate-plan ahora que estamos en
   // Vercel Pro (maxDuration 300s). El chat es streaming, así que el
   // primer token suele llegar en < 5s; 120s solo aplica si OpenAI se
@@ -157,6 +164,12 @@ export async function POST(request: Request) {
           ],
           stream: true
         });
+
+        // OpenAI nos confirmó la apertura del stream. A partir de acá
+        // tenemos una conversación válida — consumimos el token del
+        // rate limit. Si el stream falla mid-vuelo, el usuario igual
+        // recibió respuesta parcial; no refundamos.
+        await commitRateLimit('chat');
 
         for await (const event of response) {
           if (event.type === 'response.output_text.delta') {
