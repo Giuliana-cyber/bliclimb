@@ -52,6 +52,19 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // DEUDA DE UX (audit 2026-06-22): AuthGate hoy intercepta antes de que
+  // Next pueda renderizar app/not-found.tsx, así que un usuario no
+  // autenticado que entra a una ruta inexistente ve "Inicia sesión" en
+  // lugar del 404. Después de loguearse cae en un 404 (o en home según
+  // middleware) sin contexto de qué pasó.
+  //
+  // Cuando volvamos a esto, dos opciones razonables:
+  //   (a) chequear si la ruta existe en el route manifest antes de
+  //       gatear, y dejar pasar al 404 si no existe.
+  //   (b) redirigir el flujo no-auth a /sign-in?next=<ruta>, así
+  //       después del login el 404 aparece con contexto.
+  // Sin (a) o (b), las URLs rotas compartidas por link se ven
+  // engañosas. No bloquea nada hoy; revisar cuando toquemos auth/routing.
   if (status === 'anonymous' || !user) {
     return (
       <section className="mx-auto flex min-h-[70vh] max-w-xl flex-col justify-center">
