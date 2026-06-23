@@ -223,6 +223,11 @@ export async function checkRateLimitForIdentifier(
   nowOverride?: number
 ): Promise<CheckResult> {
   if (isBypassed(identifier)) {
+    // Log visible en Vercel para que la dueña del producto pueda
+    // confirmar que la env var está activa sin tener que leer código.
+    // Sale 1 línea por request del usuario bypaseado, formato fácil
+    // de grepear en la búsqueda de Vercel logs.
+    console.info('[rate-limit] bypassed', { kind, identifier });
     return {
       ok: true,
       remaining: Number.POSITIVE_INFINITY,
