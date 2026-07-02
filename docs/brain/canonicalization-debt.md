@@ -42,10 +42,36 @@ la vista `exercises_eligible` los filtra. Es contrato duro, no deuda.
 - **Typo `Estado`**: `"Pendiente deduplicacion"` (sin tilde, 5 filas) →
   `"Pendiente deduplicación"` (canónico). Implementado en
   `lib/exercises/csv-normalize.ts:KNOWN_TYPO_FIXES.estado`. El seeder
-  loggea cuántas filas se corrigieron.
+  loggea IDs específicos corregidos.
 - **Tags** (`tags[]`): normalización a lowercase + trim + colapso de espacios
   + filtro de vacíos. Los tags SÍ son deuda cerrada — se puede confiar en
   ellos para queries.
+
+## Fixes aplicados directamente al CSV (Fase 1, pre-merge)
+
+### FIL-004: shift columnario de ~9 columnas hacia la derecha
+
+Durante la review del PR se detectó que `FIL-004` tenía valores
+desplazados desde `Señales detener` hasta `Notas` (Estado tenía
+`"Sí con bloqueo por perfil"` cuando ese valor pertenece semánticamente
+a `Publicable app`). Auditoría de las 483 filas con 5 heurísticas
+(Riesgo con comas, Estado fuera del allowlist, Publicable app URL/largo,
+Señales detener corto tipo Alto/Medio/Bajo, Fuente primaria vacía)
+confirmó que FIL-004 es la **única fila con shift real** en v3.
+EV-CS-001 aparece en H1 pero es falso positivo (Riesgo con coma dentro
+de paréntesis descriptivo).
+
+Fila reconstruida columna por columna en el commit de fix.
+`KNOWN_ESTADO_VALUES` pasa de 13 → 12 valores (se remueve
+`"Sí con bloqueo por perfil"` que solo aparecía por el shift).
+
+**Causa raíz** (deuda de proceso, no del schema):
+la generación incremental del CSV se hizo en múltiples batches sin un
+validador cross-row que verificara consistencia semántica por columna.
+Antes de futuros batches de contenido, correr las 5 heurísticas de
+auditoría como paso previo a mergear el CSV — o mejor, invertir en un
+validador Zod que cheque el shape semántico de cada fila (URL en
+`URL fuente`, no-URL en `Publicable app`, etc).
 
 ## Plan de PR de canonicalización (futuro)
 

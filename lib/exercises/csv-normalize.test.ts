@@ -132,8 +132,12 @@ describe('KNOWN_ESTADO_VALUES — allowlist post-normalización', () => {
     expect(KNOWN_ESTADO_VALUES.has('Pendiente deduplicacion')).toBe(false);
   });
 
-  it('los 13 valores canónicos del snapshot v3 están', () => {
-    expect(KNOWN_ESTADO_VALUES.size).toBe(13);
+  it('los 12 valores canónicos del snapshot v3 (post-fix FIL-004) están', () => {
+    expect(KNOWN_ESTADO_VALUES.size).toBe(12);
+  });
+
+  it('"Sí con bloqueo por perfil" NO está — pertenece a Publicable app, fix aplicado en FIL-004', () => {
+    expect(KNOWN_ESTADO_VALUES.has('Sí con bloqueo por perfil')).toBe(false);
   });
 
   it('cualquier valor no anticipado devuelve false', () => {
