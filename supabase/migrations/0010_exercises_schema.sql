@@ -58,19 +58,20 @@ create table if not exists public.exercises (
 );
 
 -- Índices para los filtros más comunes del motor + admin panel.
-create index if not exists exercises_tags_gin
+-- Convención: idx_{tabla}_{col}[_método].
+create index if not exists idx_exercises_tags_gin
   on public.exercises using gin (tags);
 
-create index if not exists exercises_categoria_idx
+create index if not exists idx_exercises_categoria
   on public.exercises (categoria);
 
-create index if not exists exercises_nivel_idx
+create index if not exists idx_exercises_nivel
   on public.exercises (nivel);
 
-create index if not exists exercises_riesgo_idx
+create index if not exists idx_exercises_riesgo
   on public.exercises (riesgo);
 
-create index if not exists exercises_publicable_app_idx
+create index if not exists idx_exercises_publicable_app
   on public.exercises (publicable_app);
 
 -- Trigger updated_at (reusa public.touch_updated_at() de 0001_init).

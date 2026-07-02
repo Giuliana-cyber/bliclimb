@@ -21,6 +21,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   CSV_HEADER,
   csvRowToExerciseRow,
+  KNOWN_ESTADO_VALUES,
   type CsvRow,
   type ExerciseRow
 } from '../lib/exercises/csv-normalize';
@@ -128,16 +129,42 @@ async function main() {
   const objects = rowsToObjects(rows);
   console.log(`[seed] ${objects.length} filas de datos parseadas`);
 
-  let estadoTypoFixCount = 0;
+  const estadoTypoFixedIds: string[] = [];
+  const unknownEstado: Array<{ id: string; value: string }> = [];
   const exercises: ExerciseRow[] = [];
   for (const obj of objects) {
     const { exercise, fixesApplied } = csvRowToExerciseRow(obj);
-    if (fixesApplied.estadoTypo) estadoTypoFixCount++;
+    if (fixesApplied.estadoTypo) estadoTypoFixedIds.push(exercise.id);
+    if (!KNOWN_ESTADO_VALUES.has(exercise.estado)) {
+      unknownEstado.push({ id: exercise.id, value: exercise.estado });
+    }
     exercises.push(exercise);
   }
+
   console.log(
-    `[seed] Fixes aplicados: "Pendiente deduplicacion" (sin tilde) → "Pendiente deduplicación": ${estadoTypoFixCount} filas`
+    `[seed] Fix "Pendiente deduplicacion" (sin tilde) → "Pendiente deduplicación": ${estadoTypoFixedIds.length} filas`
   );
+  if (estadoTypoFixedIds.length > 0) {
+    console.log(`[seed]   IDs corregidos: ${estadoTypoFixedIds.join(', ')}`);
+  }
+
+  // Fail-fast: si aparece una variante de Estado no anticipada, abortamos
+  // antes de escribir. Prevenir que se cuele contenido silenciosamente y
+  // preservar KNOWN_ESTADO_VALUES como snapshot vivo del contrato.
+  if (unknownEstado.length > 0) {
+    console.error(
+      `[seed] ABORT: ${unknownEstado.length} filas tienen valores de Estado ` +
+        `no anticipados en KNOWN_ESTADO_VALUES (lib/exercises/csv-normalize.ts).`
+    );
+    for (const { id, value } of unknownEstado) {
+      console.error(`[seed]   ${id}: ${JSON.stringify(value)}`);
+    }
+    console.error(
+      '[seed] Decidí con el equipo de contenido si es una variante nueva ' +
+        'que debe agregarse al allowlist, o un typo a corregir en el CSV.'
+    );
+    process.exit(1);
+  }
 
   const ids = new Set<string>();
   for (const e of exercises) {
@@ -187,7 +214,7 @@ async function main() {
   console.log('');
   console.log(`[seed] ✓ Total en public.exercises:          ${count}`);
   console.log(`[seed] ✓ Total en public.exercises_eligible: ${eligibleCount}`);
-  console.log(`[seed] ✓ Fixes aplicados (estado typo):       ${estadoTypoFixCount}`);
+  console.log(`[seed] ✓ Fixes aplicados (estado typo):       ${estadoTypoFixedIds.length} (${estadoTypoFixedIds.join(', ') || 'ninguno'})`);
   console.log('[seed] Listo.');
 }
 

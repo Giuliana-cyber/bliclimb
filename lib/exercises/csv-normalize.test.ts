@@ -3,6 +3,7 @@ import {
   CSV_HEADER,
   csvRowToExerciseRow,
   emptyToNull,
+  KNOWN_ESTADO_VALUES,
   KNOWN_TYPO_FIXES,
   normalizeEstado,
   parseTagsList,
@@ -119,6 +120,25 @@ describe('requireNonEmpty', () => {
 
   it('tira con id incluido para debug', () => {
     expect(() => requireNonEmpty('', 'Nombre', 'FD-042')).toThrow(/FD-042/);
+  });
+});
+
+describe('KNOWN_ESTADO_VALUES — allowlist post-normalización', () => {
+  it('el canónico "Pendiente deduplicación" (con tilde) está', () => {
+    expect(KNOWN_ESTADO_VALUES.has('Pendiente deduplicación')).toBe(true);
+  });
+
+  it('el typo "Pendiente deduplicacion" (sin tilde) NO está — se colapsa vía normalizeEstado', () => {
+    expect(KNOWN_ESTADO_VALUES.has('Pendiente deduplicacion')).toBe(false);
+  });
+
+  it('los 13 valores canónicos del snapshot v3 están', () => {
+    expect(KNOWN_ESTADO_VALUES.size).toBe(13);
+  });
+
+  it('cualquier valor no anticipado devuelve false', () => {
+    expect(KNOWN_ESTADO_VALUES.has('Estado inventado 2027')).toBe(false);
+    expect(KNOWN_ESTADO_VALUES.has('')).toBe(false);
   });
 });
 

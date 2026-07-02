@@ -127,6 +127,32 @@ export function normalizeEstado(raw: string): { value: string; wasFixed: boolean
 }
 
 /**
+ * Allowlist de valores canónicos de `Estado` **post-normalización**. Extraído
+ * del snapshot exercises-v3.csv (Fase 1). El seeder falla si aparece cualquier
+ * valor fuera de este set — así una nueva variante de curación no entra a la
+ * DB silenciosamente.
+ *
+ * Nota: "Sí con bloqueo por perfil" (1 fila) parece error de curación —
+ * pertenece semánticamente a `Publicable app`, no a `Estado`. Se preserva
+ * tal cual hasta consenso con el equipo de contenido; NO re-normalizar acá.
+ */
+export const KNOWN_ESTADO_VALUES = new Set<string>([
+  'activo',
+  'Faltante',
+  'Incompleto',
+  'Pendiente deduplicación',
+  'Pendiente limpieza',
+  'Pendiente migrar a Contenido app',
+  'Pendiente migrar a Motor',
+  'Pendiente migrar a Seguridad',
+  'Pendiente migrar a Seguridad/Motor',
+  'Pendiente revisión legal',
+  'EXCLUIDO v1 (HIT diferido a v2)',
+  'EXCLUIDO v1 (decisión de producto: HIT diferido a v2)',
+  'Sí con bloqueo por perfil'
+]);
+
+/**
  * Colapsa strings vacíos ("") a `null` para columnas nullable. Preserva
  * strings con contenido tal cual (con trim).
  */
