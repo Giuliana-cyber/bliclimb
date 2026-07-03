@@ -100,43 +100,42 @@ Requiere alineación explícita con Giuliana antes de arrancar. Steps sugeridos:
   `Estado` es la excepción, documentado explícitamente. Cualquier otro
   fix requiere un item nuevo en `KNOWN_TYPO_FIXES` con su porqué.
 
-## Deuda crítica: bug de encoding en el CSV inicial
+## Bug sistémico de encoding en CSV inicial
 
 **Descubierto**: 2026-07-03 durante el apply de Fase 1 contra Supabase.
 **Reporte completo**: [encoding-audit-report.md](encoding-audit-report.md).
-**Estado**: **bloqueante pre-Fase 4** — no exponer contenido a usuarios finales hasta resolver.
 
-### Scope
-
-**46 filas de 483 (9.5%) con corrupción sistemática de acentos** (ñ, á, é, í, ó, ú) en al menos una columna. Total de 93 findings de palabras corruptas distribuidas en columnas críticas del ejercicio (Nombre, Descripción, Precauciones, Señales detener) además de metadata (Publicable app, Estado, Fuente secundaria).
+**Alcance medido**: 46/483 filas afectadas (9.5%). 93 findings totales distribuidos en columnas `Nombre`, `Descripción`, `Precauciones`, `Publicable app`, `Estado`, `Señales detener`, `Fuente secundaria` y otras.
 
 Familias más afectadas: **PF (100%)**, **CO (92.9%)**, **FM (78.6%)**, **EV (22.6%)**, **HB (15.2%)**. Otras 33 familias limpias (0%). El patrón sugiere que la corrupción vino de un batch específico de generación del CSV en un pipeline no-UTF-8, no de curación manual.
 
-Palabras top corruptas: `maxima` (27), `aerobica` (17), `anadido` (5), `tecnico` (4), `duracion` (3), `lesion` (3). Todos son términos técnicos del dominio de escalada.
+### Tipos de corrupción detectados por la auditoría automática
+
+1. **`ñ` perdida.** Ejemplos: `anadido → añadido`, `muneca → muñeca`, `pequenas → pequeñas`, `diseno → diseño`. ~30 pares en el diccionario de la auditoría.
+2. **Tildes faltantes en sustantivos.** Ejemplos: `maxima → máxima`, `aerobica → aeróbica`, `tecnica → técnica`, `periodizacion → periodización`, `lesion → lesión`. Mayoría del diccionario. Palabras top por frecuencia: `maxima` (27 ocurrencias), `aerobica` (17), `tecnico` (4), `duracion` (3), `lesion` (3).
+
+**Fuera del scope de la auditoría automática (por diseño)**: verbos y palabras ambiguas (`esta`/`está`, `si`/`sí`, `solo`/`sólo`, `practica` verbo vs `práctica` sustantivo). Ambos usos son gramaticalmente válidos según contexto y no se pueden fixear con reglas de word-boundary sin inspección manual. Estos requieren revisión caso por caso durante la regeneración.
 
 ### Estado de la DB de producción
 
-- **483 filas cargadas** en `public.exercises` (apply de 0010 + seeder ejecutados exitosamente el 2026-07-03).
-- **Los `Nombre` y `Descripción` de esas 46 filas contienen palabras corruptas** — no aptos para renderizar en la UI de Bill/Senda sin arreglar antes.
-- La política de `Publicable app` filtró correctamente los canónicos, pero 10 filas quedaron fuera de `exercises_eligible` por typo en el mismo campo (`"Si con..."` sin tilde) — debería subir de 359 a 369 post-fix.
+- **483 filas cargadas** en `public.exercises` (apply de 0010 + seeder ejecutados exitosamente el 2026-07-03T04:22Z).
+- **46 filas con corrupción visible en `Nombre` y otras columnas** — apto para trabajo interno de Fase 2 (vector store) y Fase 3 (motor de plan por IDs). **NO apto para exposición a usuarios finales.**
+- La política de `Publicable app` filtró correctamente los canónicos, pero 10 filas quedaron fuera de `exercises_eligible` por typo en el mismo campo (`"Si con..."` sin tilde) — debería subir de 359 a 369 post-regeneración.
 
-### Bloqueante pre-Fase 4
+### Estrategia de resolución
 
-**Antes de que Bill muestre planes a usuarios reales, el CSV debe regenerarse limpio.** No aplicar autofix sobre la corrupción — es sistémico y arriesga introducir sutilezas peor que las que arregla (encoding preserva estructura, autofix no).
+**NO fix automático.** Aplicar 46 reemplazos vía script sobre un CSV corrupto arriesga introducir sutilezas peor que las que arregla (encoding preserva estructura, autofix no). En cambio: **regeneración del CSV desde raíz con pipeline UTF-8 explícito en sesión aparte con Claude** (contexto amplio necesario).
 
-### Plan de resolución
+Plan de re-carga tras la regeneración:
 
-1. **Sesión de regeneración con Claude** (la sesión que usa Giuliana para construir el brain) — produce un nuevo `exercises-v3.csv` desde cero con pipeline UTF-8 explícito.
-2. **Re-run del seeder** contra el CSV limpio. Es idempotente por upsert de PK, así que:
-   - Filas nuevas se insertan.
-   - Filas con IDs preexistentes se actualizan (los nombres corruptos se sobrescriben).
-   - Si algún ID desaparece en la regeneración, queda huérfano en la DB — decidir con Giuliana si el seeder debe hacer un DELETE reconciliatorio o si se maneja manual.
-3. **Re-correr la auditoría de encoding** (script en `/private/tmp/.../encoding-audit.py` — se puede migrar al repo si se decide instrumentar como CI check).
-4. **Verificar que `exercises_eligible = 369`** (o el número final consensuado tras la regeneración).
+1. Reemplazar `data/brain/exercises-v3.csv` con el CSV limpio.
+2. `npm run seed:exercises` — idempotente por upsert de PK. Filas con IDs preexistentes se sobrescriben (nombres corruptos → limpios). Si algún ID desaparece en la regeneración, queda huérfano en la DB — decidir si el seeder hace `DELETE` reconciliatorio o se maneja manual.
+3. Re-correr la auditoría de encoding para verificar 0 findings.
+4. Verificar `exercises_eligible = 369` (o el número final consensuado).
 
-### Fecha estimada de resolución
+### Prioridad
 
-Sesión de regeneración con Claude — **fecha por definir**. Bloqueante para Fase 4 (exposición pública). No bloquea Fase 2 (vector store) ni Fase 3 (motor de plan interno) mientras se trabaje con IDs y no con contenido crudo.
+**URGENTE — bloqueante pre-Fase 4.** Antes de que Bill muestre planes a usuarios reales, el CSV debe regenerarse limpio. No bloquea Fase 2 (vector store) ni Fase 3 (motor de plan interno) mientras se trabaje con IDs y no con contenido crudo.
 
 ### Deuda del seeder cuando llegue el CSV limpio
 
