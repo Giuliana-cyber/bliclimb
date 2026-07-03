@@ -18,6 +18,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { createClient } from '@supabase/supabase-js';
+import ws from 'ws';
 import {
   CSV_HEADER,
   csvRowToExerciseRow,
@@ -173,7 +174,10 @@ async function main() {
   }
 
   const supabase = createClient(supabaseUrl, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false }
+    auth: { autoRefreshToken: false, persistSession: false },
+    // Node 20 no tiene WebSocket nativo; el seeder no usa realtime pero
+    // el cliente lo inicializa igual. Pasamos ws para evitar el crash.
+    realtime: { transport: ws as unknown as typeof WebSocket }
   });
 
   const BATCH = 100;
