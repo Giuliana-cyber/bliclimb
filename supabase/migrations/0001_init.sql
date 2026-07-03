@@ -6,7 +6,7 @@
 -- Extensiones
 -- =========================================================================
 create extension if not exists "pgcrypto";
-create extension if not exists "vector";
+create extension if not exists "vector" with schema extensions;
 
 -- =========================================================================
 -- profiles
@@ -199,19 +199,19 @@ create table if not exists public.source_chunks (
   source_id uuid not null references public.sources(id) on delete cascade,
   chunk_index int not null,
   chunk_text text not null,
-  embedding vector(1536),
+  embedding extensions.vector(1536),
   metadata jsonb default '{}'::jsonb,
   created_at timestamptz default now()
 );
 
 create index if not exists source_chunks_source_idx on public.source_chunks(source_id);
 create index if not exists source_chunks_embedding_idx
-  on public.source_chunks using ivfflat (embedding vector_cosine_ops)
+  on public.source_chunks using ivfflat (embedding extensions.vector_cosine_ops)
   with (lists = 100);
 
 -- Función helper para búsqueda semántica
 create or replace function public.match_source_chunks(
-  query_embedding vector(1536),
+  query_embedding extensions.vector(1536),
   match_count int default 8,
   filter_language text default null
 )

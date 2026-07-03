@@ -213,7 +213,36 @@ Ambos commits son **solo edición de archivos** — CP2 no ejecuta ningún SQL c
 - ❌ No hay funciones plpgsql huérfanas.
 - ❌ El schema `extensions` tiene todas las extensiones esperadas: `pgcrypto`, `vector`, `uuid-ossp`, `pg_stat_statements`, `supabase_vault`.
 
-## Pendiente de tu OK antes de CP2
+## Decisión de Giuliana — CP2 aplicado con alcance conservador
 
-- ¿Aprobás las recomendaciones D1-D6? Puedo aplicar parcialmente si querés (ej: solo D1+D2, dejar residuos del rename).
-- ¿Preferís que D3/D5 (PK y FK) sí se renombren en la misma 0011 para consistencia total?
+Solo se aplica **D2** (fix pgvector). D3-D6 se dejan como deuda registrada abajo. Razones:
+- D2 es lo único bloqueante para reproducibilidad de fresh install.
+- El resto es cosmético.
+- Fase 1.5 próxima toca `profiles` — mezclar limpieza de constraints legacy de `entitlements` genera ruido cruzado.
+
+## Deuda registrada para PR futuro
+
+**Prioridad**: baja — trabajo cosmético post-Fase 5. **Impacto funcional**: cero.
+
+Cuatro residuos del rename `subscriptions → entitlements` de [0002_entitlements.sql](supabase/migrations/0002_entitlements.sql) que 0003 no llegó a limpiar del todo. Se documentan acá para que un PR futuro los recoja sin re-descubrirlos.
+
+### D3 — PK `subscriptions_pkey` en entitlements
+- **Estado actual**: PRIMARY KEY (id) tiene nombre viejo del rename.
+- **Recomendación**: dejar tal cual. Renombrar PKs interactúa con integrity checks internos de Postgres y el retorno del cambio es puramente estético.
+
+### D4 — UNIQUE `subscriptions_provider_provider_subscription_id_key`
+- **Estado actual**: UNIQUE (provider, provider_subscription_id) presente en entitlements con nombre viejo.
+- **Origen**: 0003 líneas 40-41 intentaron `drop constraint if exists`, pero el drop no se refleja en el backup — 0003 fue aplicada parcialmente en esa parte.
+- **Recomendación futura**: nueva migración `drop constraint if exists subscriptions_provider_provider_subscription_id_key on public.entitlements`. El partial index `entitlements_provider_sub_idx` (creado en 0002) cubre el caso de uso.
+
+### D5 — FK `subscriptions_profile_id_fkey`
+- **Estado actual**: FOREIGN KEY (profile_id) → profiles.id con nombre viejo.
+- **Recomendación**: dejar tal cual (mismo razonamiento que D3).
+
+### D6 — Trigger duplicado en entitlements
+- **Estado actual**: `subscriptions_touch` + `entitlements_touch`, ambos activos, ambos ejecutan `touch_updated_at()`.
+- **Impacto**: overhead trivial (2 ejecuciones idénticas del trigger por UPDATE).
+- **Recomendación futura**: nueva migración `drop trigger if exists subscriptions_touch on public.entitlements`. `entitlements_touch` cubre la funcionalidad idéntica.
+
+### Cuándo abordar
+Post-Fase 5 en un PR de "limpieza de deuda de schema" que agrupe todos los residuos históricos, junto con el PR de canonicalización del catálogo de ejercicios ([canonicalization-debt.md](docs/brain/canonicalization-debt.md)).
