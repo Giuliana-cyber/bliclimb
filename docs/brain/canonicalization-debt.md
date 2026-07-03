@@ -100,6 +100,49 @@ Requiere alineación explícita con Giuliana antes de arrancar. Steps sugeridos:
   `Estado` es la excepción, documentado explícitamente. Cualquier otro
   fix requiere un item nuevo en `KNOWN_TYPO_FIXES` con su porqué.
 
+## Deuda crítica: bug de encoding en el CSV inicial
+
+**Descubierto**: 2026-07-03 durante el apply de Fase 1 contra Supabase.
+**Reporte completo**: [encoding-audit-report.md](encoding-audit-report.md).
+**Estado**: **bloqueante pre-Fase 4** — no exponer contenido a usuarios finales hasta resolver.
+
+### Scope
+
+**46 filas de 483 (9.5%) con corrupción sistemática de acentos** (ñ, á, é, í, ó, ú) en al menos una columna. Total de 93 findings de palabras corruptas distribuidas en columnas críticas del ejercicio (Nombre, Descripción, Precauciones, Señales detener) además de metadata (Publicable app, Estado, Fuente secundaria).
+
+Familias más afectadas: **PF (100%)**, **CO (92.9%)**, **FM (78.6%)**, **EV (22.6%)**, **HB (15.2%)**. Otras 33 familias limpias (0%). El patrón sugiere que la corrupción vino de un batch específico de generación del CSV en un pipeline no-UTF-8, no de curación manual.
+
+Palabras top corruptas: `maxima` (27), `aerobica` (17), `anadido` (5), `tecnico` (4), `duracion` (3), `lesion` (3). Todos son términos técnicos del dominio de escalada.
+
+### Estado de la DB de producción
+
+- **483 filas cargadas** en `public.exercises` (apply de 0010 + seeder ejecutados exitosamente el 2026-07-03).
+- **Los `Nombre` y `Descripción` de esas 46 filas contienen palabras corruptas** — no aptos para renderizar en la UI de Bill/Senda sin arreglar antes.
+- La política de `Publicable app` filtró correctamente los canónicos, pero 10 filas quedaron fuera de `exercises_eligible` por typo en el mismo campo (`"Si con..."` sin tilde) — debería subir de 359 a 369 post-fix.
+
+### Bloqueante pre-Fase 4
+
+**Antes de que Bill muestre planes a usuarios reales, el CSV debe regenerarse limpio.** No aplicar autofix sobre la corrupción — es sistémico y arriesga introducir sutilezas peor que las que arregla (encoding preserva estructura, autofix no).
+
+### Plan de resolución
+
+1. **Sesión de regeneración con Claude** (la sesión que usa Giuliana para construir el brain) — produce un nuevo `exercises-v3.csv` desde cero con pipeline UTF-8 explícito.
+2. **Re-run del seeder** contra el CSV limpio. Es idempotente por upsert de PK, así que:
+   - Filas nuevas se insertan.
+   - Filas con IDs preexistentes se actualizan (los nombres corruptos se sobrescriben).
+   - Si algún ID desaparece en la regeneración, queda huérfano en la DB — decidir con Giuliana si el seeder debe hacer un DELETE reconciliatorio o si se maneja manual.
+3. **Re-correr la auditoría de encoding** (script en `/private/tmp/.../encoding-audit.py` — se puede migrar al repo si se decide instrumentar como CI check).
+4. **Verificar que `exercises_eligible = 369`** (o el número final consensuado tras la regeneración).
+
+### Fecha estimada de resolución
+
+Sesión de regeneración con Claude — **fecha por definir**. Bloqueante para Fase 4 (exposición pública). No bloquea Fase 2 (vector store) ni Fase 3 (motor de plan interno) mientras se trabaje con IDs y no con contenido crudo.
+
+### Deuda del seeder cuando llegue el CSV limpio
+
+- Remover el fix `KNOWN_TYPO_FIXES.estado` para `"Pendiente deduplicacion"` una vez que el CSV regenerado ya no lo tenga.
+- Considerar agregar validación de encoding al seeder (ej: rechazar filas con caracteres non-printable o con ratio anómalo de ASCII-solo en un CSV que debería tener acentos).
+
 ## Impacto en el motor (Fase 3)
 
 Mientras esta deuda esté abierta, el motor de generación de plan NO debe
