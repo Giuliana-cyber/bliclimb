@@ -100,6 +100,65 @@ Requiere alineación explícita con Giuliana antes de arrancar. Steps sugeridos:
   `Estado` es la excepción, documentado explícitamente. Cualquier otro
   fix requiere un item nuevo en `KNOWN_TYPO_FIXES` con su porqué.
 
+## Deuda del middleware de seguridad — Fase 3 sub-fase 1
+
+**Contexto**: `lib/brain/` implementa el gate de perfil del Doc 02 §1
+(reglas 1.1, 1.2, 1.3). Estas son las decisiones tomadas o diferidas
+mientras se aterriza el resto del middleware.
+
+### Zonas de dolor sin cobertura en §1.3
+
+Doc 02 §1.3 lista 6 zonas para la regla de dolor 3+/10: dedos, poleas,
+muñeca, codo, hombro, cuello. El perfil actual (`public.profiles`) solo
+tiene 3 escalas 0-10:
+
+- `current_finger_pain` → cubre **dedos** + **poleas** (misma zona
+  anatómica en escalada).
+- `current_elbow_pain` → cubre **codo**.
+- `current_shoulder_pain` → cubre **hombro**.
+- **Muñeca**: sin campo. El flag `injuries.includes('wrists')` existe
+  como histórico bool, pero no representa dolor actual con gradient.
+- **Cuello**: sin campo ni flag.
+
+**Decisión de Giuliana (sub-fase 1)**: no agregar UI nueva. Muñeca y
+cuello quedan sin cobertura en v1. Si en la práctica aparecen falsos
+negativos peligrosos (usuarios entrenando con dolor de muñeca/cuello),
+priorizar agregar los 2 campos al onboarding en v2.
+
+### Reglas del Doc 02 §1 diferidas a v2
+
+- **1.4 Cribado RED-S / LEAF-Q**: decisión de producto (no screening
+  clínico). BilClimb no recolecta ni interpreta datos clínicos; deriva
+  ante señales vía la regla 3.15 (sub-fase futura) y los mensajes
+  reactivos del middleware.
+- **1.5 Embarazo**: diferido a v2 (no se pregunta en onboarding).
+
+### `lib/ai/plan-safety.ts` coexiste sin cambios
+
+El validador viejo con 4 reglas keyword-based (`R1..R4`) sigue vivo en
+`lib/ai/plan-safety.ts` y wireado en `app/api/generate-plan/route.ts`.
+`lib/brain/` es una capa paralela nueva. La decisión de depreciar o
+llamar `plan-safety.ts` como fallback POST se toma en la sub-fase final
+de wiring, no durante las sub-fases intermedias.
+
+### Audit persistente de bloqueos
+
+Sub-fase 1 usa `ConsoleLogSink` (JSON estructurado a stdout). La
+interface `LogSink` está lista para swap trivial a un `SupabaseLogSink`
+cuando llegue la sub-fase de audit persistente (tabla nueva tipo
+`safety_block_events`).
+
+### Assumptions con edge cases
+
+- **`age` vacío/desconocido** en 1.1: **NO dispara** el bloqueo. Se
+  asume adulto por default. Justificativo: en perfiles legacy sin
+  bucket, el falso positivo sería peor que el falso negativo (bloquear
+  a la gran mayoría por asumir que son menores).
+- **`climbingTime` vacío/desconocido** en 1.2: **SÍ dispara** el
+  bloqueo. Justificativo: sin saber los años de práctica, no permitimos
+  hangboard intenso — coherente con "ante duda, lado seguro" del
+  principio transversal de Fase 3.
+
 ## Impacto en el motor (Fase 3)
 
 Mientras esta deuda esté abierta, el motor de generación de plan NO debe
