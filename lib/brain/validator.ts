@@ -11,6 +11,7 @@
 
 import { ConsoleLogSink } from './logging';
 import { section01ProfileFilters } from './rules/section-01-profile-filters';
+import { translateCategoriesToGating } from './rules/section-02-exercise-gating';
 import type { BlockingContext, LogSink, ProfileForRules, RuleModule } from './types';
 
 // Orden de precedencia — reglas de nivel superior invalidan permisos de
@@ -42,10 +43,13 @@ export function evaluateProfile(
   const ctx: BlockingContext = {
     blockedCategories: new Set(),
     blockedZones: new Set(),
+    blockedExercises: { exactIds: new Set(), prefixes: new Set() },
+    gripRestrictions: new Set(),
     derivationMessages: [],
     ruleHits: []
   };
 
+  // ---------- Section-01: gate de perfil ----------
   for (const mod of ENABLED_MODULES) {
     for (const v of mod.check(profile)) {
       ctx.ruleHits.push({ rule: v.rule, kind: v.kind });
@@ -67,6 +71,16 @@ export function evaluateProfile(
       ctx.derivationMessages.push(v.userMessage);
     }
   }
+
+  // ---------- Section-02: gating de ejercicios (traducción de categorías) ----------
+  //
+  // Consume las blockedCategories acumuladas y traduce a IDs concretos del
+  // catálogo. Los filtros de perfil mandan sobre este gating por
+  // construcción: sin categorías bloqueadas, no hay IDs bloqueados.
+  const gating = translateCategoriesToGating(ctx.blockedCategories);
+  gating.matcher.exactIds.forEach((id) => ctx.blockedExercises.exactIds.add(id));
+  gating.matcher.prefixes.forEach((p) => ctx.blockedExercises.prefixes.add(p));
+  gating.gripRestrictions.forEach((g) => ctx.gripRestrictions.add(g));
 
   return ctx;
 }
