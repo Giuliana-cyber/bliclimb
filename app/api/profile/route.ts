@@ -22,6 +22,9 @@ const ProfileSchema = z.object({
   language: z.enum(['es', 'en']).optional(),
   name: z.string().optional(),
   age: z.string().optional(),
+  sex: z.string().optional(),
+  weight: z.number().nullable().optional(),
+  height: z.number().nullable().optional(),
   climbingTime: z.string().optional(),
   level: z.string().optional(),
   goals: z.array(z.string()).optional(),
@@ -69,6 +72,9 @@ function toDbRow(p: ProfileInput): Record<string, unknown> {
   set('language', 'language');
   set('name', 'name');
   set('age', 'age');
+  set('sex', 'sex');
+  set('weight', 'weight');
+  set('height', 'height');
   set('climbing_time', 'climbingTime');
   set('level', 'level');
   set('goals', 'goals');
