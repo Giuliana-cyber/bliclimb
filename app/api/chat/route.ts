@@ -9,6 +9,11 @@ import { buildCoachSystemPrompt } from '@/lib/prompts/coach-system';
 import { extractLibraryTraceability } from '@/lib/ai/response-sources';
 import { CHAT_MAX_OUTPUT_TOKENS } from '@/lib/ai/token-budget';
 import { ChatRequestSchema } from '@/lib/schemas/user-profile';
+import { checkWeightDerivation } from '@/lib/brain/detection/section-03-15-orchestrator';
+import { buildFixedResponseStream } from '@/lib/brain/detection/fixed-response-stream';
+import { getDerivationMessage } from '@/lib/brain/messages/section-03-15';
+import { ConsoleLogSink } from '@/lib/brain/logging';
+import type { ConversationTurn } from '@/lib/brain/detection/weight-intent-classifier';
 
 export const runtime = 'nodejs';
 
@@ -135,6 +140,58 @@ export async function POST(request: Request) {
     return encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
   }
 
+  // ---------- §3.15 pérdida de peso — dos capas, corren ANTES del stream ----------
+  //
+  // Capa 1 (keywords, <1ms) + capa 2 (LLM classifier, 500-800ms si capa 1
+  // dispara). Si el orchestrator decide derivar, respondemos con el
+  // mensaje fijo de derivación y SILENCIO TOTAL de Bill — no se llama a
+  // client.responses.create() en absoluto. La regla es dura (Doc 02 §3.15).
+  const lastUserMessage =
+    [...messages].reverse().find((m) => m.role === 'user')?.content ?? '';
+  const conversationContext: ConversationTurn[] = messages
+    .slice(-6) // hasta 3 turnos user+assistant
+    .map((m) => ({ role: m.role, content: m.content }));
+
+  const weightDecision = await checkWeightDerivation(
+    client,
+    lastUserMessage,
+    conversationContext
+  );
+
+  if (weightDecision.derive) {
+    // Consumimos rate limit — hicimos trabajo real (potencialmente una
+    // llamada LLM del classifier) y vamos a devolver una respuesta.
+    await commitRateLimit('chat');
+
+    // Log estructurado — misma sink que sub-fases 1/2/3.
+    new ConsoleLogSink().logBlock({
+      section: 'section-03-15',
+      rule: '3.15',
+      profileId: body.profile?.id ?? null,
+      kind: 'derivation-weight',
+      weightKeywords: weightDecision.layer1.matched,
+      weightIntent: weightDecision.layer2.intent,
+      weightReason: weightDecision.reason,
+      weightError:
+        weightDecision.reason === 'fail-safe'
+          ? weightDecision.layer2.error
+          : undefined,
+      timestamp: new Date().toISOString()
+    });
+
+    const derivationStream = buildFixedResponseStream(
+      getDerivationMessage('3.15')
+    );
+    return new Response(derivationStream, {
+      headers: {
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive'
+      }
+    });
+  }
+
+  // Flujo normal — no hay derivación, Bill responde con streaming.
   const stream = new ReadableStream({
     async start(controller) {
       try {
