@@ -11,6 +11,8 @@ function cleanProfile(overrides: Partial<ProfileForRules> = {}): ProfileForRules
     currentFingerPain: 0,
     currentElbowPain: 0,
     currentShoulderPain: 0,
+    injuries: [],
+    sleep: 'good',
     ...overrides
   };
 }

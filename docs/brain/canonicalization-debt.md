@@ -203,6 +203,69 @@ No se pierde el trabajo de criterio — solo no se implementa como
 etiqueta ahora porque `tipo_registro='test'` cubre la exclusión del
 pool general.
 
+## Deuda del middleware de seguridad — Fase 3 sub-fase 3
+
+**Contexto**: `lib/brain/rules/section-05-health-derivation.ts` implementa
+las 3 reglas de perfil del Doc 02 §5 (5.2 historial de polea, 5.3 historial
+de codo/epicondilitis, 5.4 sueño).
+
+### Proxies conservadores por falta de campos específicos
+
+El onboarding no captura historial médico específico. Sub-fase 3 usa
+`injuries[]` como proxy — decisión de Giuliana: no agregar UI nueva.
+
+| Regla | Trigger real (Doc 02) | Proxy implementado | Falso positivo |
+|---|---|---|---|
+| §5.2 | "reporta lesión de polea pasada" | `injuries.includes('fingers')` | Cualquiera con lesión pasada de dedos/mano dispara (no solo polea). Aceptable — la regla solo añade GripRestriction, no bloquea plan. |
+| §5.3 | "reporta historial de epicondilitis" | `injuries.includes('elbows')` | Cualquier historial de codo dispara. Aceptable — la regla prioriza extensores, beneficio para todos. |
+| §5.4 | "sueño <7h consistente" | `sleep === 'bad'` (solo <5h) | Excluye el bucket 'regular' (5-7h). Decisión firme: demasiada gente para reducirles intensidad, no es seguridad crítica. |
+
+### La regla estrella §3.15 (pérdida de peso) NO vive en section-05
+
+§3.15 dispara por lenguaje del usuario en el chat (`chat/route.ts`), no
+por campos del perfil. Se diseña como pieza aparte con dos capas:
+detección determinística (keywords en Node) + intención vía LLM.
+Pendiente para siguiente sub-fase.
+
+## Deuda de esquema en `public.profiles` (redundancias históricas)
+
+Detectadas al verificar datos para sub-fase 3. **NO requieren acción
+inmediata** — todos los campos son `nullable`, no rompen nada. Se
+documentan para un workstream futuro de limpieza de schema.
+
+### Duplicados de sueño (3 columnas para lo mismo)
+
+- `sleep integer` — legacy (versión numérica, no usada por el onboarding actual)
+- `sleep text` — activa (`'good'` / `'regular'` / `'bad'`, la que consume el mapper)
+- `sleep_quality text` — redundante (el mapper copia `sleep` acá también)
+
+Recomendación futura: consolidar en `sleep text`, dropear las otras 2.
+
+### Duplicados de energía (3 columnas para lo mismo)
+
+- `energy integer` — legacy
+- `energy text` — activa
+- `energy_level text` — redundante
+
+Recomendación futura: consolidar en `energy text`.
+
+### `injury_description` = `injury_notes` (duplicado en escritura)
+
+El onboarding copia el mismo textarea (`injuryNotes`) a las 2 columnas.
+El mapper no distingue. Recomendación futura: dropear `injury_description`,
+mantener solo `injury_notes`.
+
+### `needs_regeneration boolean` sin wire
+
+Existe en DB pero no está en `UserProfileSchema` ni en el mapper. Vestigio
+sin uso. Recomendación futura: dropear si nada la lee.
+
+### Cuándo abordar
+
+Post-Fase 5 en un PR de "limpieza de schema de profiles" que consolide
+las 4 áreas. Prerequisito: verificar que ningún código lee de las
+columnas duplicadas antes de dropearlas.
+
 ## Impacto en el motor (Fase 3)
 
 Mientras esta deuda esté abierta, el motor de generación de plan NO debe

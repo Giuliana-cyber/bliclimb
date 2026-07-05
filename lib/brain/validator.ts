@@ -1,23 +1,29 @@
 // Orquestador del middleware de seguridad (Doc 02).
 //
 // Corre los módulos de reglas en orden de precedencia y acumula bloqueos
-// en un BlockingContext. Sub-fase 1 solo enlaza section-01. Sub-fases
-// posteriores encadenan section-02 (gating de ejercicio), section-05
-// (derivación reactiva), section-03 (programación de sesión), etc.
+// en un BlockingContext. Sub-fase 1 solo enlazó section-01. Sub-fase 2
+// agregó section-02 (traducción de categorías → IDs). Sub-fase 3 agrega
+// section-05 (derivación de salud, §5.2/§5.3/§5.4).
 //
-// Sub-fase 1 NO wirea con generate-plan/route.ts — solo expone la función
-// pura evaluateProfile() para tests. La integración con generate-plan va
-// en la sub-fase final del middleware.
+// El wiring con generate-plan/route.ts va en la sub-fase final del
+// middleware — este archivo expone la función pura evaluateProfile() para
+// tests y consumo futuro.
 
 import { ConsoleLogSink } from './logging';
 import { section01ProfileFilters } from './rules/section-01-profile-filters';
 import { translateCategoriesToGating } from './rules/section-02-exercise-gating';
+import { section05HealthDerivation } from './rules/section-05-health-derivation';
 import type { BlockingContext, LogSink, ProfileForRules, RuleModule } from './types';
 
 // Orden de precedencia — reglas de nivel superior invalidan permisos de
-// niveles inferiores. Sub-fase 1: solo perfil. Se agregan módulos en su
-// posición correcta a medida que las sub-fases posteriores los implementen.
-const ENABLED_MODULES: RuleModule[] = [section01ProfileFilters];
+// niveles inferiores. Section-05 corre después de section-01 porque §5.x
+// añade restricciones ortogonales a los bloqueos de §1.x (grip restrictions
+// + training priorities + intensity adjustments son sets aditivos, no
+// interfieren con blockedCategories/blockedZones).
+const ENABLED_MODULES: RuleModule[] = [
+  section01ProfileFilters,
+  section05HealthDerivation
+];
 
 export type EvaluateProfileOptions = {
   /** ID del profile en Supabase, si aplica. Para trazabilidad en logs. */
@@ -45,11 +51,13 @@ export function evaluateProfile(
     blockedZones: new Set(),
     blockedExercises: { exactIds: new Set(), prefixes: new Set() },
     gripRestrictions: new Set(),
+    trainingPriorities: new Set(),
+    intensityAdjustments: new Set(),
     derivationMessages: [],
     ruleHits: []
   };
 
-  // ---------- Section-01: gate de perfil ----------
+  // ---------- Módulos de reglas (section-01, section-05) ----------
   for (const mod of ENABLED_MODULES) {
     for (const v of mod.check(profile)) {
       ctx.ruleHits.push({ rule: v.rule, kind: v.kind });
@@ -60,6 +68,10 @@ export function evaluateProfile(
         kind: v.kind,
         categories: v.kind === 'block-categories' ? v.categories : undefined,
         zone: v.kind === 'block-zone' ? v.zone : undefined,
+        restriction: v.kind === 'add-grip-restriction' ? v.restriction : undefined,
+        priority: v.kind === 'add-training-priority' ? v.priority : undefined,
+        adjustment:
+          v.kind === 'add-intensity-adjustment' ? v.adjustment : undefined,
         timestamp: new Date().toISOString()
       });
 
@@ -67,6 +79,12 @@ export function evaluateProfile(
         for (const c of v.categories) ctx.blockedCategories.add(c);
       } else if (v.kind === 'block-zone') {
         ctx.blockedZones.add(v.zone);
+      } else if (v.kind === 'add-grip-restriction') {
+        ctx.gripRestrictions.add(v.restriction);
+      } else if (v.kind === 'add-training-priority') {
+        ctx.trainingPriorities.add(v.priority);
+      } else if (v.kind === 'add-intensity-adjustment') {
+        ctx.intensityAdjustments.add(v.adjustment);
       }
       ctx.derivationMessages.push(v.userMessage);
     }
