@@ -177,16 +177,31 @@ export interface RuleModule {
 }
 
 // -------------------- Logging --------------------
+//
+// `kind` es la union de kinds de Verdict + 'derivation-weight' (§3.15,
+// que NO emite un Verdict porque no corre en el pipeline de perfil —
+// vive en el runtime del chat con detección por lenguaje). Los campos
+// específicos por kind son opcionales.
 export type BlockLogEvent = {
   section: string;
   rule: string;
   profileId: string | null;
-  kind: Verdict['kind'];
+  kind: Verdict['kind'] | 'derivation-weight';
   categories?: BlockedCategory[];
   zone?: BlockedZone;
   restriction?: GripRestriction;
   priority?: TrainingPriority;
   adjustment?: IntensityAdjustment;
+  // §3.15 (chat runtime) — solo poblados si kind === 'derivation-weight'.
+  weightKeywords?: string[];
+  weightIntent?: 'change-weight' | 'informational' | 'other';
+  weightReason?:
+    | 'no-keyword'
+    | 'change-weight'
+    | 'informational'
+    | 'other'
+    | 'fail-safe';
+  weightError?: string;
   timestamp: string;
 };
 
