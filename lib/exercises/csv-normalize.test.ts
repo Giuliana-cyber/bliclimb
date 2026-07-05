@@ -4,6 +4,7 @@ import {
   csvRowToExerciseRow,
   emptyToNull,
   KNOWN_ESTADO_VALUES,
+  KNOWN_TIPO_REGISTRO_VALUES,
   KNOWN_TYPO_FIXES,
   normalizeEstado,
   parseTagsList,
@@ -147,16 +148,37 @@ describe('KNOWN_ESTADO_VALUES — allowlist post-normalización', () => {
 });
 
 describe('CSV_HEADER — contrato de columnas', () => {
-  it('tiene exactamente 31 columnas', () => {
-    expect(CSV_HEADER.length).toBe(31);
+  it('tiene exactamente 32 columnas (31 originales + tipo_registro)', () => {
+    expect(CSV_HEADER.length).toBe(32);
   });
 
   it('primera columna es ID', () => {
     expect(CSV_HEADER[0]).toBe('ID');
   });
 
-  it('última columna es Notas', () => {
+  it('columna 30 (indexado 0) es Notas', () => {
     expect(CSV_HEADER[30]).toBe('Notas');
+  });
+
+  it('última columna es tipo_registro (nueva de 0012)', () => {
+    expect(CSV_HEADER[31]).toBe('tipo_registro');
+  });
+});
+
+describe('KNOWN_TIPO_REGISTRO_VALUES — 5 categorías del saneamiento', () => {
+  it('contiene exactamente los 5 valores canónicos', () => {
+    expect(KNOWN_TIPO_REGISTRO_VALUES.size).toBe(5);
+    expect(KNOWN_TIPO_REGISTRO_VALUES.has('ejercicio')).toBe(true);
+    expect(KNOWN_TIPO_REGISTRO_VALUES.has('test')).toBe(true);
+    expect(KNOWN_TIPO_REGISTRO_VALUES.has('regla')).toBe(true);
+    expect(KNOWN_TIPO_REGISTRO_VALUES.has('concepto')).toBe(true);
+    expect(KNOWN_TIPO_REGISTRO_VALUES.has('nota')).toBe(true);
+  });
+
+  it('cualquier valor no anticipado devuelve false', () => {
+    expect(KNOWN_TIPO_REGISTRO_VALUES.has('otro')).toBe(false);
+    expect(KNOWN_TIPO_REGISTRO_VALUES.has('')).toBe(false);
+    expect(KNOWN_TIPO_REGISTRO_VALUES.has('Ejercicio')).toBe(false); // case-sensitive
   });
 });
 
@@ -193,7 +215,8 @@ const SAMPLE_ROW: CsvRow = {
   Estado: 'Pendiente deduplicacion',
   'Publicable app': 'Sí con advertencia',
   'Validación profesional': 'No requerida',
-  Notas: ''
+  Notas: '',
+  tipo_registro: 'ejercicio'
 };
 
 describe('csvRowToExerciseRow — end-to-end', () => {
@@ -228,11 +251,19 @@ describe('csvRowToExerciseRow — end-to-end', () => {
     // Preservados
     expect(exercise.publicable_app).toBe('Sí con advertencia');
     expect(exercise.riesgo).toBe('Medio/alto');
+
+    // tipo_registro (nueva columna de 0012)
+    expect(exercise.tipo_registro).toBe('ejercicio');
   });
 
   it('tira si un NOT NULL viene vacío', () => {
     const bad = { ...SAMPLE_ROW, Nombre: '' } as CsvRow;
     expect(() => csvRowToExerciseRow(bad)).toThrow(/'Nombre' vacío/);
+  });
+
+  it('tira si tipo_registro viene vacío (NOT NULL)', () => {
+    const bad = { ...SAMPLE_ROW, tipo_registro: '' } as CsvRow;
+    expect(() => csvRowToExerciseRow(bad)).toThrow(/'tipo_registro' vacío/);
   });
 
   it('fixesApplied.estadoTypo=false cuando estado ya es canónico', () => {

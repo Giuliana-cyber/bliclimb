@@ -38,7 +38,8 @@ export const CSV_HEADER = [
   'Estado',
   'Publicable app',
   'Validación profesional',
-  'Notas'
+  'Notas',
+  'tipo_registro'
 ] as const;
 
 export type CsvRow = Record<(typeof CSV_HEADER)[number], string>;
@@ -79,7 +80,24 @@ export type ExerciseRow = {
   publicable_app: string;
   validacion_profesional: string | null;
   notas: string | null;
+  tipo_registro: string;
 };
+
+/**
+ * Categorías válidas de `tipo_registro` según la spec de saneamiento
+ * (docs/brain/saneamiento-catalogo-tipo-registro decisiones 2026-07-04).
+ *
+ * El seeder aborta si aparece cualquier otro valor — previene que un CSV
+ * regenerado sin la columna cargada correctamente meta un valor inválido
+ * a la DB.
+ */
+export const KNOWN_TIPO_REGISTRO_VALUES = new Set<string>([
+  'ejercicio',
+  'test',
+  'regla',
+  'concepto',
+  'nota'
+]);
 
 /**
  * Parsea el string de tags de una fila:
@@ -213,7 +231,8 @@ export function csvRowToExerciseRow(row: CsvRow): {
       estado: estadoNorm.value,
       publicable_app: requireNonEmpty(row['Publicable app'], 'Publicable app', id),
       validacion_profesional: emptyToNull(row['Validación profesional']),
-      notas: emptyToNull(row.Notas)
+      notas: emptyToNull(row.Notas),
+      tipo_registro: requireNonEmpty(row.tipo_registro, 'tipo_registro', id)
     },
     fixesApplied: { estadoTypo: estadoNorm.wasFixed }
   };
