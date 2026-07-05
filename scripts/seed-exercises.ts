@@ -18,10 +18,12 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { createClient } from '@supabase/supabase-js';
+import ws from 'ws';
 import {
   CSV_HEADER,
   csvRowToExerciseRow,
   KNOWN_ESTADO_VALUES,
+  KNOWN_TIPO_REGISTRO_VALUES,
   type CsvRow,
   type ExerciseRow
 } from '../lib/exercises/csv-normalize';
@@ -131,6 +133,8 @@ async function main() {
 
   const estadoTypoFixedIds: string[] = [];
   const unknownEstado: Array<{ id: string; value: string }> = [];
+  const unknownTipoRegistro: Array<{ id: string; value: string }> = [];
+  const tipoRegistroCounts: Record<string, number> = {};
   const exercises: ExerciseRow[] = [];
   for (const obj of objects) {
     const { exercise, fixesApplied } = csvRowToExerciseRow(obj);
@@ -138,6 +142,11 @@ async function main() {
     if (!KNOWN_ESTADO_VALUES.has(exercise.estado)) {
       unknownEstado.push({ id: exercise.id, value: exercise.estado });
     }
+    if (!KNOWN_TIPO_REGISTRO_VALUES.has(exercise.tipo_registro)) {
+      unknownTipoRegistro.push({ id: exercise.id, value: exercise.tipo_registro });
+    }
+    tipoRegistroCounts[exercise.tipo_registro] =
+      (tipoRegistroCounts[exercise.tipo_registro] ?? 0) + 1;
     exercises.push(exercise);
   }
 
@@ -146,6 +155,24 @@ async function main() {
   );
   if (estadoTypoFixedIds.length > 0) {
     console.log(`[seed]   IDs corregidos: ${estadoTypoFixedIds.join(', ')}`);
+  }
+
+  // Log de tipo_registro
+  console.log(`[seed] tipo_registro:`);
+  for (const cat of ['ejercicio', 'test', 'regla', 'concepto', 'nota']) {
+    console.log(`  ${cat.padEnd(12)} ${tipoRegistroCounts[cat] ?? 0}`);
+  }
+
+  // Fail-fast: si aparece una variante de tipo_registro no anticipada, abortamos
+  if (unknownTipoRegistro.length > 0) {
+    console.error(
+      `[seed] ABORT: ${unknownTipoRegistro.length} filas tienen valores de tipo_registro ` +
+        `no anticipados en KNOWN_TIPO_REGISTRO_VALUES.`
+    );
+    for (const { id, value } of unknownTipoRegistro) {
+      console.error(`[seed]   ${id}: ${JSON.stringify(value)}`);
+    }
+    process.exit(1);
   }
 
   // Fail-fast: si aparece una variante de Estado no anticipada, abortamos
@@ -173,7 +200,10 @@ async function main() {
   }
 
   const supabase = createClient(supabaseUrl, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false }
+    auth: { autoRefreshToken: false, persistSession: false },
+    // Node 20 no tiene WebSocket nativo; el seeder no usa realtime pero
+    // el cliente lo inicializa igual. Pasamos ws para evitar el crash.
+    realtime: { transport: ws as unknown as typeof WebSocket }
   });
 
   const BATCH = 100;

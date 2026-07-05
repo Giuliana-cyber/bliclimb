@@ -159,6 +159,50 @@ cuando llegue la sub-fase de audit persistente (tabla nueva tipo
   hangboard intenso — coherente con "ante duda, lado seguro" del
   principio transversal de Fase 3.
 
+## Tests-máximos preservados como criterio (para modo evaluación futuro)
+
+Con el saneamiento vía `tipo_registro` (0012), la sub-fase 2 Parte B de
+Fase 3 (etiquetado manual `test-maximo` en Sheet 01) queda **cubierta
+por saneamiento + hardcode**:
+
+- Los 15 tests de alto riesgo tienen `tipo_registro='test'` → automáticamente
+  fuera de `exercises_eligible` (el pool que ve Bill/Senda como
+  ejercicios asignables al plan diario).
+- Dominadas con lastre (`FT-002`, `FTE-002`) son `tipo_registro='ejercicio'`
+  pero ya las bloquea section-02 Parte A por perfil (§1.2 <2 años).
+
+**No hace falta agregar etiqueta `test-maximo` a Sheet 01.** El PR de
+etiquetado queda descartado.
+
+### Criterio del subset "test-máximo" preservado para futuro
+
+Los 15 IDs identificados como tests de alto riesgo (spec de
+sub-fase 2 Parte B, revisados uno por uno con criterio en 2026-07-04)
+quedan archivados **para retomar cuando/si se construye un "modo
+evaluación"** donde los tests se sirvan al usuario con protocolo de
+seguridad extra:
+
+- `FD-006` — Suspensión máxima en 25mm
+- `FD-007` — Test MIFS (fuerza isométrica máxima de dedos)
+- `FD-008` — Fuerza máxima de flexores
+- `FD-009` — Resistencia de dedos con contracciones máximas (E1/E2)
+- `HB-007` — Dead hang 11mm hasta fallo
+- `CD-009` — Prefatiga + escalada hasta fallo
+- `EV-CF` — Critical Force Test
+- `EV-GRIP-PULL` — Grip + Pull-up hasta fallo
+- `EV-FM-002` — Isometric pull-up force
+- `EV-FM-004` — Bent-arm hang hasta fallo
+- `FTE-002` — 1RM dominada con lastre
+- `EVT-PO-001` — RFD contracción máxima
+- `EV-CB-001` — Maximal reach en campus
+- `EV-CB-003` — Isometric pull-up force en campus
+- `EV-CB-004` — RFD en campus
+
+**Origen**: `fase-3-subfase-2-etiquetado.md` (spec de Giuliana, 2026-07-04).
+No se pierde el trabajo de criterio — solo no se implementa como
+etiqueta ahora porque `tipo_registro='test'` cubre la exclusión del
+pool general.
+
 ## Impacto en el motor (Fase 3)
 
 Mientras esta deuda esté abierta, el motor de generación de plan NO debe
