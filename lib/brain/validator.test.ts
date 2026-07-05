@@ -10,6 +10,8 @@ function cleanProfile(overrides: Partial<ProfileForRules> = {}): ProfileForRules
     currentFingerPain: 0,
     currentElbowPain: 0,
     currentShoulderPain: 0,
+    injuries: [],
+    sleep: 'good',
     ...overrides
   };
 }
@@ -64,6 +66,104 @@ describe('evaluateProfile — integración con section-02 (traducción categorí
     expect(ctx.blockedZones.has('fingers-pulleys')).toBe(true);
     expect(ctx.blockedExercises.exactIds.size).toBe(0);
     expect(ctx.blockedExercises.prefixes.size).toBe(0);
+  });
+});
+
+describe('evaluateProfile — integración con section-05 (derivación de salud)', () => {
+  it("perfil limpio → trainingPriorities + intensityAdjustments vacíos", () => {
+    const ctx = evaluateProfile(cleanProfile(), { log: new NullLogSink() });
+    expect(ctx.trainingPriorities.size).toBe(0);
+    expect(ctx.intensityAdjustments.size).toBe(0);
+  });
+
+  it("injuries=['fingers'] → gripRestrictions incluye 'no-small-crimps-below-15mm' (§5.2)", () => {
+    const ctx = evaluateProfile(cleanProfile({ injuries: ['fingers'] }), {
+      log: new NullLogSink()
+    });
+    expect(ctx.gripRestrictions.has('no-small-crimps-below-15mm')).toBe(true);
+    expect(ctx.ruleHits).toContainEqual({
+      rule: '5.2',
+      kind: 'add-grip-restriction'
+    });
+  });
+
+  it("injuries=['elbows'] → trainingPriorities + intensityAdjustments populados (§5.3)", () => {
+    const ctx = evaluateProfile(cleanProfile({ injuries: ['elbows'] }), {
+      log: new NullLogSink()
+    });
+    expect(ctx.trainingPriorities.has('extensors-before-traction')).toBe(true);
+    expect(ctx.intensityAdjustments.has('reduce-traction-volume')).toBe(true);
+    expect(ctx.ruleHits.filter((h) => h.rule === '5.3')).toHaveLength(2);
+  });
+
+  it("sleep='bad' → intensityAdjustments incluye 'reduce-below-baseline' (§5.4)", () => {
+    const ctx = evaluateProfile(cleanProfile({ sleep: 'bad' }), {
+      log: new NullLogSink()
+    });
+    expect(ctx.intensityAdjustments.has('reduce-below-baseline')).toBe(true);
+    expect(ctx.ruleHits).toContainEqual({
+      rule: '5.4',
+      kind: 'add-intensity-adjustment'
+    });
+  });
+
+  it("sleep='regular' NO dispara §5.4 (decisión firme)", () => {
+    const ctx = evaluateProfile(cleanProfile({ sleep: 'regular' }), {
+      log: new NullLogSink()
+    });
+    expect(ctx.intensityAdjustments.has('reduce-below-baseline')).toBe(false);
+  });
+
+  it("perfil compuesto (u16 + injuries=['fingers','elbows'] + sleep='bad') acumula §1.1 + §5.2 + §5.3 + §5.4", () => {
+    const ctx = evaluateProfile(
+      cleanProfile({
+        age: 'u16',
+        injuries: ['fingers', 'elbows'],
+        sleep: 'bad'
+      }),
+      { log: new NullLogSink() }
+    );
+    // §1.1 (5 categorías) + section-02 traduce
+    expect(ctx.blockedCategories.size).toBe(5);
+    expect(ctx.blockedExercises.prefixes.has('HB-')).toBe(true);
+    // §5.2 + section-01 §1.1 ambas contribuyen a gripRestrictions
+    expect(ctx.gripRestrictions.has('no-full-crimp')).toBe(true); // de §1.1
+    expect(ctx.gripRestrictions.has('no-small-crimps-below-15mm')).toBe(true); // de §5.2
+    // §5.3
+    expect(ctx.trainingPriorities.has('extensors-before-traction')).toBe(true);
+    expect(ctx.intensityAdjustments.has('reduce-traction-volume')).toBe(true);
+    // §5.4
+    expect(ctx.intensityAdjustments.has('reduce-below-baseline')).toBe(true);
+    // ruleHits registra los 5 verdicts: 1.1 + 5.2 + 5.3 (2×) + 5.4
+    expect(ctx.ruleHits).toHaveLength(5);
+  });
+});
+
+describe('evaluateProfile — logging de kinds nuevos de sub-fase 3', () => {
+  it('logBlock incluye restriction/priority/adjustment según kind', () => {
+    const events: import('./types').BlockLogEvent[] = [];
+    const mockSink: import('./types').LogSink = {
+      logBlock: (e) => events.push(e)
+    };
+
+    evaluateProfile(
+      cleanProfile({ injuries: ['fingers', 'elbows'], sleep: 'bad' }),
+      { log: mockSink }
+    );
+
+    const log_5_2 = events.find((e) => e.rule === '5.2')!;
+    expect(log_5_2.kind).toBe('add-grip-restriction');
+    expect(log_5_2.restriction).toBe('no-small-crimps-below-15mm');
+    expect(log_5_2.priority).toBeUndefined();
+
+    const priorityLog = events.find((e) => e.kind === 'add-training-priority')!;
+    expect(priorityLog.rule).toBe('5.3');
+    expect(priorityLog.priority).toBe('extensors-before-traction');
+    expect(priorityLog.restriction).toBeUndefined();
+
+    const log_5_4 = events.find((e) => e.rule === '5.4')!;
+    expect(log_5_4.kind).toBe('add-intensity-adjustment');
+    expect(log_5_4.adjustment).toBe('reduce-below-baseline');
   });
 });
 
