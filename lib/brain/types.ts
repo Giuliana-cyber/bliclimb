@@ -51,16 +51,57 @@ export type Verdict =
       source: string;
     };
 
+// -------------------- Matcher de ejercicios bloqueados --------------------
+//
+// Section-02 (sub-fase 2) traduce categorías semánticas del perfil a este
+// matcher, que puede consumirse contra un ID del catálogo (Sheet 01) para
+// saber si el ejercicio está bloqueado. Dos vías:
+//   - `exactIds`: matcheo exacto (ej: 'FM-014', 'PF-FM-005').
+//   - `prefixes`: bloqueo por familia (ej: 'HB-' cubre los 66 HB-*).
+//
+// Sub-fase 2 Parte B introducirá una etiqueta `gating` en Sheet 01 para
+// familias dispersas (test-maximo, dominadas-con-lastre). Cuando aterrice,
+// este tipo se extenderá con un tercer campo `taggedIds: Set<string>` que
+// se popula desde la DB.
+export type BlockedExerciseMatcher = {
+  exactIds: Set<string>;
+  prefixes: Set<string>;
+};
+
+// -------------------- Restricciones de agarre --------------------
+//
+// Full crimp NO es un ejercicio — es una VARIANTE DE AGARRE. Section-02 la
+// traduce a una restricción que Bill/Senda pasa como constraint al LLM
+// dentro de ejercicios permitidos ("realizar en half crimp o open, nunca
+// full crimp"). NO bloquea IDs.
+export type GripRestriction = 'no-full-crimp';
+
 // -------------------- BlockingContext --------------------
 //
 // Estado acumulado tras correr todos los módulos habilitados. Consumidores
-// futuros lo usan como filtro. Sub-fase 1 solo lo devuelve y testea.
+// futuros lo usan como filtro contra Sheet 01 y como constraint al LLM.
 export type BlockingContext = {
   blockedCategories: Set<BlockedCategory>;
   blockedZones: Set<BlockedZone>;
+  blockedExercises: BlockedExerciseMatcher;
+  gripRestrictions: Set<GripRestriction>;
   derivationMessages: string[];
   ruleHits: Array<{ rule: string; kind: Verdict['kind'] }>;
 };
+
+// -------------------- Helper: ¿este ejercicio está bloqueado? --------------------
+//
+// Consulta pura. Sub-fase 3 (wiring con generate-plan) y section-03
+// (validación de plan armado) lo usan para filtrar catálogo y validar
+// ejercicios ya generados por el LLM.
+export function isExerciseBlocked(id: string, matcher: BlockedExerciseMatcher): boolean {
+  if (matcher.exactIds.has(id)) return true;
+  let matched = false;
+  matcher.prefixes.forEach((prefix) => {
+    if (id.startsWith(prefix)) matched = true;
+  });
+  return matched;
+}
 
 // -------------------- Perfil mínimo para reglas --------------------
 //

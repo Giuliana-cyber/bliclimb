@@ -15,12 +15,55 @@ function cleanProfile(overrides: Partial<ProfileForRules> = {}): ProfileForRules
 }
 
 describe('evaluateProfile — happy path', () => {
-  it('perfil limpio → BlockingContext vacío', () => {
+  it('perfil limpio → BlockingContext vacío (incluye blockedExercises + gripRestrictions vacíos tras section-02)', () => {
     const ctx = evaluateProfile(cleanProfile(), { log: new NullLogSink() });
     expect(ctx.blockedCategories.size).toBe(0);
     expect(ctx.blockedZones.size).toBe(0);
+    expect(ctx.blockedExercises.exactIds.size).toBe(0);
+    expect(ctx.blockedExercises.prefixes.size).toBe(0);
+    expect(ctx.gripRestrictions.size).toBe(0);
     expect(ctx.derivationMessages).toHaveLength(0);
     expect(ctx.ruleHits).toHaveLength(0);
+  });
+});
+
+describe('evaluateProfile — integración con section-02 (traducción categorías → IDs)', () => {
+  it('u16 → HB- + CB- + FM-014 + PF-FM-005 bloqueados + no-full-crimp', () => {
+    const ctx = evaluateProfile(cleanProfile({ age: 'u16' }), { log: new NullLogSink() });
+    expect(ctx.blockedExercises.prefixes.has('HB-')).toBe(true);
+    expect(ctx.blockedExercises.prefixes.has('CB-')).toBe(true);
+    expect(ctx.blockedExercises.exactIds.has('FM-014')).toBe(true);
+    expect(ctx.blockedExercises.exactIds.has('PF-FM-005')).toBe(true);
+    expect(ctx.gripRestrictions.has('no-full-crimp')).toBe(true);
+  });
+
+  it("climbingTime 'start' (<2 años) → HB- + CB- + FM-014 + PF-FM-005 + 2 pullups-weighted + 15 test-maximo (deduped)", () => {
+    const ctx = evaluateProfile(cleanProfile({ climbingTime: 'start' }), {
+      log: new NullLogSink()
+    });
+    expect(ctx.blockedExercises.prefixes.has('HB-')).toBe(true);
+    expect(ctx.blockedExercises.prefixes.has('CB-')).toBe(true);
+    // 2 (hit) + 2 (pullups-weighted) + 15 (max-tests) - 1 (FTE-002 dedupe) = 18
+    expect(ctx.blockedExercises.exactIds.size).toBe(18);
+    // gripRestriction NO se activa en §1.2 (no incluye full-crimp)
+    expect(ctx.gripRestrictions.size).toBe(0);
+  });
+
+  it("climbingTime 'more3' (adulto experimentado) sin dolor → sin bloqueos", () => {
+    const ctx = evaluateProfile(cleanProfile({ climbingTime: 'more3' }), {
+      log: new NullLogSink()
+    });
+    expect(ctx.blockedExercises.exactIds.size).toBe(0);
+    expect(ctx.blockedExercises.prefixes.size).toBe(0);
+  });
+
+  it('perfil solo con dolor (sin categorías por §1.1/§1.2) → sin IDs bloqueados (dolor bloquea ZONAS, no ejercicios)', () => {
+    const ctx = evaluateProfile(cleanProfile({ currentFingerPain: 5 }), {
+      log: new NullLogSink()
+    });
+    expect(ctx.blockedZones.has('fingers-pulleys')).toBe(true);
+    expect(ctx.blockedExercises.exactIds.size).toBe(0);
+    expect(ctx.blockedExercises.prefixes.size).toBe(0);
   });
 });
 
