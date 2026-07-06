@@ -79,6 +79,13 @@ export const FastExerciseSchema = z.object({
   alternative: z.string().nullable(),
   equipment: z.string().nullable(),
   riskLevel: RiskLevelSchema,
+  // Sub-fase 4 — categoría de estímulo per-exercise. Misma taxonomía que
+  // FastSession.stimulusCategory pero aplicada al ejercicio individual.
+  // Habilita reglas §3.1 (orden intra-sesión), §3.2 (skills primeros 30 min),
+  // §3.6 (hangboard antes de escalar), §3.20 (max 2 elementos alta intensidad)
+  // sin string matching. Un ejercicio con name="Hangboard 20mm" viene con
+  // stimulusCategory='strength'; el validador filtra por enum, no por texto.
+  stimulusCategory: StimulusCategorySchema,
   // Instrucciones técnicas reales — el modelo DEBE rellenarlos. Si vienen
   // vacíos la UI muestra vacío (no rompe). El prompt en WEEK_PROMPT pide
   // 3-5 pasos para howTo, 2-3 para cues, 1-2 para commonMistakes.
