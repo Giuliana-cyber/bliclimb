@@ -62,8 +62,14 @@ vi.mock('@/lib/ai/response-sources', () => ({
   extractLibraryTraceability: vi.fn(() => ({ sources: [] }))
 }));
 
-// Import DESPUÉS de los mocks
-const { POST } = await import('./route');
+// Import DESPUÉS de los mocks. Evitamos top-level await (no soportado con
+// tsc target=es5) usando dynamic import dentro de beforeAll.
+let POST: (req: Request) => Promise<Response>;
+import { beforeAll } from 'vitest';
+beforeAll(async () => {
+  const mod = await import('./route');
+  POST = mod.POST as typeof POST;
+});
 
 // -------------------- Helpers --------------------
 

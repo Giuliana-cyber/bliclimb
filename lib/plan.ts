@@ -62,6 +62,10 @@ export interface Week {
   loadLevel?: string | null;
   deloadWeek?: boolean | null;
   deloadFocus?: string | null;
+  // Sub-fase 4 base — phase estructurada para reglas §3.7/§3.8. Opcional
+  // en runtime type para compat con planes viejos (permisivo por defecto:
+  // el validador skipeará reglas que dependan de phase si viene ausente).
+  phase?: 'base' | 'build' | 'peak' | 'deload' | 'test' | null;
   sessions: Session[];
 }
 
@@ -69,6 +73,22 @@ export interface Session {
   dayNumber: number; // 1, 2, 3 dentro de la semana
   title: string; // "Hangboard + técnica"
   stimulusType?: string | null;
+  // Sub-fase 4 base — categoría dominante estructurada.
+  // Consumida por reglas §3.1/§3.2/§3.6/§3.9/§3.10. Opcional para compat.
+  stimulusCategory?:
+    | 'warmup'
+    | 'skill'
+    | 'strength'
+    | 'power'
+    | 'power-endurance'
+    | 'aerobic-base'
+    | 'mobility'
+    | 'mental'
+    | 'cooldown'
+    | 'rest'
+    | null;
+  // Sub-fase 4 base — RPE bucket. Consumido por §3.10.
+  intensityLevel?: 'easy' | 'medium' | 'hard' | null;
   location: string; // "gym" | "casa" | "roca"
   equipment?: string[] | null;
   estimatedMinutes: number;
