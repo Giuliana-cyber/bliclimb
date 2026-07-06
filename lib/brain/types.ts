@@ -208,3 +208,192 @@ export type BlockLogEvent = {
 export interface LogSink {
   logBlock(event: BlockLogEvent): void;
 }
+
+// ====================================================================
+// Sub-fase 4 — Validación de PLAN (Doc 02 §3).
+// ====================================================================
+//
+// Las reglas de §3 operan sobre un TrainingPlan ya armado por el LLM, no
+// sobre un perfil. Emiten PlanViolation (distinto de Verdict) porque la
+// unidad de trabajo es semana/sesión/ejercicio, no categoría/zona.
+//
+// El orquestador (a montarse en el paso final del middleware) va a:
+//   1) Correr todas las PlanRuleModule.
+//   2) Si hay violations → regenerar (hasta 3 intentos, passando el
+//      diagnostic al prompt de retry).
+//   3) Tras 3 fallidos → mensaje #17 al usuario (placeholder tono
+//      Belay Partners), sin publicar el plan.
+//
+// Este módulo NO se wire-a con generate-plan en este PR (librería pura).
+
+export type PlanRuleId =
+  | '3.1'
+  | '3.2'
+  | '3.3'
+  | '3.4'
+  | '3.6'
+  | '3.7'
+  | '3.8'
+  | '3.9'
+  | '3.10'
+  | '3.20'
+  | '10.6';
+
+// Location dentro del plan donde ocurrió la violación. Al menos uno de
+// weekNumber/dayNumber suele estar, salvo violaciones macro (§3.7/§3.8/§3.9)
+// que son de PLAN entero.
+export type PlanLocation = {
+  weekNumber?: number;
+  dayNumber?: number;
+  exerciseIndex?: number;
+  block?: 'warmup' | 'mainBlock' | 'cooldown';
+};
+
+// Detalle específico por regla — permite tanto reportar en tests como
+// pasar al prompt de retry información útil ("estos días son hard
+// consecutivos: 1,2,3"). Cada regla define su propio kind.
+export type PlanViolationDetails =
+  | { kind: 'session-order-wrong'; expected: string[]; got: string[] }
+  | { kind: 'skill-not-in-first-30-min'; sessionMinutesBeforeSkill: number }
+  | { kind: 'consecutive-hard-days'; dayNumbers: number[] }
+  | {
+      kind: 'insufficient-recovery-between-sessions';
+      stimulus: string;
+      daysBetween: number;
+      minDaysRequired: number;
+      dayA: number;
+      dayB: number;
+    }
+  | { kind: 'hangboard-after-climb'; hangboardIndex: number; climbIndex: number }
+  | {
+      kind: 'missing-deload-after-block';
+      weeksSinceLastDeload: number;
+      maxAllowed: number;
+    }
+  | { kind: 'macro-order-wrong'; violation: string; details: string }
+  | {
+      kind: 'anaerobic-without-aerobic-base';
+      firstAnaerobicWeek: number;
+      aerobicBaseWeeksBefore: number;
+      minRequired: number;
+    }
+  | { kind: 'too-many-hard-days-per-week'; hardCount: number; max: number }
+  | {
+      kind: 'more-than-two-high-intensity-elements';
+      elements: string[];
+      max: number;
+    }
+  | {
+      kind: 'no-load-alternation';
+      daysPerWeek: number;
+      consecutiveHeavyDays: number[];
+    };
+
+/**
+ * Severidad de una violation.
+ *   - 'blocking' → dispara regeneración del plan. Ej: 3.3 (3 días duros
+ *     seguidos = riesgo de sobreuso), 3.9 (anaeróbico sin base = aeróbica
+ *     insegura), 3.20 (más de 2 estímulos altos = sobrecarga sesión).
+ *   - 'advisory' → NO regenera, se pasa como hint/mensaje al usuario o
+ *     al retry-prompt. Ej: 10.6 (alternar heavy/light es preferencia con
+ *     evidencia sólida pero no safety-critical).
+ */
+export type PlanViolationSeverity = 'blocking' | 'advisory';
+
+/**
+ * Una violación estructural del plan. Incluye contexto diagnóstico
+ * para logging + retry prompt + tests.
+ */
+export type PlanViolation = {
+  rule: PlanRuleId;
+  section: 'section-03' | 'section-10';
+  severity: PlanViolationSeverity;
+  location: PlanLocation;
+  details: PlanViolationDetails;
+  /** Mensaje del Doc 02 §3.x — para trazabilidad en logs. Nunca se muestra
+   *  al usuario tal cual; el usuario ve el fallback #17 tras 3 retries. */
+  ruleSummary: string;
+  /** Fuente académica de la regla. */
+  source: string;
+};
+
+/**
+ * Resultado de validar un plan. Vacío = plan sano.
+ * ruleHits agrupado por regla ayuda a debugging.
+ */
+export type PlanValidationResult = {
+  violations: PlanViolation[];
+  ruleHits: PlanRuleId[];
+};
+
+// Subset del TrainingPlan runtime que necesitan las reglas. Definido
+// localmente para desacoplar tests y evitar depender de lib/plan.ts en
+// el módulo de reglas puro. Solo campos usados por §3/§10.6.
+//
+// TODOS los campos nuevos de sub-fase 4 (phase, stimulusCategory,
+// intensityLevel, riskLevel) son OPCIONALES — planes viejos sin ellos
+// hacen que las reglas dependientes se salten (permisivo por defecto,
+// diseñado con Giuliana en el PR de schema).
+export type PlanExerciseForRules = {
+  name?: string | null;
+  riskLevel?: 'bajo' | 'medio' | 'alto' | null;
+  category?: string | null;
+  // Sub-fase 4 base — categoría per-exercise. Habilita §3.1/§3.2/§3.6/§3.20
+  // sin string matching. Opcional/nullable → fallback permisivo con planes
+  // viejos generados antes de que aterrizara el schema per-exercise.
+  stimulusCategory?:
+    | 'warmup'
+    | 'skill'
+    | 'strength'
+    | 'power'
+    | 'power-endurance'
+    | 'aerobic-base'
+    | 'mobility'
+    | 'mental'
+    | 'cooldown'
+    | 'rest'
+    | null;
+};
+
+export type PlanSessionForRules = {
+  dayNumber: number;
+  title?: string | null;
+  stimulusCategory?:
+    | 'warmup'
+    | 'skill'
+    | 'strength'
+    | 'power'
+    | 'power-endurance'
+    | 'aerobic-base'
+    | 'mobility'
+    | 'mental'
+    | 'cooldown'
+    | 'rest'
+    | null;
+  intensityLevel?: 'easy' | 'medium' | 'hard' | null;
+  estimatedMinutes?: number | null;
+  warmup?: PlanExerciseForRules[] | null;
+  mainBlock?: PlanExerciseForRules[] | null;
+  cooldown?: PlanExerciseForRules[] | null;
+};
+
+export type PlanWeekForRules = {
+  weekNumber: number;
+  phase?: 'base' | 'build' | 'peak' | 'deload' | 'test' | null;
+  deloadWeek?: boolean | null;
+  sessions: PlanSessionForRules[];
+};
+
+export type PlanForRules = {
+  weeks: PlanWeekForRules[];
+};
+
+/**
+ * Módulo que valida un TrainingPlan (no un profile). Simétrico a
+ * RuleModule pero para reglas de programación.
+ */
+export interface PlanRuleModule {
+  readonly section: 'section-03' | 'section-10';
+  readonly ruleIds: readonly PlanRuleId[];
+  check(plan: PlanForRules): PlanViolation[];
+}
