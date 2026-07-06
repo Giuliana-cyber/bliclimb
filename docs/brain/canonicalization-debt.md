@@ -279,3 +279,40 @@ seguras hasta canonicalizar:
 
 Cuando 0011 aterrice y las 6 columnas tengan enum efectivo, el motor puede
 migrar a matching estricto sin cambios en el schema.
+
+## Fase 3 sub-fase 4 — deudas abiertas
+
+Registradas durante la implementación de section-03-session-programming.
+
+### Mensaje #17 de mensajes-tono-belay-partners.md
+
+`lib/brain/messages/section-03-programming.ts` referencia el mensaje #17
+como fallback tras 3 retries fallidos. Ese archivo aún no está en el repo
+(no encontrado en `find . -name mensajes-tono*.md`). El string queda como
+PLACEHOLDER explícito ('[PLACEHOLDER — mensaje #17 de mensajes-tono-belay-partners.md] ...')
+para respetar la regla "no inventar tono".
+
+Cierre: cuando el doc aterrice, reemplazar el string en
+`SECTION_03_FALLBACK_MESSAGE.text` (misma clave, sin cambiar lógica).
+
+### Wiring generate-plan + retry loop
+
+Este PR entrega la librería pura (`section03SessionProgramming` +
+`section10LoadAlternation`) con 42 tests verdes. El wiring con
+`app/api/generate-plan/route.ts` (correr los módulos post-generación,
+regenerar hasta 3 veces si hay `blocking`, pasar `advisory` como hint
+al retry prompt, tras 3 fallidos mostrar el mensaje #17) queda para
+el paso final del middleware, DESPUÉS de sub-fase 5.
+
+### Precisión de §3.2 sin duración per-exercise
+
+La regla original habla de "primeros ~30 minutos" pero el mainBlock no
+tiene duración por ejercicio. Aproximamos con posición: skill debe estar
+en la primera mitad (redondeada hacia arriba) del mainBlock. Cuando aterrice
+per-exercise duration, el check puede pasar a minutos reales.
+
+### 3.4 recovery para power-endurance
+
+Doc 02 dice "hasta 5 días" para power-endurance al fallo / 4x4. Usamos 3
+como mínimo defensivo (no 5) porque bloqueaba plans válidos de 3 días/semana
+con PE. Revisar con Giuliana + Doc 02 v4 si el mínimo debe ser más agresivo.
