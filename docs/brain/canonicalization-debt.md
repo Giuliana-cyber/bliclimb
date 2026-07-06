@@ -316,3 +316,19 @@ per-exercise duration, el check puede pasar a minutos reales.
 Doc 02 dice "hasta 5 días" para power-endurance al fallo / 4x4. Usamos 3
 como mínimo defensivo (no 5) porque bloqueaba plans válidos de 3 días/semana
 con PE. Revisar con Giuliana + Doc 02 v4 si el mínimo debe ser más agresivo.
+
+## Fase 3 sub-fase 5 grupo 1 — deudas abiertas
+
+### 14.2 usa mobility como proxy de "extensor work"
+
+El validador `section14ElbowPrevention` verifica presencia de al menos 1
+exercise con `stimulusCategory === 'mobility'` en la semana como proxy de
+"trabajo de extensores". Es GENEROSO — cualquier movilidad (foam roll,
+estiramiento pasivo de espalda) cumple la regla, no solo band extensors
+específicos.
+
+Cierre: cuando aterrice un flag `isExtensorWork` per-exercise (o una
+sub-categoría 'extensor' bajo mobility), refinar el check a exigir un
+ejercicio marcado explícitamente. Hasta entonces, el trade-off es:
+falsos negativos (semana que dice cumplir sin ser realmente extensor
+loading), pero cero falsos positivos que bloqueen planes válidos.
