@@ -100,6 +100,7 @@ const VALID_EXERCISE = {
   alternative: null,
   equipment: 'hangboard',
   riskLevel: 'alto' as const,
+  stimulusCategory: 'strength' as const,
   howTo: ['agarra', 'cuelga', 'baja'],
   cues: ['sentí flexores'],
   commonMistakes: ['no perder técnica en el último segundo']
@@ -139,6 +140,39 @@ describe('FastExerciseSchema — requiere riskLevel obligatorio (bug fix)', () =
     expect(
       FastExerciseSchema.safeParse({ ...VALID_EXERCISE, riskLevel: 'medium' }).success
     ).toBe(false);
+  });
+});
+
+describe('FastExerciseSchema — requiere stimulusCategory per-exercise (sub-fase 4)', () => {
+  it('exercise SIN stimulusCategory falla', () => {
+    const { stimulusCategory: _sc, ...noSC } = VALID_EXERCISE;
+    expect(FastExerciseSchema.safeParse(noSC).success).toBe(false);
+  });
+
+  it("exercise con stimulusCategory='aerobic' (old name) falla", () => {
+    expect(
+      FastExerciseSchema.safeParse({
+        ...VALID_EXERCISE,
+        stimulusCategory: 'aerobic'
+      }).success
+    ).toBe(false);
+  });
+
+  it.each([
+    'warmup',
+    'skill',
+    'strength',
+    'power',
+    'power-endurance',
+    'aerobic-base',
+    'mobility',
+    'mental',
+    'cooldown',
+    'rest'
+  ] as const)("exercise con stimulusCategory='%s' pasa", (v) => {
+    expect(
+      FastExerciseSchema.safeParse({ ...VALID_EXERCISE, stimulusCategory: v }).success
+    ).toBe(true);
   });
 });
 

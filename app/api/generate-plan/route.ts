@@ -216,7 +216,19 @@ PARA CADA EJERCICIO INCLUYE OBLIGATORIAMENTE:
 Estos tres arrays son LA DIFERENCIA entre un plan útil y uno que solo lista nombres. Nunca devuelvas arrays vacíos.
 
 Para CADA EJERCICIO también:
-- riskLevel (enum obligatorio): "bajo" (movilidad, técnica sin carga), "medio" (fuerza submáx, dominadas normales) o "alto" (max hangs, campus, dinámicos, ejercicios con lastre pesado).`;
+- riskLevel (enum obligatorio): "bajo" (movilidad, técnica sin carga), "medio" (fuerza submáx, dominadas normales) o "alto" (max hangs, campus, dinámicos, ejercicios con lastre pesado).
+- stimulusCategory (enum obligatorio) — categoría dominante DEL EJERCICIO individual (mismo enum de 10 que la sesión):
+    "warmup" para movilidad articular, activación (jumping jacks, band pull-aparts),
+    "skill" para drills técnicos (silent feet, twist locks, quiet feet),
+    "strength" para fuerza máxima de dedos y tracción (hangboard max hangs, dominadas con lastre pesado, front lever),
+    "power" para explosividad (campus, dinámicos, boulder máximo),
+    "power-endurance" para circuitos con recuperación incompleta (4x4, boulders repetidos, hangboard repeaters),
+    "aerobic-base" para ARC / Aero Cap (escalada continua baja intensidad, traverse largo),
+    "mobility" para estiramiento activo, PNF, extensor loading (band extensors),
+    "mental" para visualización, rutina pre-escalada, respiración,
+    "cooldown" para vuelta a la calma (foam rolling, estiramiento pasivo),
+    "rest" para pausa activa entre bloques (caminar, hidratar).
+Sé preciso — un Hangboard MaxHangs es "strength", no "warmup" ni "power". Un drill de silent feet es "skill", no "mobility". Bandas de extensores es "mobility" (o "warmup" si es de activación previa), no "strength".`;
 
 const SCHEMA_FIELD_NAMES = new Set([
   'safetyNotes',
@@ -254,6 +266,7 @@ function toExercise(fast: FastExercise): Exercise {
     category: null,
     requiredEquipment: fast.equipment ? [fast.equipment] : null,
     riskLevel: fast.riskLevel,
+    stimulusCategory: fast.stimulusCategory,
     objective: null,
     prescription: null,
     sets: fast.sets,

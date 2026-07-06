@@ -117,6 +117,22 @@ export interface Exercise {
   category?: string | null;
   requiredEquipment?: string[] | null;
   riskLevel?: 'bajo' | 'medio' | 'alto' | null;
+  // Sub-fase 4 — categoría de estímulo per-exercise (misma taxonomía que
+  // Session.stimulusCategory). Opcional/nullable para compat con ejercicios
+  // de planes viejos generados antes del schema extendido — el validador
+  // §3.x salta reglas dependientes cuando el campo viene ausente.
+  stimulusCategory?:
+    | 'warmup'
+    | 'skill'
+    | 'strength'
+    | 'power'
+    | 'power-endurance'
+    | 'aerobic-base'
+    | 'mobility'
+    | 'mental'
+    | 'cooldown'
+    | 'rest'
+    | null;
   objective?: string | null;
   prescription?: string | null;
   sets: number | null;
