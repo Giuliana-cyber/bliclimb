@@ -237,7 +237,8 @@ export type PlanRuleId =
   | '3.9'
   | '3.10'
   | '3.20'
-  | '10.6';
+  | '10.6'
+  | '14.2';
 
 // Location dentro del plan donde ocurrió la violación. Al menos uno de
 // weekNumber/dayNumber suele estar, salvo violaciones macro (§3.7/§3.8/§3.9)
@@ -287,6 +288,16 @@ export type PlanViolationDetails =
       kind: 'no-load-alternation';
       daysPerWeek: number;
       consecutiveHeavyDays: number[];
+    }
+  | {
+      kind: 'missing-extensor-work';
+      /** Cantidad de sesiones de tracción (strength/power/PE/aerobic-base)
+       *  en la semana observada. */
+      tractionDaysInWeek: number;
+      /** true si el perfil incluye 'elbows' en injuries — regla dura. */
+      hasEpicondylitisHistory: boolean;
+      /** Por qué disparó: threshold general (3+ días) o historia clínica. */
+      reason: 'traction-threshold' | 'epicondylitis-history';
     };
 
 /**
@@ -306,7 +317,7 @@ export type PlanViolationSeverity = 'blocking' | 'advisory';
  */
 export type PlanViolation = {
   rule: PlanRuleId;
-  section: 'section-03' | 'section-10';
+  section: 'section-03' | 'section-10' | 'section-14';
   severity: PlanViolationSeverity;
   location: PlanLocation;
   details: PlanViolationDetails;
@@ -391,9 +402,14 @@ export type PlanForRules = {
 /**
  * Módulo que valida un TrainingPlan (no un profile). Simétrico a
  * RuleModule pero para reglas de programación.
+ *
+ * profile es opcional: reglas plan-only (§3.x, §10.6) lo ignoran.
+ * Reglas que combinan plan + perfil (§14.2 — extensores condicionados
+ * a historial de epicondilitis) lo requieren. Fallback permisivo:
+ * cuando la regla necesita profile y viene undefined, se salta.
  */
 export interface PlanRuleModule {
-  readonly section: 'section-03' | 'section-10';
+  readonly section: 'section-03' | 'section-10' | 'section-14';
   readonly ruleIds: readonly PlanRuleId[];
-  check(plan: PlanForRules): PlanViolation[];
+  check(plan: PlanForRules, profile?: ProfileForRules): PlanViolation[];
 }
