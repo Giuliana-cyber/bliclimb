@@ -151,7 +151,13 @@ REGLAS DE ESTRUCTURA META:
   * Cada semana tiene theme corto (3-6 palabras) y objective específico.
   * focusAreas: 2-4 áreas concretas (ej: "fuerza max dedos", "potencia campus", "resistencia corta").
   * loadLevel: "introducción", "carga moderada", "carga alta", "descarga".
-  * Semanas múltiplos de 4 (4, 8, 12) son descarga: deloadWeek=true, loadLevel="descarga".`;
+  * Semanas múltiplos de 4 (4, 8, 12) son descarga: deloadWeek=true, loadLevel="descarga".
+  * phase (enum obligatorio, elige el más apropiado):
+      - "base"   → fundamentos, alta variedad, volumen moderado.
+      - "build"  → progresión, especificidad creciente, volumen alto.
+      - "peak"   → intensidad máxima, volumen reducido, especificidad total.
+      - "deload" → descarga (~50% volumen). USAR cuando deloadWeek=true.
+      - "test"   → semana de evaluación (max hangs, tests de fuerza).`;
 
 const WEEK_PROMPT = `Eres un coach de escalada profesional del calibre de Lattice Training, Eric Hörst y Power Company. Generas UNA SEMANA de entrenamiento serio. NO inventas fluff genérico de gym.
 
@@ -165,6 +171,21 @@ REGLAS DURAS:
 - TODO en español. JAMÁS inglés ("warmup", "workout", etc).
 - safetyNotes, adjustmentRules, successCriteria contienen ORACIONES REALES DE CONTENIDO. JAMÁS nombres de campos del schema.
 - Cada sesión tiene día exacto, título tipo "Día X — [Foco]", lugar (gym/roca/casa), duración estimada coherente con el perfil.
+- stimulusCategory (enum obligatorio) — categoría dominante de la sesión:
+    - "skill"           técnica/movimiento (drills, boulder de estilo). Distinto de "mental": skill = ejecución motora.
+    - "strength"        fuerza máxima (max hangs, dominadas con lastre pesadas).
+    - "power"           explosividad — 5-7 movs con descanso completo, campus, dinámicos.
+    - "power-endurance" circuitos 30 movs / esfuerzos 45s-5min con recuperación incompleta.
+    - "aerobic-base"    cubre TANTO ARC (baja intensidad continua 20-40 min) COMO Aero Cap (intensidad sostenible con bomba controlable).
+    - "mobility"        movilidad activa, flexibilidad.
+    - "mental"          visualización, foco, rutina pre-escalada, gestión del miedo. Distinto de "skill": mental = mente, no ejecución motora.
+    - "warmup"          sesión ENTERA de activación (raro; solo si la sesión es 100% preparación).
+    - "cooldown"        sesión ENTERA de vuelta a la calma (raro).
+    - "rest"            día off o recovery activo SUAVE (yoga restorativo, caminar). Distinto de "deload": rest = SESIÓN off, deload = SEMANA descarga.
+- intensityLevel (enum obligatorio):
+    - "easy"   RPE ≤5, recuperación activa, aeróbico base suave.
+    - "medium" RPE 6-7, trabajo moderado sostenido.
+    - "hard"   RPE ≥8, sesiones intensas.
 - objective de la sesión (1 oración corta y específica).
 - why (1 oración corta): por qué existe esta sesión en el contexto del mesociclo.
 - intensityTarget: "RPE 7-8/10", "65-75% capacidad max", "técnica al 60%", etc.
@@ -192,7 +213,10 @@ PARA CADA EJERCICIO INCLUYE OBLIGATORIAMENTE:
   Buenos: "Apurar la serie y perder técnica de agarre en el último segundo", "Hombro adelantado y elevado durante el hang — busca silla activa".
   Malos: "No hacer bien el ejercicio".
 
-Estos tres arrays son LA DIFERENCIA entre un plan útil y uno que solo lista nombres. Nunca devuelvas arrays vacíos.`;
+Estos tres arrays son LA DIFERENCIA entre un plan útil y uno que solo lista nombres. Nunca devuelvas arrays vacíos.
+
+Para CADA EJERCICIO también:
+- riskLevel (enum obligatorio): "bajo" (movilidad, técnica sin carga), "medio" (fuerza submáx, dominadas normales) o "alto" (max hangs, campus, dinámicos, ejercicios con lastre pesado).`;
 
 const SCHEMA_FIELD_NAMES = new Set([
   'safetyNotes',
@@ -229,7 +253,7 @@ function toExercise(fast: FastExercise): Exercise {
     description: fast.description,
     category: null,
     requiredEquipment: fast.equipment ? [fast.equipment] : null,
-    riskLevel: null,
+    riskLevel: fast.riskLevel,
     objective: null,
     prescription: null,
     sets: fast.sets,
@@ -278,10 +302,13 @@ function buildPlan(
     loadLevel: week.loadLevel,
     deloadWeek: week.deloadWeek,
     deloadFocus: null,
+    phase: week.phase,
     sessions: week.sessions.map<Session>((session) => ({
       dayNumber: session.dayNumber,
       title: session.title,
       stimulusType: null,
+      stimulusCategory: session.stimulusCategory,
+      intensityLevel: session.intensityLevel,
       location: session.location,
       equipment: null,
       estimatedMinutes: session.estimatedMinutes,
@@ -790,13 +817,16 @@ export async function POST(request: Request) {
 
     while (themes.length < profile.planDuration) {
       const last = themes[themes.length - 1];
+      const nextWeekNumber = themes.length + 1;
+      const isDeload = nextWeekNumber % 4 === 0;
       themes.push({
-        weekNumber: themes.length + 1,
+        weekNumber: nextWeekNumber,
         theme: last?.theme ?? 'Consolidación',
         objective: last?.objective ?? 'Consolidar lo aprendido',
         focusAreas: last?.focusAreas ?? [],
         loadLevel: last?.loadLevel ?? 'moderado',
-        deloadWeek: (themes.length + 1) % 4 === 0
+        deloadWeek: isDeload,
+        phase: isDeload ? 'deload' : (last?.phase ?? 'base')
       });
     }
 
