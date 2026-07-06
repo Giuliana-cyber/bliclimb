@@ -332,3 +332,51 @@ sub-categoría 'extensor' bajo mobility), refinar el check a exigir un
 ejercicio marcado explícitamente. Hasta entonces, el trade-off es:
 falsos negativos (semana que dice cumplir sin ser realmente extensor
 loading), pero cero falsos positivos que bloqueen planes válidos.
+
+## Fase 3 sub-fase 5 grupo 2 — deudas abiertas
+
+### 9.5 diferida — falta campo estructurado de disfrute/motivación
+
+La regla §9.5 del Doc 02 dice: si el usuario reporta frustración /
+desmotivación en 3+ check-ins CONSECUTIVOS, sugerir pausa de 2-4 semanas.
+Requiere leer `public.check_ins` entre sesiones y detectar la señal.
+
+Estado actual verificado en `supabase/migrations/0001_init.sql:135`:
+la tabla existe con `rpe`, `finger_pain`, `energy` (1-5), `sleep` (1-5),
+`notes` (texto libre), `manual_activity`. **Ningún campo estructurado de
+disfrute / motivación / diversión.**
+
+Decisión (Giuliana + Claude, 2026-07-06): NO implementar §9.5 con proxy
+loose (ej: `energy ≤ 2` en 3+ consecutivos). Razón: energía baja es
+compatible con fatiga física normal post-sesión intensa, NO
+necesariamente desmotivación. Bill sugiriendo "descanso de 2-4 semanas"
+a alguien solo cansado sería contraproducente — false positive con
+costo alto.
+
+Cierre: implementar §9.5 cuando aterrice un campo estructurado
+(ej: `enjoyment int 1-5` en `check_ins` + pregunta explícita "¿cómo la
+pasaste?" en el flujo de check-in UI).
+
+### §10.4 solo detección numérica, no semántica
+
+`lib/brain/detection/project-attempts-keywords.ts` solo detecta "N intentos"
+con N ≥ 7. Frases como "no me sale" / "estoy trabado" NO disparan.
+Razón (Giuliana, 2026-07-06): precisión > cobertura. "No me sale" abarca
+frustración pasajera / mal día / duda técnica — no necesariamente 7+
+intentos. Disparar "pará por hoy" con esa señal sería intrusivo para una
+sugerencia suave.
+
+Cierre: no hay cierre pendiente — decisión de diseño estable.
+Si en producción aparecen usuarios que la necesitan sin usar números,
+revisitar con datos reales.
+
+### §10.3 sin distinción viral vs bacteriana
+
+`sickness-keywords.ts` clasifica en `high-symptoms` (fiebre, covid,
+escalofríos, temp ≥38°C → descanso total) o `mild-symptoms` (resfriado,
+gripe, tos, mocos, garganta, flema → reducir volumen). Doc 02 §10.3
+opera con la misma granularidad.
+
+Deuda potencial: no detectamos sinusitis con antibiótico ni post-viral
+prolongada. No urgente — la mitigación es que el mensaje de mild incluya
+"si persiste 48h+, consultá profesional".
