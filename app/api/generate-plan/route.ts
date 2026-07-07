@@ -33,6 +33,7 @@ import { buildCorrectionMessage } from '@/lib/brain/orchestrator/build-correctio
 import { toPlanForRules } from '@/lib/brain/orchestrator/plan-adapter';
 import { SECTION_03_FALLBACK_MESSAGE } from '@/lib/brain/messages/section-03-programming';
 import { extractLibraryTraceability, type LibraryTraceability } from '@/lib/ai/response-sources';
+import { stripExplicitAttributions } from '@/lib/brain/sanitizers/citation-sanitizer';
 import { UserProfileSchema } from '@/lib/schemas/user-profile';
 import type { TrainingPlan, Week, Session, Exercise } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
@@ -497,8 +498,32 @@ ${profileToPrompt(profile)}`
       ] as Parameters<typeof client.responses.create>[0]['tools']
     });
 
-    const context = extractResponsesText(response);
+    const rawContext = extractResponsesText(response);
     const traceability = extractLibraryTraceability(response);
+
+    // Capa B — limpieza determinística de atribuciones explícitas en el texto
+    // que ve el LLM downstream. La traceability (metadata de fuentes) se
+    // conserva intacta en `traceability.sourceNames` — solo removemos lo
+    // estructurado del texto (líneas "Fuente:", secciones "Referencias",
+    // frases "según el estudio de X"). Deja lo ambiguo a la Capa A del prompt.
+    const { cleaned: context, stats: sanitizeStats } =
+      stripExplicitAttributions(rawContext);
+    if (
+      sanitizeStats.linesStripped +
+        sanitizeStats.sectionsStripped +
+        sanitizeStats.phrasesReplaced >
+      0
+    ) {
+      console.log(
+        JSON.stringify({
+          kind: 'grounding_sanitized',
+          ...sanitizeStats,
+          rawLength: rawContext.length,
+          cleanedLength: context.length,
+          timestamp: new Date().toISOString()
+        })
+      );
+    }
 
     return { context, traceability };
   } catch (error) {
