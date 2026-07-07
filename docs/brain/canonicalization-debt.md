@@ -413,6 +413,38 @@ Sanity real (2026-07-07 con gpt-4o-mini, perfil u16):
     'hangboard'): §1.gating detecta 1 violation, severity=blocking,
     profileRule='1.1'.
 
+### Monitoreo `low-confidence-block-category` (log-only, sin bloqueo)
+
+`lib/brain/monitoring/low-confidence-block-category.ts` emite JSON a stdout
+por cada exercise sospechoso de mal-etiquetado en perfiles con bloqueos
+de §1.x. Pattern: `stimulusCategory ∈ {strength, power}` + `riskLevel='alto'`
++ `blockCategory=null` + perfil con al menos 1 categoría bloqueada.
+
+Contexto de por qué NO bloquea (decisión Giuliana, 2026-07-07):
+la combinación coincide TANTO con ejercicios legítimos prescritos para
+menores (front lever, muscle-up, dominadas BW max, compound BW) como con
+ejercicios prohibidos mal-etiquetados. Un bloqueante sobre este pattern
+generaría ~5-10 falsos positivos por cada mal-etiquetado real, empujando
+al fallback #17 planes válidos para u16 y haciéndoles inútil la app.
+Preferimos medir el fenómeno con log antes de meter mecanismo.
+
+Formato del evento (`kind: 'low-confidence-block-category'`):
+  profileAge, profileClimbingTime, exerciseName, stimulusCategory,
+  riskLevel, blockCategory: null, activeProfileBlocks[], location.
+
+Revisión en 2-4 semanas de prod. Decisión con datos:
+  - Si mal-etiquetado real es FRECUENTE (ratio >20%): agregar
+    `loadsFingersDirectly: boolean` al FastExerciseSchema (schema-first,
+    mismo patrón que blockCategory) para separar strength-dedos de
+    strength-compuesta. Después, bloqueante limpio.
+  - Si mal-etiquetado real es RARO (<5%): refinar descripciones del enum
+    en el WEEK_PROMPT o dejar log-only permanente.
+  - Si intermedio (5-20%): decidir con casos concretos.
+
+Emit implementado en `app/api/generate-plan/route.ts` justo antes de
+`markFreePlanConsumed` (solo en path de éxito, no en fallos ni retries
+intermedios — el log tracea el plan FINAL que el usuario recibió).
+
 ### `lib/ai/plan-safety.ts` (legacy R1..R4) coexiste
 
 Decisión (Giuliana, 2026-07-07): no deprecar en este PR. La validación

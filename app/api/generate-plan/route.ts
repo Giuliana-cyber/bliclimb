@@ -27,6 +27,7 @@ import {
 } from '@/lib/ai/plan-safety';
 import { evaluateProfile } from '@/lib/brain/validator';
 import type { ProfileForRules } from '@/lib/brain/types';
+import { detectLowConfidenceBlockCategory } from '@/lib/brain/monitoring/low-confidence-block-category';
 import { extractLibraryTraceability, type LibraryTraceability } from '@/lib/ai/response-sources';
 import { UserProfileSchema } from '@/lib/schemas/user-profile';
 import type { TrainingPlan, Week, Session, Exercise } from '@/lib/plan';
@@ -954,6 +955,49 @@ export async function POST(request: Request) {
           { status: 422 }
         );
       }
+    }
+
+    // Monitoreo NO bloqueante: emite JSON por cada ejercicio sospechoso de
+    // mal-etiquetado de blockCategory (strength/power + alto + null en perfil
+    // con bloqueos de §1.1/§1.2). Con 2-4 semanas de prod decidimos si
+    // agregar `loadsFingersDirectly` al schema o refinar el prompt. No afecta
+    // la respuesta al usuario ni cuenta contadores.
+    for (const evt of detectLowConfidenceBlockCategory(
+      {
+        weeks: plan.weeks.map((w) => ({
+          weekNumber: w.weekNumber,
+          phase: w.phase ?? null,
+          deloadWeek: w.deloadWeek ?? false,
+          sessions: w.sessions.map((s) => ({
+            dayNumber: s.dayNumber,
+            title: s.title,
+            stimulusCategory: s.stimulusCategory ?? null,
+            intensityLevel: s.intensityLevel ?? null,
+            estimatedMinutes: s.estimatedMinutes,
+            warmup: s.warmup.map((e) => ({
+              name: e.name,
+              stimulusCategory: e.stimulusCategory ?? null,
+              riskLevel: e.riskLevel ?? null,
+              blockCategory: e.blockCategory ?? null
+            })),
+            mainBlock: s.mainBlock.map((e) => ({
+              name: e.name,
+              stimulusCategory: e.stimulusCategory ?? null,
+              riskLevel: e.riskLevel ?? null,
+              blockCategory: e.blockCategory ?? null
+            })),
+            cooldown: s.cooldown.map((e) => ({
+              name: e.name,
+              stimulusCategory: e.stimulusCategory ?? null,
+              riskLevel: e.riskLevel ?? null,
+              blockCategory: e.blockCategory ?? null
+            }))
+          }))
+        }))
+      },
+      profileForRules
+    )) {
+      console.log(JSON.stringify(evt));
     }
 
     // CONTRATO IMPORTANTE: TODOS los contadores se mueven solo en éxito.
