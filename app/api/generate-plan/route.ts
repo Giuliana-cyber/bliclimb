@@ -28,6 +28,10 @@ import {
 import { evaluateProfile } from '@/lib/brain/validator';
 import type { ProfileForRules } from '@/lib/brain/types';
 import { detectLowConfidenceBlockCategory } from '@/lib/brain/monitoring/low-confidence-block-category';
+import { evaluateGeneratedPlan } from '@/lib/brain/orchestrator/evaluate-generated-plan';
+import { buildCorrectionMessage } from '@/lib/brain/orchestrator/build-correction-message';
+import { toPlanForRules } from '@/lib/brain/orchestrator/plan-adapter';
+import { SECTION_03_FALLBACK_MESSAGE } from '@/lib/brain/messages/section-03-programming';
 import { extractLibraryTraceability, type LibraryTraceability } from '@/lib/ai/response-sources';
 import { UserProfileSchema } from '@/lib/schemas/user-profile';
 import type { TrainingPlan, Week, Session, Exercise } from '@/lib/plan';
@@ -904,23 +908,63 @@ export async function POST(request: Request) {
     );
     let plan = buildPlan(metadata, fastWeeks, profile, traceability);
 
-    // Validación de seguridad enforceable server-side
+    // Validación de seguridad — dos capas coexisten (deuda registrada):
+    //   1. Legacy (validatePlanSafety) por 2-4 semanas hasta probar en prod.
+    //   2. Brain (evaluateGeneratedPlan) — 4 validators plan-level:
+    //      §1.gating, §3.x, §14.2 (blocking) + §10.6 (advisory).
+    // Ambos disparan retry al mismo loop. Hasta 3 intentos totales.
+    // Contador NO se toca en el retry; solo en éxito final (línea ~995).
+    const MAX_RETRIES = 3;
+    let brainEval = evaluateGeneratedPlan(toPlanForRules(plan), profileForRules);
     let safety = validatePlanSafety(plan, profile);
+    let attempt = 0;
 
-    if (!safety.ok) {
-      logSafetyViolations('first', profile, safety.violations);
+    while ((brainEval.blocking.length > 0 || !safety.ok) && attempt < MAX_RETRIES) {
+      attempt++;
 
-      // Reintento: regeneramos SOLO las semanas que tienen el problema, con feedback correctivo.
-      const correction = buildSafetyRetryMessage(safety.violations);
-      const offendingWeekNumbers = new Set(
-        safety.violations
-          .map((v) => v.triggerExercise?.week)
-          .filter((w): w is number => typeof w === 'number')
-      );
+      // Log del pase actual (primer intento = 'first', luego 'retry-N').
+      if (!safety.ok) {
+        logSafetyViolations(attempt === 1 ? 'first' : 'retry', profile, safety.violations);
+      }
+      if (brainEval.blocking.length > 0) {
+        console.log(
+          JSON.stringify({
+            kind: 'plan_brain_violations',
+            attempt,
+            profileId: profile.id ?? null,
+            blocking: brainEval.blocking.map((v) => ({
+              rule: v.rule,
+              detailsKind: v.details.kind,
+              location: v.location
+            })),
+            advisory: brainEval.advisory.map((v) => ({ rule: v.rule })),
+            timestamp: new Date().toISOString()
+          })
+        );
+      }
+
+      // Ensamble de correction: legacy + brain. Bill recibe ambos hints.
+      const legacyMsg = safety.ok ? '' : buildSafetyRetryMessage(safety.violations);
+      const brainMsg =
+        brainEval.blocking.length > 0
+          ? buildCorrectionMessage(brainEval.blocking, brainEval.advisory)
+          : '';
+      const correction = [legacyMsg, brainMsg].filter(Boolean).join('\n\n');
+
+      // Semanas ofensivas: unión de las que reporta legacy + brain.
+      const offending = new Set<number>();
+      if (!safety.ok) {
+        for (const v of safety.violations) {
+          if (typeof v.triggerExercise?.week === 'number') offending.add(v.triggerExercise.week);
+        }
+      }
+      for (const v of brainEval.blocking) {
+        if (typeof v.location.weekNumber === 'number') offending.add(v.location.weekNumber);
+      }
 
       const regenerated = await Promise.all(
         themes.map(async (theme) => {
-          if (offendingWeekNumbers.size === 0 || offendingWeekNumbers.has(theme.weekNumber)) {
+          if (offending.size === 0 || offending.has(theme.weekNumber)) {
             return generateWeek(
               client,
               model,
@@ -937,24 +981,38 @@ export async function POST(request: Request) {
 
       fastWeeks = regenerated;
       plan = buildPlan(metadata, fastWeeks, profile, traceability);
+      brainEval = evaluateGeneratedPlan(toPlanForRules(plan), profileForRules);
       safety = validatePlanSafety(plan, profile);
+    }
 
-      if (!safety.ok) {
-        // Segundo fallo → no devolvemos plan inseguro al usuario.
-        logSafetyViolations('retry', profile, safety.violations);
-        return NextResponse.json(
-          {
-            code: 'plan_unsafe_after_retry',
-            error:
-              'Generamos el plan pero contiene ejercicios que no son seguros para tu perfil. Estamos revisando esto — vuelve a intentarlo en un momento o ajusta tu perfil (lesiones, edad, tiempo escalando).',
-            violations: safety.violations.map((v) => ({
-              rule: v.rule,
-              reason: v.reason
-            }))
-          },
-          { status: 422 }
-        );
-      }
+    if (brainEval.blocking.length > 0 || !safety.ok) {
+      // Tras MAX_RETRIES intentos, no publicamos plan inseguro.
+      if (!safety.ok) logSafetyViolations('retry', profile, safety.violations);
+      console.log(
+        JSON.stringify({
+          kind: 'plan_unrecoverable_after_retries',
+          attempts: MAX_RETRIES,
+          profileId: profile.id ?? null,
+          finalBlocking: brainEval.blocking.map((v) => ({
+            rule: v.rule,
+            detailsKind: v.details.kind,
+            location: v.location
+          })),
+          legacyViolations: safety.ok ? [] : safety.violations.map((v) => ({ rule: v.rule, reason: v.reason })),
+          timestamp: new Date().toISOString()
+        })
+      );
+      return NextResponse.json(
+        {
+          code: 'plan_unsafe_after_retry',
+          error: SECTION_03_FALLBACK_MESSAGE.text,
+          violations: [
+            ...(safety.ok ? [] : safety.violations.map((v) => ({ rule: v.rule, reason: v.reason }))),
+            ...brainEval.blocking.map((v) => ({ rule: v.rule, reason: v.details.kind }))
+          ]
+        },
+        { status: 422 }
+      );
     }
 
     // Monitoreo NO bloqueante: emite JSON por cada ejercicio sospechoso de

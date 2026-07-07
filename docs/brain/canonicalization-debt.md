@@ -445,11 +445,30 @@ Emit implementado en `app/api/generate-plan/route.ts` justo antes de
 `markFreePlanConsumed` (solo en path de éxito, no en fallos ni retries
 intermedios — el log tracea el plan FINAL que el usuario recibió).
 
-### `lib/ai/plan-safety.ts` (legacy R1..R4) coexiste
+### `lib/ai/plan-safety.ts` (legacy R1..R4) coexiste con brain evaluator
 
 Decisión (Giuliana, 2026-07-07): no deprecar en este PR. La validación
-vieja de 4 reglas keyword-based sigue wireada en `route.ts:878` como
-segunda red. Cuando el wiring nuevo (§1.gating + section-03 + section-14
-en el retry loop) esté probado en producción, deprecar `plan-safety.ts`
-en un PR separado. Convivencia temporal es más segura que reemplazo de
-golpe.
+vieja de 4 reglas keyword-based sigue wireada en `route.ts` como red
+paralela a `evaluateGeneratedPlan` (§1.gating + §3.x + §14.2 + §10.6).
+Ambos corren en cada intento; ambos disparan retry al mismo loop; ambos
+mensajes de corrección van concatenados a Bill.
+
+Cuando 2-4 semanas de prod confirmen que el brain evaluator no deja
+pasar nada que el legacy sí atrapaba, deprecar `plan-safety.ts` en PR
+separado (sacar el import + el bloque de correction ensemble).
+
+### Fallback #17 sigue como PLACEHOLDER
+
+`SECTION_03_FALLBACK_MESSAGE.text` retorna al usuario cuando el retry
+loop se agota tras 3 intentos con blocking persistente. Sigue con el
+texto placeholder:
+`'[PLACEHOLDER — mensaje #17 de mensajes-tono-belay-partners.md] ...'`
+
+Verificado (2026-07-07) que el frontend `app/generating-plan/page.tsx`
+pasa `data.error` por `getFriendlyGenerationError()`, que solo swappea
+si detecta rate-limit técnico de OpenAI. Cualquier otro error se
+muestra tal cual al usuario. O sea: hoy el placeholder llega al usuario
+literal. Riesgo bajo en frecuencia (solo dispara tras 3 retries fallidos,
+que en el sanity de u16 no se activó), pero cuando lo haga, el texto
+placeholder se ve raro. Reemplazar el string por el mensaje #17 real
+cuando aterrice `mensajes-tono-belay-partners.md`.
