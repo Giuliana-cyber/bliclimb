@@ -6,13 +6,16 @@ import type { UserProfile } from '@/lib/profile';
 import { gateChat } from '@/lib/billing/gates';
 import { checkRateLimit, commitRateLimit } from '@/lib/rate-limit';
 import { buildCoachSystemPrompt } from '@/lib/prompts/coach-system';
-import { extractLibraryTraceability } from '@/lib/ai/response-sources';
 import { CHAT_MAX_OUTPUT_TOKENS } from '@/lib/ai/token-budget';
 import { ChatRequestSchema } from '@/lib/schemas/user-profile';
 import { checkWeightDerivation } from '@/lib/brain/detection/section-03-15-orchestrator';
 import { buildFixedResponseStream } from '@/lib/brain/detection/fixed-response-stream';
 import { getDerivationMessage } from '@/lib/brain/messages/section-03-15';
 import { checkChatHints } from '@/lib/brain/orchestrator/chat-hints';
+import {
+  buildSearchQuery,
+  fetchAndSanitizeChatRag
+} from '@/lib/brain/orchestrator/chat-rag-context';
 import { ConsoleLogSink } from '@/lib/brain/logging';
 import type { ConversationTurn } from '@/lib/brain/detection/weight-intent-classifier';
 
@@ -203,6 +206,40 @@ export async function POST(request: Request) {
     console.log(JSON.stringify(evt));
   }
 
+  // ---------- Capa B — RAG explícito + sanitizer, DESPUÉS de §3.15 ----------
+  //
+  // En vez del file_search inline (que consume tokens del LLM y NO da
+  // punto de intercepción pre-modelo), hacemos una llamada explícita a
+  // client.vectorStores.search, sanitizamos los chunks con el mismo
+  // sanitizer que usa generate-plan (stripExplicitAttributions), y
+  // inyectamos el texto limpio como system message adicional.
+  //
+  // Query: últimos 3 mensajes concatenados (contexto para "¿y para eso
+  // qué hago?" etc). max_num_results: 5. Fail-safe: si la search tira,
+  // Bill responde sin contexto de biblioteca esa vez.
+  const ragQuery = buildSearchQuery(messages);
+  const ragResult = await fetchAndSanitizeChatRag(
+    client,
+    vectorStoreId,
+    ragQuery,
+    { maxNumResults: 5 }
+  );
+  if (
+    ragResult.stats.linesStripped +
+      ragResult.stats.sectionsStripped +
+      ragResult.stats.phrasesReplaced >
+    0
+  ) {
+    console.log(
+      JSON.stringify({
+        kind: 'chat_rag_sanitized',
+        ...ragResult.stats,
+        sourceNames: ragResult.traceability.sourceNames,
+        timestamp: new Date().toISOString()
+      })
+    );
+  }
+
   // Flujo normal — no hay derivación, Bill responde con streaming.
   const stream = new ReadableStream({
     async start(controller) {
@@ -226,17 +263,26 @@ export async function POST(request: Request) {
               role: 'system' as const,
               content: hint
             })),
+            // Capa B — contexto RAG ya sanitizado (sin citas explícitas).
+            // Solo se inyecta si la search trajo resultados. `traceability`
+            // se emite en el evento 'done' para que la UI pueda mostrar
+            // fuentes en un badge separado del texto.
+            ...(ragResult.context
+              ? [
+                  {
+                    role: 'system' as const,
+                    content: `BIBLIOTECA — extractos relevantes de fuentes profesionales (procesados para retirar citas explícitas; usa la información sin atribuir):\n\n${ragResult.context}`
+                  }
+                ]
+              : []),
             ...messages.map((message) => ({
               role: message.role,
               content: message.content
             }))
           ],
-          tools: [
-            {
-              type: 'file_search',
-              vector_store_ids: [vectorStoreId]
-            }
-          ],
+          // file_search REMOVIDO del tools — la recuperación ahora es
+          // explícita arriba (Capa B). Si algún día se necesita re-agregar,
+          // hay que volver a proteger la salida con Capa A + prompt.
           stream: true
         });
 
@@ -252,7 +298,11 @@ export async function POST(request: Request) {
           }
 
           if (event.type === 'response.completed') {
-            controller.enqueue(sse('done', extractLibraryTraceability(event.response)));
+            // Con file_search removido del tools, `event.response` no trae
+            // citations. La traceability ahora sale de la search explícita
+            // de la Capa B (arriba). Emitimos la misma shape que consumía
+            // la UI para no romper el contrato.
+            controller.enqueue(sse('done', ragResult.traceability));
           }
         }
       } catch (error) {
