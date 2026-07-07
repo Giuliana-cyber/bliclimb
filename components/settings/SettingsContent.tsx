@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   AlertTriangle,
-  BookOpenCheck,
   ChevronRight,
   Bug,
   Database,
@@ -14,7 +13,6 @@ import {
   LogOut,
   Mail,
   ShieldCheck,
-  Sparkles,
   Trash2,
   Users,
   UserRound
@@ -22,7 +20,6 @@ import {
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Banner } from '@/components/ui/Banner';
-import { MountainBackdrop } from '@/components/ui/MountainBackdrop';
 import { CharacterAvatar } from '@/components/ui/CharacterAvatar';
 import { createClient } from '@/lib/supabase/client';
 import { clearLocalSession, loadLocalSession, type LocalSession } from '@/lib/session';
@@ -183,59 +180,6 @@ export function SettingsContent({ subscriptionPanel }: SettingsContentProps = {}
           title="Esto NO reemplaza a un profesional"
           description="BilClimb es un asistente de IA. Puede equivocarse, recomendar mal o no ver matices que sí vería un coach humano, fisioterapeuta o médico. Si tienes lesiones, molestias persistentes o vas en serio con un proyecto fuerte, consulta a un profesional certificado. Tú eres responsable de tus decisiones de entrenamiento."
         />
-
-        <Card variant="hero" className="relative overflow-hidden !p-5">
-          <MountainBackdrop />
-          <div className="relative">
-            <div className="inline-flex items-center gap-2 rounded-full border border-brand-cyan/30 bg-brand-cyan/[0.08] px-3 py-1 text-xs font-bold uppercase tracking-[0.10em] text-brand-cyan">
-              <Sparkles size={12} />
-              Cómo se pensó
-            </div>
-            <h3 className="mt-3 text-lg font-extrabold leading-tight">
-              Un coach digital con bases reales
-            </h3>
-            <p className="mt-2 text-sm leading-6 text-white/72">
-              BilClimb mezcla principios de coaches de escalada referentes (Lattice Training,
-              Eric Hörst, Power Company, Climb Strong, Catalyst, Hooper&apos;s Beta) con un motor
-              de IA. La idea: que cualquier escalador pueda tener un plan estructurado,
-              técnico y adaptado a su contexto, sin pagar $100+/mes a un coach humano.
-            </p>
-            <p className="mt-3 text-sm leading-6 text-white/72">
-              Hecho por <span className="font-bold text-brand-cyan">Belay Partners</span>.
-              Estamos al inicio del camino — si algo te parece mal o falta, dinos.
-            </p>
-          </div>
-        </Card>
-
-        <ExpandableCard
-          icon={BookOpenCheck}
-          title="¿De dónde sale la información?"
-          description="Fuentes y metodología"
-        >
-          <ul className="space-y-2.5 text-sm leading-6 text-white/72">
-            <li>
-              <span className="font-bold text-white">Coaches referentes:</span> los planes se
-              inspiran en la metodología de Lattice Training, TrainingForClimbing (Eric
-              Hörst), Power Company Climbing, Climb Strong (Steve Bechtel), Catalyst
-              Climbing, Hooper&apos;s Beta, The Climbing Doctor, Dave MacLeod y más.
-            </li>
-            <li>
-              <span className="font-bold text-white">Motor de IA:</span> hoy usamos GPT-4o
-              para generar planes y GPT-4o-mini para el chat. La IA conoce los métodos pero
-              puede equivocarse.
-            </li>
-            <li>
-              <span className="font-bold text-white">Próximo paso:</span> estamos
-              construyendo un sistema que indexa canales de YouTube y blogs de los mejores
-              entrenadores para citar fuentes específicas (Fase 3).
-            </li>
-            <li>
-              <span className="font-bold text-white">Lo que NO somos:</span> no somos un
-              equipo médico, no diagnosticamos lesiones, no prescribimos dietas. Para eso,
-              fisio o nutriólogo.
-            </li>
-          </ul>
-        </ExpandableCard>
 
         <ExpandableCard
           icon={ShieldCheck}
