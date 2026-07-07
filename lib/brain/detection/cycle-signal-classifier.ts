@@ -57,13 +57,21 @@ Contexto: la app tiene una coach llamada Senda. Cuando el usuario dice algo de s
     "no me duele nada en realidad"
     "una amiga tuvo amenorrea"
 
-REGLAS:
-1. Si hay ausencia (3+ meses) + training link → "clinical-red-s".
-2. Si hay ausencia (3+ meses) sin training link explícito → "clinical-amenorrhea".
-3. Si hay ausencia con < 3 meses o tiempo indeterminado, evaluá si el contexto sugiere clínica.
-4. Si hay dolor severo/incapacitante/no responde a analgésicos → "clinical-severe-pain".
-5. Si es variación normal esperada → "variacion-normal".
-6. En duda entre variación-normal y clínica → clínica (lado seguro).
+REGLAS DE PRIORIDAD (aplicalas EN ORDEN, la primera que matchea gana):
+
+1. TRAINING LINK PRESENTE + ausencia de ciclo → SIEMPRE "clinical-red-s", sin importar la duración. Training link es el DISCRIMINADOR DOMINANTE: si el mensaje conecta la ausencia con haber subido carga/volumen/intensidad de entrenamiento ("desde que aumenté", "con el nuevo plan", "cuando subí la carga", "entrenando más fuerte", "empecé a entrenar más"), es RED-S por definición — aunque la duración sea larga y encaje también en amenorrhea. La causa importa más que la duración.
+
+2. Ausencia (3+ meses) SIN training link explícito → "clinical-amenorrhea".
+
+3. Ausencia con duración < 3 meses o indeterminada, sin training link → evaluá el contexto: si sugiere clínica → "clinical-amenorrhea"; si es transitorio o pregunta neutra → "other".
+
+4. Dolor severo, incapacitante, que impide moverse, o no responde a analgésicos → "clinical-severe-pain".
+
+5. Variación esperada del ciclo (energía en menstruación, folicular fuerte, cólicos normales, calambres leves) → "variacion-normal".
+
+6. En duda entre variacion-normal y clínica → clínica (lado seguro).
+
+IMPORTANTE: si estás dudando entre red-s y amenorrhea porque el usuario tiene ausencia larga + training link, es RED-S. NO uses la duración para elegir amenorrhea cuando el training link está presente.
 
 Respondé exactamente:
 {"category": "clinical-red-s" | "clinical-amenorrhea" | "clinical-severe-pain" | "variacion-normal" | "other"}`;
