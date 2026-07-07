@@ -227,6 +227,7 @@ export interface LogSink {
 // Este módulo NO se wire-a con generate-plan en este PR (librería pura).
 
 export type PlanRuleId =
+  | '1.gating'
   | '3.1'
   | '3.2'
   | '3.3'
@@ -290,6 +291,16 @@ export type PlanViolationDetails =
       consecutiveHeavyDays: number[];
     }
   | {
+      kind: 'gated-exercise-slipped';
+      /** Nombre del ejercicio tal como lo generó Bill (para diagnostic). */
+      exerciseName: string;
+      /** Categoría gateable etiquetada por el LLM que el perfil bloquea. */
+      blockedCategory: BlockedCategory;
+      /** Regla del perfil que originó el bloqueo (ej '1.1' o '1.2'). Puede
+       *  ser null si el bloqueo vino de una fuente que no exponía rule ID. */
+      profileRule: string | null;
+    }
+  | {
       kind: 'missing-extensor-work';
       /** Cantidad de sesiones de tracción (strength/power/PE/aerobic-base)
        *  en la semana observada. */
@@ -317,7 +328,7 @@ export type PlanViolationSeverity = 'blocking' | 'advisory';
  */
 export type PlanViolation = {
   rule: PlanRuleId;
-  section: 'section-03' | 'section-10' | 'section-14';
+  section: 'section-01' | 'section-03' | 'section-10' | 'section-14';
   severity: PlanViolationSeverity;
   location: PlanLocation;
   details: PlanViolationDetails;
@@ -364,6 +375,9 @@ export type PlanExerciseForRules = {
     | 'cooldown'
     | 'rest'
     | null;
+  // Sub-fase final del middleware — categoría gateable per-exercise.
+  // Alineada con BlockedCategory. Cruza con BlockingContext del perfil.
+  blockCategory?: BlockedCategory | null;
 };
 
 export type PlanSessionForRules = {
@@ -409,7 +423,7 @@ export type PlanForRules = {
  * cuando la regla necesita profile y viene undefined, se salta.
  */
 export interface PlanRuleModule {
-  readonly section: 'section-03' | 'section-10' | 'section-14';
+  readonly section: 'section-01' | 'section-03' | 'section-10' | 'section-14';
   readonly ruleIds: readonly PlanRuleId[];
   check(plan: PlanForRules, profile?: ProfileForRules): PlanViolation[];
 }

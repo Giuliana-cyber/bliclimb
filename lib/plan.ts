@@ -133,6 +133,19 @@ export interface Exercise {
     | 'cooldown'
     | 'rest'
     | null;
+  // Sub-fase final del middleware — categoría gateable. Cruza con
+  // BlockingContext del perfil (§1.x). Opcional/nullable para compat con
+  // planes viejos (validador skipeará ejercicios sin la etiqueta).
+  blockCategory?:
+    | 'hangboard'
+    | 'hangboard-intense'
+    | 'campus'
+    | 'full-crimp'
+    | 'hit'
+    | 'pullups-weighted'
+    | 'max-tests'
+    | 'finger-training-any'
+    | null;
   objective?: string | null;
   prescription?: string | null;
   sets: number | null;
