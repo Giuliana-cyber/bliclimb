@@ -908,7 +908,10 @@ export async function POST(request: Request) {
       currentShoulderPain: profile.currentShoulderPain ?? 0,
       currentElbowPain: profile.currentElbowPain ?? 0,
       injuries: profile.injuries ?? [],
-      sleep: profile.sleep ?? ''
+      sleep: profile.sleep ?? '',
+      // Fase 4 Pieza 2 — pasa el coach activo para que §1.3 (dolor ≥3)
+      // sirva el mensaje adaptado (Bill neutro vs Senda Derivación 3).
+      character: profile.character === 'senda' ? 'senda' : 'bill'
     };
     const brainContext = evaluateProfile(profileForRules, {
       profileId: profile.id ?? null

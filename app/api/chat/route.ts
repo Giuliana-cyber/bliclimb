@@ -12,6 +12,7 @@ import { checkWeightDerivation } from '@/lib/brain/detection/section-03-15-orche
 import { buildFixedResponseStream } from '@/lib/brain/detection/fixed-response-stream';
 import { getDerivationMessage } from '@/lib/brain/messages/section-03-15';
 import { checkChatHints } from '@/lib/brain/orchestrator/chat-hints';
+import { checkSendaDerivation } from '@/lib/brain/detection/senda-derivation-orchestrator';
 import {
   buildSearchQuery,
   fetchAndSanitizeChatRag
@@ -195,12 +196,63 @@ export async function POST(request: Request) {
     });
   }
 
-  // ---------- §10.3 / §10.4 — hints reactivos, corren DESPUÉS de §3.15 ----------
+  // ---------- SENDA — derivaciones clínicas (solo si coach = Senda) ----------
+  //
+  // Fase 4 Pieza 2. Detecta señal clínica de ciclo (RED-S, amenorrea 3+
+  // meses) o dolor severo, y sirve el mensaje verbatim aprobado envuelto
+  // con una línea de calidez opcional del LLM (Opción A del compositor).
+  // Silencio total de Senda como §3.15 — no llamamos al stream normal.
+  //
+  // Precedencia: DESPUÉS de §3.15 (peso tiene prioridad), ANTES de los
+  // hints §10.3/§10.4. Solo se activa si character === 'senda'.
+  const activeCharacter = character ?? body.profile?.character ?? 'bill';
+  if (activeCharacter === 'senda') {
+    const sendaDecision = await checkSendaDerivation(
+      client,
+      lastUserMessage,
+      conversationContext
+    );
+    if (sendaDecision.derive) {
+      await commitRateLimit('chat');
+      console.log(
+        JSON.stringify({
+          kind: 'senda-derivation-served',
+          rule: 'fase-4-pieza-2',
+          profileId: body.profile?.id ?? null,
+          category: sendaDecision.category,
+          derivationKind: sendaDecision.kind,
+          usedFallback: sendaDecision.composed.usedFallback,
+          fallbackReason: sendaDecision.composed.fallbackReason,
+          layer1Domains: {
+            absence: sendaDecision.layer1.domains.absence.length,
+            trainingLink: sendaDecision.layer1.domains.trainingLink.length,
+            severity: sendaDecision.layer1.domains.severity.length
+          },
+          monthsElapsed: sendaDecision.layer1.monthsElapsed,
+          classifierError: sendaDecision.layer2.error,
+          timestamp: new Date().toISOString()
+        })
+      );
+      const derivationStream = buildFixedResponseStream(
+        sendaDecision.composed.fullMessage
+      );
+      return new Response(derivationStream, {
+        headers: {
+          'Content-Type': 'text/event-stream; charset=utf-8',
+          'Cache-Control': 'no-cache, no-transform',
+          Connection: 'keep-alive'
+        }
+      });
+    }
+  }
+
+  // ---------- §10.3 / §10.4 — hints reactivos, corren DESPUÉS de §3.15 y Senda ----------
   //
   // Detección liviana de síntomas de enfermedad (§10.3) y N+ intentos en un
   // proyecto (§10.4). Distinto de §3.15: NO silencia a Bill; le pasa un
   // system message extra para que contextualice la respuesta en su voz.
-  // §3.15 tiene precedencia (si derivó arriba, este bloque no corre).
+  // §3.15 y Senda tienen precedencia (si alguna derivó arriba, este bloque
+  // no corre porque ya se retornó la respuesta).
   const chatHints = checkChatHints(lastUserMessage);
   for (const evt of chatHints.logEvents) {
     console.log(JSON.stringify(evt));

@@ -59,19 +59,27 @@ describe('buildCoachSystemPrompt — bloques COMUNES aplican a Bill y a Senda', 
 
 const SENDA_ONLY_MARKERS = [
   'VOZ Y TONO (aplica solo a Senda)',
+  'REGISTRO EN TEMAS ÍNTIMOS',
   'SALUD FEMENINA Y CICLO (aplica solo a Senda)',
-  'DERIVACIONES CLÍNICAS (verbatim',
+  'DERIVACIONES CLÍNICAS (las sirve el sistema',
+  'RED 3 — FALLBACK PARA DESCRIPCIÓN INDIRECTA',
   'ÁNGULO DEL TRABAJO MENTAL (aplica solo a Senda',
   // Distinción clave dentro del bloque de ciclo
   'VARIACIÓN NORMAL',
-  'SEÑAL CLÍNICA',
-  // Los 3 verbatim (fragmentos representativos + inconfundibles)
-  'Gracias por contarme esto',                     // Derivación 1 opening
-  'este tema vale una consulta de verdad',         // Derivación 1 closing
-  'Gracias por confiarme esto',                    // Derivación 2 opening
-  'un profesional que pueda verte de verdad',      // Derivación 2 closing
-  'Eso que me cuentas no suena a molestia normal', // Derivación 3 opening
-  'Que alguien lo revise es cuidarte, no exagerar' // Derivación 3 closing
+  'SEÑAL CLÍNICA'
+];
+
+// Los 3 mensajes de derivación clínica VERBATIM ya NO viven en el prompt —
+// se sirven determinísticamente vía el orquestador de chat runtime,
+// desde `lib/brain/messages/senda-derivations.ts`. El prompt solo tiene
+// un puntero al sistema.
+const SENDA_VERBATIM_NOT_IN_PROMPT = [
+  'Gracias por contarme esto — y me alegra que lo notes',
+  'este tema vale una consulta de verdad',
+  'Gracias por confiarme esto. Que la menstruación',
+  'un profesional que pueda verte de verdad',
+  'Eso que me cuentas no suena a molestia normal',
+  'Que alguien lo revise es cuidarte, no exagerar'
 ];
 
 describe('buildCoachSystemPrompt — SENDA_PERSONA_BLOCK solo aparece con Senda', () => {
@@ -127,32 +135,23 @@ describe('buildCoachSystemPrompt — bloques de datos runtime en ambos', () => {
   });
 });
 
-// -------------------- Derivaciones son texto verbatim inalterado --------------------
+// -------------------- Derivaciones NO están inline en el prompt --------------------
+// (viven en lib/brain/messages/senda-derivations.ts y las sirve el orquestador
+//  de chat runtime — el prompt solo tiene un puntero al sistema)
 
-describe('buildCoachSystemPrompt — derivaciones son verbatim inalteradas', () => {
-  it('Derivación 1 completa aparece letra por letra', () => {
+describe('buildCoachSystemPrompt — derivaciones NO están inline en el prompt', () => {
+  it('character="senda" NO incluye los verbatim inline (se sirven vía sistema)', () => {
     const p = buildCoachSystemPrompt({ profile: baseProfile, character: 'senda' });
-    const d1 =
-      'Gracias por contarme esto — y me alegra que lo notes, porque es importante. ' +
-      'Que el ciclo desaparezca cuando subes la carga de entrenamiento no es algo para dejar pasar ni para resolver acá entre nosotras: es una señal de que tu cuerpo puede estar bajo más estrés del que puede sostener, y eso lo tiene que ver un profesional de salud. ' +
-      'No es para asustarte, es para cuidarte. Mientras tanto seguimos con tu escalada, pero este tema vale una consulta de verdad.';
-    expect(p).toContain(d1);
+    for (const fragment of SENDA_VERBATIM_NOT_IN_PROMPT) {
+      expect(
+        p,
+        `El prompt NO debe incluir el verbatim inline "${fragment}"`
+      ).not.toContain(fragment);
+    }
   });
 
-  it('Derivación 2 completa aparece letra por letra', () => {
+  it('character="senda" tiene el puntero explícito al sistema', () => {
     const p = buildCoachSystemPrompt({ profile: baseProfile, character: 'senda' });
-    const d2 =
-      'Gracias por confiarme esto. Que la menstruación no aparezca por varios meses es de esas cosas que conviene mirar con alguien de salud — no para alarmarte, sino porque tu cuerpo te está contando algo y vale la pena entender qué. ' +
-      'No es un tema para resolver solo con el entrenamiento. Yo te acompaño con tu escalada como siempre, pero esto merece una consulta con un profesional que pueda verte de verdad.';
-    expect(p).toContain(d2);
-  });
-
-  it('Derivación 3 completa aparece letra por letra', () => {
-    const p = buildCoachSystemPrompt({ profile: baseProfile, character: 'senda' });
-    const d3 =
-      'Eso que me cuentas no suena a molestia normal, y no quiero que lo aguantes como si lo fuera. ' +
-      'Un dolor que te frena o que es fuerte de verdad lo tiene que ver un profesional de salud — no es algo que debamos manejar acá entre las dos. ' +
-      'Seguimos con tu entrenamiento en lo que puedas, pero por favor no dejes pasar ese dolor. Que alguien lo revise es cuidarte, no exagerar.';
-    expect(p).toContain(d3);
+    expect(p).toContain('las sirve el sistema, NO las escribas vos');
   });
 });

@@ -172,6 +172,60 @@ describe('section-01 — combinaciones', () => {
   });
 });
 
+// -------------------- Fase 4 Pieza 2 — variante de mensaje §1.3 por coach --------------------
+
+describe('section-01 — §1.3 mensaje adaptado por coach (Opción 1)', () => {
+  it('character="bill" con dolor 4 → verdict.userMessage === texto neutro histórico', () => {
+    const v = section01ProfileFilters
+      .check(cleanProfile({ currentFingerPain: 4, character: 'bill' }))
+      .find((x) => x.rule === '1.3');
+    expect(v).toBeDefined();
+    expect(v!.userMessage).toBe(SECTION_01_MESSAGES.activePain.text);
+    expect(v!.userMessage).toContain('Bill no es médico');
+  });
+
+  it('character="senda" con dolor 4 → verdict.userMessage === Derivación 3 verbatim', () => {
+    const v = section01ProfileFilters
+      .check(cleanProfile({ currentFingerPain: 4, character: 'senda' }))
+      .find((x) => x.rule === '1.3');
+    expect(v).toBeDefined();
+    expect(v!.userMessage).toBe(SECTION_01_MESSAGES.activePainSenda.text);
+    expect(v!.userMessage).toContain('Eso que me cuentas no suena a molestia normal');
+    expect(v!.userMessage).toContain('Que alguien lo revise es cuidarte, no exagerar');
+  });
+
+  it('sin character (undefined) → default Bill', () => {
+    const v = section01ProfileFilters
+      .check(cleanProfile({ currentFingerPain: 4 }))
+      .find((x) => x.rule === '1.3');
+    expect(v!.userMessage).toBe(SECTION_01_MESSAGES.activePain.text);
+  });
+
+  it('dolor 2 (bajo umbral) + character="senda" → cero verdicts (detección intacta)', () => {
+    const verdicts = section01ProfileFilters.check(
+      cleanProfile({ currentFingerPain: 2, character: 'senda' })
+    );
+    expect(verdicts).toHaveLength(0);
+  });
+
+  it('Senda con dolor en 3 zonas → 3 verdicts, TODOS con Derivación 3', () => {
+    const verdicts = section01ProfileFilters
+      .check(
+        cleanProfile({
+          currentFingerPain: 4,
+          currentElbowPain: 4,
+          currentShoulderPain: 4,
+          character: 'senda'
+        })
+      )
+      .filter((v) => v.rule === '1.3');
+    expect(verdicts).toHaveLength(3);
+    for (const v of verdicts) {
+      expect(v.userMessage).toBe(SECTION_01_MESSAGES.activePainSenda.text);
+    }
+  });
+});
+
 describe('section-01 — metadata del módulo', () => {
   it('section y ruleIds correctos', () => {
     expect(section01ProfileFilters.section).toBe('section-01');
