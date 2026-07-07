@@ -44,6 +44,7 @@ export default function GeneratingPlanPage() {
   const [needsSubscription, setNeedsSubscription] = useState(false);
   const [status, setStatus] = useState<'generating' | 'success' | 'error'>('generating');
   const [error, setError] = useState('');
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [rateLimit, setRateLimit] = useState<{
     seconds: number | null;
     message: string;
@@ -103,6 +104,9 @@ export default function GeneratingPlanPage() {
         }
 
         if (!response.ok || !data.plan) {
+          // Capturamos el code para que el renderizado del banner pueda
+          // discriminar entre errores fríos vs mensajes user-facing warm.
+          setErrorCode(data.code ?? null);
           const message =
             data.code === 'openai_rate_limited'
               ? RATE_LIMIT_UI_MESSAGE
@@ -225,6 +229,18 @@ export default function GeneratingPlanPage() {
                   hasStartedRef.current = false;
                   window.location.reload();
                 }}
+              />
+            ) : errorCode === 'plan_unsafe_after_retry' ? (
+              // Fallback #17 del middleware — el server nos manda un mensaje
+              // pensado para el usuario (voz de Bill, tono cálido, orientado
+              // a la acción). Lo mostramos con envoltorio cyan/Sparkles en
+              // vez del "No pudimos generar" mustard para no pisar el tono
+              // del mensaje. Todos los demás errores siguen frío por defecto.
+              <Banner
+                tone="cyan"
+                icon={Sparkles}
+                title="Ajustemos algo antes de armar tu plan"
+                description={error}
               />
             ) : (
               <Banner tone="mustard" title="No pudimos generar" description={error} />

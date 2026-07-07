@@ -2,22 +2,16 @@
 //
 // El middleware de sub-fase 4 valida el plan armado por el LLM. Si hay
 // violaciones, regenera (hasta 3 intentos). Tras 3 fallidos, muestra al
-// usuario el mensaje "fallback" (equivalente al #17 de la tabla de tono
-// Belay Partners que Giuliana redactó).
+// usuario el mensaje "fallback" #17 de la tabla de tono Belay Partners.
 //
-// DEUDA — el archivo mensajes-tono-belay-partners.md aún no está en el
-// repo (ver canonicalization-debt.md). Usamos un PLACEHOLDER explícito
-// para no inventar tono. El texto final se pega en el string
-// SECTION_03_FALLBACK_MESSAGE.text SIN cambiar la clave ni la lógica.
+// Texto verbatim aprobado por Giuliana 2026-07-07.
 
 export const SECTION_03_FALLBACK_MESSAGE = {
-  // PLACEHOLDER — reemplazar con el texto #17 exacto de mensajes-tono
-  // cuando ese doc aterrice en el repo. NO inventar tono acá.
   text:
-    '[PLACEHOLDER — mensaje #17 de mensajes-tono-belay-partners.md] ' +
-    'No pudimos armar un plan que cumpla las reglas de seguridad tras varios ' +
-    'intentos. Vamos a ajustar los parámetros antes de reintentar.',
-  source: 'Doc 02 §3 (fallback tras 3 retries fallidos)'
+    'Prefiero no darte un plan que no esté bien armado. Con lo que tengo ' +
+    'ahora no me termina de cerrar la estructura. Dame un ajuste —cuántos ' +
+    'días entrenas o qué quieres priorizar — y te lo armo como corresponde.',
+  source: 'Doc 02 §3 (fallback tras 3 retries fallidos) — mensajes-tono-belay-partners.md #17'
 } as const;
 
 // Resúmenes internos por regla — solo para logs y para incrustar en el
