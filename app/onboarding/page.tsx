@@ -14,104 +14,21 @@ import {
   Zap
 } from 'lucide-react';
 import { saveProfile, type UserProfile } from '@/lib/profile';
+import { loadLocalSession } from '@/lib/session';
 import { Card } from '@/components/ui/Card';
 import { CharacterAvatar } from '@/components/ui/CharacterAvatar';
+import {
+  ONBOARDING_DRAFT_DEBOUNCE_MS,
+  clearDraft,
+  initialForm,
+  readDraft,
+  writeDraft,
+  type OnboardingForm
+} from './onboarding-draft';
 
-type DurationChoice = '' | '2' | '3' | '4' | 'starter';
-
-type OnboardingForm = {
-  character: UserProfile['character'];
-  name: string;
-  age: string;
-  sex: string;
-  weight: string;
-  height: string;
-  climbingTime: string;
-  disciplines: string[];
-  level: string;
-  setting: string;
-  injuries: string[];
-  injuryNotes: string;
-  warmup: string;
-  sleep: string;
-  energy: string;
-  daysPerWeek: number;
-  availableDays: string[];
-  sessionDuration: number;
-  maxSessionDuration: number;
-  equipment: string[];
-  equipmentNotes: string;
-  previousTraining: string;
-  pullUpAbility: string;
-  fingerTrainingExperience: string;
-  campusExperience: string;
-  currentFingerPain: number;
-  currentShoulderPain: number;
-  currentElbowPain: number;
-  trainingAggressiveness: string;
-  outdoorFrequency: string;
-  // ---- Fuerza (B1) — strings para evitar bugs de "input vacío == NaN" ----
-  pullupsBodyweight: string;
-  pullupsAddedWeight5Reps: string;
-  hangboard20mmSeconds: string;
-  hangboard20mmAddedWeight7s: string;
-  benchPress1Rm: string;
-  squat1Rm: string;
-  deadlift1Rm: string;
-  // -----------------------------------------------------------------------
-  goals: string[];
-  goalDescription: string;
-  project: string;
-  rockProjectDescription: string;
-  durationChoice: DurationChoice;
-};
+type DurationChoice = OnboardingForm['durationChoice'];
 
 type Option = { label: string; value: string; helper?: string };
-
-const initialForm: OnboardingForm = {
-  character: 'bill',
-  name: '',
-  age: '',
-  sex: '',
-  weight: '',
-  height: '',
-  climbingTime: '',
-  disciplines: [],
-  level: '',
-  setting: '',
-  injuries: [],
-  injuryNotes: '',
-  warmup: '',
-  sleep: '',
-  energy: '',
-  daysPerWeek: 0,
-  availableDays: [],
-  sessionDuration: 90,
-  maxSessionDuration: 90,
-  equipment: [],
-  equipmentNotes: '',
-  previousTraining: '',
-  pullUpAbility: '',
-  fingerTrainingExperience: '',
-  campusExperience: '',
-  currentFingerPain: 0,
-  currentShoulderPain: 0,
-  currentElbowPain: 0,
-  trainingAggressiveness: 'balanced',
-  outdoorFrequency: '',
-  pullupsBodyweight: '',
-  pullupsAddedWeight5Reps: '',
-  hangboard20mmSeconds: '',
-  hangboard20mmAddedWeight7s: '',
-  benchPress1Rm: '',
-  squat1Rm: '',
-  deadlift1Rm: '',
-  goals: [],
-  goalDescription: '',
-  project: '',
-  rockProjectDescription: '',
-  durationChoice: ''
-};
 
 const climbingTimeOptions: Option[] = [
   { label: '<3 meses', value: 'start' },
@@ -409,6 +326,57 @@ function StepSection({
 export default function OnboardingPage() {
   const router = useRouter();
   const [form, setForm] = useState<OnboardingForm>(initialForm);
+  // Draft state:
+  // - ownerId: session.id de la cuenta actual, o null si aún no la resolvimos
+  //   / no hay sesión. Sin ownerId no autosaveamos (no queremos drafts huérfanos).
+  // - draftReady: true una vez terminado el intento de rehidratación al montar.
+  //   Sin esto, el autosave se dispararía en el primer render con `initialForm`
+  //   y pisaría un draft válido antes de que lo leamos.
+  // - rehydrated: true si el form arrancó con datos guardados. Dispara el
+  //   banner "Retomamos donde quedaste" y se apaga con "Empezar de nuevo".
+  const [ownerId, setOwnerId] = useState<string | null>(null);
+  const [draftReady, setDraftReady] = useState(false);
+  const [rehydrated, setRehydrated] = useState(false);
+
+  useEffect(() => {
+    // Resolver dueño del draft de forma síncrona: loadLocalSession() lee
+    // localStorage/cookie, no toca red. Si no hay sesión, no rehidratamos
+    // ni autosaveamos — el draft debe estar atado a un usuario concreto
+    // para evitar filtrar datos de salud entre cuentas del mismo navegador.
+    const session = loadLocalSession();
+    const id = session?.id ?? null;
+    setOwnerId(id);
+    if (id) {
+      const draft = readDraft(id);
+      if (draft) {
+        setForm((current) => ({ ...current, ...draft }));
+        setRehydrated(true);
+      }
+    }
+    setDraftReady(true);
+  }, []);
+
+  useEffect(() => {
+    // Autosave con debounce: cada cambio en `form` reinicia el timer.
+    // Cero autosave hasta terminar la rehidratación y sin ownerId.
+    if (!draftReady || !ownerId) return;
+    const timeout = window.setTimeout(() => {
+      writeDraft(ownerId, form);
+    }, ONBOARDING_DRAFT_DEBOUNCE_MS);
+    return () => window.clearTimeout(timeout);
+  }, [form, draftReady, ownerId]);
+
+  function handleReset() {
+    if (typeof window !== 'undefined') {
+      const confirmed = window.confirm(
+        'Vas a borrar todo lo que llevas del onboarding. Esta acción no se puede deshacer. ¿Continuar?'
+      );
+      if (!confirmed) return;
+    }
+    if (ownerId) clearDraft(ownerId);
+    setForm(initialForm);
+    setRehydrated(false);
+  }
 
   const stepsDone = useMemo(() => {
     return {
@@ -502,6 +470,12 @@ export default function OnboardingPage() {
     };
 
     saveProfile(profile);
+
+    // Draft cumplió su función — se borra SIEMPRE al submit exitoso para
+    // que no quede huérfano en el navegador (contiene datos de salud:
+    // lesiones, dolor, sueño). Va antes del POST/redirect: si algo
+    // falla después, `profile` ya está en localStorage vía saveProfile.
+    if (ownerId) clearDraft(ownerId);
 
     // Persist to Supabase. saveProfile() solo escribe a localStorage; sin
     // este POST, public.profiles queda con todos los campos en null y los
@@ -613,6 +587,33 @@ export default function OnboardingPage() {
               style={{ width: `${progressPercent}%` }}
             />
           </div>
+          {rehydrated ? (
+            <div
+              className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-cyan/25 bg-brand-cyan/[0.08] px-3 py-2 text-xs"
+              data-testid="onboarding-rehydrated-banner"
+            >
+              <p className="font-bold text-brand-cyan">
+                Retomamos donde quedaste. Tus respuestas están guardadas.
+              </p>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="rounded-lg border border-white/10 px-2.5 py-1 font-bold text-white/72 transition hover:border-white/30 hover:text-white"
+              >
+                Empezar de nuevo
+              </button>
+            </div>
+          ) : ownerId ? (
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={handleReset}
+                className="text-[0.68rem] font-bold uppercase tracking-[0.10em] text-white/40 transition hover:text-white/70"
+              >
+                Empezar de nuevo
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
 
