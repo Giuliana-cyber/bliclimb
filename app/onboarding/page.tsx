@@ -350,6 +350,12 @@ export default function OnboardingPage() {
   const [ownerId, setOwnerId] = useState<string | null>(null);
   const [draftReady, setDraftReady] = useState(false);
   const [rehydrated, setRehydrated] = useState(false);
+  // Bloque audit-360 post-diag: si el POST a /api/profile falla, mostramos
+  // banner rojo inline y NO navegamos a /generating-plan. Antes hacíamos
+  // console.warn silencioso + navegación, y el usuario quedaba sin plan
+  // pero sin saber por qué. Ahora se entera en el momento.
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     // Resolver dueño del draft de forma síncrona: loadLocalSession() lee
@@ -466,7 +472,9 @@ export default function OnboardingPage() {
     durationOptions.find((option) => option.value === form.durationChoice)?.label ?? 'Pendiente';
 
   async function handleSubmit() {
-    if (!canSubmit) return;
+    if (!canSubmit || submitting) return;
+    setSubmitting(true);
+    setSubmitError(null);
 
     const now = new Date().toISOString();
     const goals = form.goals.length ? form.goals : ['other'];
@@ -575,32 +583,25 @@ export default function OnboardingPage() {
       hangboard20mmSeconds: profile.hangboard20mmSeconds,
       hangboard20mmAddedWeight7s: profile.hangboard20mmAddedWeight7s
     };
+    // Bloque audit-360 post-diag: si el POST falla, se muestra banner y NO
+    // se navega a /generating-plan. Sin este cambio el usuario quedaba con
+    // la fila de profiles en defaults y un plan generado sobre localStorage
+    // que jamás persistía a Supabase.
     try {
-      // eslint-disable-next-line no-console
-      console.log('[onboarding] POST /api/profile', {
-        fields: Object.keys(dbPayload).filter(
-          (k) => (dbPayload as Record<string, unknown>)[k] !== undefined
-        ).length
-      });
       const res = await fetch('/api/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dbPayload),
-        keepalive: true
-      });
-      // eslint-disable-next-line no-console
-      console.log('[onboarding] /api/profile response', {
-        status: res.status,
-        ok: res.ok
+        body: JSON.stringify(dbPayload)
       });
       if (!res.ok) {
-        const errBody = await res.text().catch(() => '');
-        // eslint-disable-next-line no-console
-        console.warn('[onboarding] /api/profile failed', errBody);
+        setSubmitError('No pudimos guardar tu perfil. Vuelve a intentar.');
+        setSubmitting(false);
+        return;
       }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.warn('[onboarding] /api/profile threw', error);
+    } catch {
+      setSubmitError('No pudimos guardar tu perfil. Vuelve a intentar.');
+      setSubmitting(false);
+      return;
     }
 
     router.push('/generating-plan');
@@ -1187,18 +1188,30 @@ export default function OnboardingPage() {
 
           <button
             type="button"
-            disabled={!canSubmit}
+            disabled={!canSubmit || submitting}
             onClick={handleSubmit}
             className={cn(
               'flex h-14 w-full items-center justify-center gap-2 rounded-xl text-base font-extrabold transition-all duration-150',
-              canSubmit
+              canSubmit && !submitting
                 ? 'bg-gradient-cyan text-brand-dark shadow-glow-strong hover:brightness-110 active:scale-[0.99]'
                 : 'cursor-not-allowed bg-white/[0.06] text-white/35'
             )}
           >
-            Generar mi plan de entrenamiento
-            <ArrowRight aria-hidden="true" size={20} strokeWidth={2.8} />
+            {submitting ? 'Guardando…' : 'Generar mi plan de entrenamiento'}
+            {!submitting ? <ArrowRight aria-hidden="true" size={20} strokeWidth={2.8} /> : null}
           </button>
+
+          {submitError ? (
+            // Bloque audit-360 post-diag: banner visible cuando falla el POST
+            // a /api/profile. Antes el user quedaba sin plan sin saber por qué.
+            <div
+              className="rounded-xl border border-red-400/40 bg-red-400/[0.08] px-4 py-3 text-sm leading-6 text-red-200"
+              data-testid="onboarding-submit-error"
+              role="alert"
+            >
+              <p className="font-extrabold">{submitError}</p>
+            </div>
+          ) : null}
 
           {!canSubmit ? (
             // Bloque 4 audit-360: gate final útil — lista concreta de qué falta.
