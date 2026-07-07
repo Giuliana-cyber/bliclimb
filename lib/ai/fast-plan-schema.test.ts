@@ -101,6 +101,7 @@ const VALID_EXERCISE = {
   equipment: 'hangboard',
   riskLevel: 'alto' as const,
   stimulusCategory: 'strength' as const,
+  blockCategory: null,
   howTo: ['agarra', 'cuelga', 'baja'],
   cues: ['sentí flexores'],
   commonMistakes: ['no perder técnica en el último segundo']
@@ -147,6 +148,41 @@ describe('FastExerciseSchema — requiere stimulusCategory per-exercise (sub-fas
   it('exercise SIN stimulusCategory falla', () => {
     const { stimulusCategory: _sc, ...noSC } = VALID_EXERCISE;
     expect(FastExerciseSchema.safeParse(noSC).success).toBe(false);
+  });
+
+  it('exercise SIN blockCategory falla (sub-fase final del middleware)', () => {
+    const { blockCategory: _bc, ...noBC } = VALID_EXERCISE;
+    expect(FastExerciseSchema.safeParse(noBC).success).toBe(false);
+  });
+
+  it('exercise con blockCategory=null pasa (mayoría de ejercicios)', () => {
+    expect(
+      FastExerciseSchema.safeParse({ ...VALID_EXERCISE, blockCategory: null }).success
+    ).toBe(true);
+  });
+
+  it.each([
+    'hangboard',
+    'hangboard-intense',
+    'campus',
+    'full-crimp',
+    'hit',
+    'pullups-weighted',
+    'max-tests',
+    'finger-training-any'
+  ] as const)("exercise con blockCategory='%s' pasa", (v) => {
+    expect(
+      FastExerciseSchema.safeParse({ ...VALID_EXERCISE, blockCategory: v }).success
+    ).toBe(true);
+  });
+
+  it("exercise con blockCategory='invalid' falla", () => {
+    expect(
+      FastExerciseSchema.safeParse({
+        ...VALID_EXERCISE,
+        blockCategory: 'invalid'
+      }).success
+    ).toBe(false);
   });
 
   it("exercise con stimulusCategory='aerobic' (old name) falla", () => {

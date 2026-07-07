@@ -25,6 +25,8 @@ import {
   validatePlanSafety,
   type SafetyViolation
 } from '@/lib/ai/plan-safety';
+import { evaluateProfile } from '@/lib/brain/validator';
+import type { ProfileForRules } from '@/lib/brain/types';
 import { extractLibraryTraceability, type LibraryTraceability } from '@/lib/ai/response-sources';
 import { UserProfileSchema } from '@/lib/schemas/user-profile';
 import type { TrainingPlan, Week, Session, Exercise } from '@/lib/plan';
@@ -228,7 +230,18 @@ Para CADA EJERCICIO también:
     "mental" para visualización, rutina pre-escalada, respiración,
     "cooldown" para vuelta a la calma (foam rolling, estiramiento pasivo),
     "rest" para pausa activa entre bloques (caminar, hidratar).
-Sé preciso — un Hangboard MaxHangs es "strength", no "warmup" ni "power". Un drill de silent feet es "skill", no "mobility". Bandas de extensores es "mobility" (o "warmup" si es de activación previa), no "strength".`;
+Sé preciso — un Hangboard MaxHangs es "strength", no "warmup" ni "power". Un drill de silent feet es "skill", no "mobility". Bandas de extensores es "mobility" (o "warmup" si es de activación previa), no "strength".
+- blockCategory (enum obligatorio, o null si no aplica) — categoría GATEABLE del ejercicio. Etiqueta HONESTAMENTE cuál de estas categorías corresponde al ejercicio; el middleware cruza esta etiqueta contra las prohibiciones del perfil del atleta. Categorías:
+    "hangboard" — cualquier ejercicio en tabla/hangboard/fingerboard (max hangs, dead hangs, repeaters, tension boards con dedos, mini-edge protocols).
+    "hangboard-intense" — SOLO si el hangboard es específicamente intenso: MaxHangs con lastre, IntHangs, protocolo de repeaters de alta densidad. En caso de duda entre hangboard y hangboard-intense, elegí "hangboard".
+    "campus" — cualquier ejercicio en campus board (ladders, lock-offs, doubles, todas las variantes).
+    "full-crimp" — ejercicios que EXIGEN posición de full crimp (arqueo completo con pulgar sobre el índice). Regletas <15mm con arqueo obligatorio caen acá. Si el ejercicio admite half crimp u open, NO es "full-crimp".
+    "hit" — ejercicios del protocolo HIT (High Intensity Training para dedos, específicamente FM-014 y variantes).
+    "pullups-weighted" — dominadas con lastre externo pesado (>0kg extra) o 1RM de dominada.
+    "max-tests" — cualquier test de máximos: MIFS, Critical Force, dead hang hasta fallo, isometric pull-up force, RFD tests.
+    "finger-training-any" — otros ejercicios de carga directa de dedos que no caen en las anteriores (ej: tension pinch, pinch blocks, no-hang lifts).
+    null — si el ejercicio NO cae en ninguna categoría gateable (silent feet drill, foam roll, ARC de escalada continua, warmup articular, respiración, yoga). La MAYORÍA de ejercicios de un plan serán null; solo etiqueta con enum si el ejercicio encaja claramente en una categoría.
+Etiquetá honestamente aunque el ejercicio esté en la lista de PROHIBIDOS del perfil — el middleware necesita saber para regenerar.`;
 
 const SCHEMA_FIELD_NAMES = new Set([
   'safetyNotes',
@@ -267,6 +280,7 @@ function toExercise(fast: FastExercise): Exercise {
     requiredEquipment: fast.equipment ? [fast.equipment] : null,
     riskLevel: fast.riskLevel,
     stimulusCategory: fast.stimulusCategory,
+    blockCategory: fast.blockCategory,
     objective: null,
     prescription: null,
     sets: fast.sets,
@@ -541,12 +555,21 @@ async function generateWeek(
   profile: UserProfile,
   weekMeta: FastPlanMetadata['weekThemes'][number],
   retryCorrection: string | null = null,
-  groundingContext = ''
+  groundingContext = '',
+  blockedCategories: readonly string[] = []
 ): Promise<FastWeek> {
   const equipment = profile.equipment?.length ? profile.equipment : ['home'];
   const equipmentLines = equipment
     .map((item) => `- ${item}`)
     .join('\n');
+
+  // Sub-fase final del middleware — inyección de PROHIBIDOS por §1.x.
+  // Cuando el perfil dispara §1.1 (menores) o §1.2 (<2 años), Bill recibe
+  // acá la lista de blockCategory que NO puede usar. El validador
+  // section01PlanGating es la red que atrapa si igual se le cuela.
+  const prohibitedBlock = blockedCategories.length
+    ? `\n\n🚫 CATEGORÍAS PROHIBIDAS PARA ESTE ATLETA (regla dura de seguridad §1.x):\n${blockedCategories.map((c) => `- ${c}`).join('\n')}\n\nNO incluyas NINGÚN ejercicio que caiga en esas categorías. Reemplaza por alternativas de skill / mobility / aerobic-base / ejercicios técnicos sin carga directa de dedos. Si un ejercicio cae en una categoría prohibida, cambialo por otro que no. Y ETIQUETA HONESTAMENTE blockCategory de cada exercise (aunque tengas que marcar algo prohibido, marcalo — el middleware necesita saber).`
+    : '';
 
   const messages = [
     { role: 'system' as const, content: WEEK_PROMPT },
@@ -557,7 +580,7 @@ async function generateWeek(
 EQUIPO DISPONIBLE DEL ATLETA (única lista permitida):
 ${equipmentLines}
 
-⚠️ REGLA INVIOLABLE: cualquier ejercicio que requiera equipo FUERA de esta lista está PROHIBIDO. No incluyas hangboard, campus, muro, TRX, pesas, etc si no aparecen arriba. Aplica las reglas de adaptación de equipo del system prompt.
+⚠️ REGLA INVIOLABLE: cualquier ejercicio que requiera equipo FUERA de esta lista está PROHIBIDO. No incluyas hangboard, campus, muro, TRX, pesas, etc si no aparecen arriba. Aplica las reglas de adaptación de equipo del system prompt.${prohibitedBlock}
 
 Contexto de la semana:
 - Tema: ${weekMeta.theme}
@@ -843,12 +866,39 @@ export async function POST(request: Request) {
       });
     }
 
+    // Sub-fase final del middleware — Momento 1: evaluar perfil una sola vez
+    // para inyectar las categorías bloqueadas (§1.1/§1.2/etc) al WEEK_PROMPT.
+    // El objetivo es que Bill *ya* respete la prohibición desde la primera
+    // generación. El validador section01PlanGating es la red posterior por si
+    // igual mete algo prohibido.
+    const profileForRules: ProfileForRules = {
+      age: profile.age ?? '',
+      climbingTime: profile.climbingTime ?? '',
+      currentFingerPain: profile.currentFingerPain ?? 0,
+      currentShoulderPain: profile.currentShoulderPain ?? 0,
+      currentElbowPain: profile.currentElbowPain ?? 0,
+      injuries: profile.injuries ?? [],
+      sleep: profile.sleep ?? ''
+    };
+    const brainContext = evaluateProfile(profileForRules, {
+      profileId: profile.id ?? null
+    });
+    const blockedCategoriesForPrompt = Array.from(brainContext.blockedCategories);
+
     // 3. Generar todas las semanas EN PARALELO. Cada semana recibe el
     //    groundingContext para que los ejercicios y protocolos vengan
     //    anclados en biblioteca + web (allowlist).
     let fastWeeks = await Promise.all(
       themes.map((theme) =>
-        generateWeek(client, model, profile, theme, null, groundingContext)
+        generateWeek(
+          client,
+          model,
+          profile,
+          theme,
+          null,
+          groundingContext,
+          blockedCategoriesForPrompt
+        )
       )
     );
     let plan = buildPlan(metadata, fastWeeks, profile, traceability);
@@ -876,7 +926,8 @@ export async function POST(request: Request) {
               profile,
               theme,
               correction,
-              groundingContext
+              groundingContext,
+              blockedCategoriesForPrompt
             );
           }
           return fastWeeks.find((w) => w.weekNumber === theme.weekNumber)!;

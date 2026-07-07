@@ -380,3 +380,44 @@ opera con la misma granularidad.
 Deuda potencial: no detectamos sinusitis con antibiótico ni post-viral
 prolongada. No urgente — la mitigación es que el mensaje de mild incluya
 "si persiste 48h+, consultá profesional".
+
+## Fase 3 wiring del middleware — deudas abiertas
+
+### §1.gating depende de que Bill etiquete `blockCategory` honestamente
+
+`section01PlanGating` cruza `exercise.blockCategory` (enum del schema Zod)
+contra `BlockingContext.blockedCategories` (§1.1/§1.2). Es un lookup
+determinístico sin string matching, PERO depende de que el LLM etiquete
+honestamente.
+
+Análisis del riesgo (Giuliana + Claude, 2026-07-07):
+- Bill NO es adversarial. No hay incentivo para evadir el enum.
+- El prompt le pide explícitamente etiquetar honestamente incluso si el
+  ejercicio está en la lista de PROHIBIDOS ("el middleware necesita saber").
+- La primera capa (PROHIBIDOS en el user message) hace que Bill *casi
+  siempre* ni siquiera genere ejercicios de la categoría prohibida.
+- Modo de falla realista: ambigüedad de categorización (ej: "tension
+  board fingertip drill" — ¿es hangboard? Bill podría decidir null).
+
+Decisión: NO agregar red secundaria de string matching sobre `name`.
+Reintroducir string matching es exactamente lo que consistentemente vinimos
+evitando. Alternativa mitigatoria: monitorear en prod planes de perfiles
+u16/less1 que pasen §1.gating; si aparecen nombres tipo "hangboard",
+"campus" en ejercicios con blockCategory=null, incorporar cruce adicional.
+
+Sanity real (2026-07-07 con gpt-4o-mini, perfil u16):
+  - Caso A (Bill recibe PROHIBIDOS): plan generado con 0 ejercicios de
+    hangboard/campus/etc. Todos con blockCategory=null. §1.gating: 0
+    violations.
+  - Caso B (plan forzado con "MaxHang Hangboard 20mm" etiquetado
+    'hangboard'): §1.gating detecta 1 violation, severity=blocking,
+    profileRule='1.1'.
+
+### `lib/ai/plan-safety.ts` (legacy R1..R4) coexiste
+
+Decisión (Giuliana, 2026-07-07): no deprecar en este PR. La validación
+vieja de 4 reglas keyword-based sigue wireada en `route.ts:878` como
+segunda red. Cuando el wiring nuevo (§1.gating + section-03 + section-14
+en el retry loop) esté probado en producción, deprecar `plan-safety.ts`
+en un PR separado. Convivencia temporal es más segura que reemplazo de
+golpe.

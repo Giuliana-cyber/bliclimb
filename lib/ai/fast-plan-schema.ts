@@ -66,6 +66,25 @@ export type IntensityLevel = z.infer<typeof IntensityLevelSchema>;
 export const RiskLevelSchema = z.enum(['bajo', 'medio', 'alto']);
 export type RiskLevel = z.infer<typeof RiskLevelSchema>;
 
+/**
+ * Categoría gateable del ejercicio para cruce con §1.x del middleware.
+ * Debe alinearse SIEMPRE con `BlockedCategory` en `lib/brain/types.ts`
+ * — cualquier valor nuevo se agrega en ambos lados a la vez.
+ * `null` cuando el ejercicio no encaja en ninguna categoría gateable
+ * (ej: silent feet drill, foam roll, respiración).
+ */
+export const BlockCategorySchema = z.enum([
+  'hangboard',
+  'hangboard-intense',
+  'campus',
+  'full-crimp',
+  'hit',
+  'pullups-weighted',
+  'max-tests',
+  'finger-training-any'
+]);
+export type BlockCategory = z.infer<typeof BlockCategorySchema>;
+
 // -------------------- Schemas (con los enums) --------------------
 
 export const FastExerciseSchema = z.object({
@@ -86,6 +105,12 @@ export const FastExerciseSchema = z.object({
   // sin string matching. Un ejercicio con name="Hangboard 20mm" viene con
   // stimulusCategory='strength'; el validador filtra por enum, no por texto.
   stimulusCategory: StimulusCategorySchema,
+  // Sub-fase final del middleware — categoría gateable per-exercise.
+  // Cruza con `BlockingContext.blockedCategories` (emitida por §1.x del
+  // perfil) en `section01PlanGating`. El LLM etiqueta con el enum o
+  // `null` si el ejercicio no cae en ninguna categoría gateable
+  // (silent feet drill, foam roll, respiración = null).
+  blockCategory: BlockCategorySchema.nullable(),
   // Instrucciones técnicas reales — el modelo DEBE rellenarlos. Si vienen
   // vacíos la UI muestra vacío (no rompe). El prompt en WEEK_PROMPT pide
   // 3-5 pasos para howTo, 2-3 para cues, 1-2 para commonMistakes.
