@@ -5,8 +5,20 @@ import { CheckCircle2, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { MountainBackdrop } from '@/components/ui/MountainBackdrop';
+import {
+  selectBillingSuccessDescription,
+  type BillingSuccessCycle
+} from './billing-success-copy';
 
-export function BillingSuccess() {
+export type { BillingSuccessCycle } from './billing-success-copy';
+
+export function BillingSuccess({
+  billingCycle
+}: {
+  billingCycle?: BillingSuccessCycle;
+}) {
+  const description = selectBillingSuccessDescription(billingCycle ?? null);
+
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-12 text-white">
       <motion.section
@@ -22,9 +34,11 @@ export function BillingSuccess() {
               <CheckCircle2 aria-hidden="true" size={28} strokeWidth={2.4} />
             </div>
             <h1 className="mt-5 text-2xl font-extrabold">¡Suscripción activada!</h1>
-            <p className="mt-3 text-sm leading-6 text-white/72">
-              Tenés 30 días de prueba gratuita. Después se cobran $249 MXN una sola vez al
-              año.
+            <p
+              className="mt-3 text-sm leading-6 text-white/72"
+              data-testid="billing-success-description"
+            >
+              {description}
             </p>
 
             <Button href="/generating-plan" size="lg" icon={<Sparkles size={18} />} className="mt-6 w-full">
@@ -34,7 +48,7 @@ export function BillingSuccess() {
               Volver al dashboard
             </Button>
             <p className="mt-4 text-xs text-white/45">
-              Si todavía no ves la suscripción reflejada en /settings, esperá unos
+              Si todavía no ves la suscripción reflejada en Ajustes, espera unos
               segundos — Stripe nos avisa por webhook.
             </p>
           </div>

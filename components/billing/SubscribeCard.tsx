@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import {
   CalendarClock,
   Check,
+  Clock3,
   CreditCard,
   Loader2,
   ShieldCheck,
@@ -32,7 +33,7 @@ const PLANS: Record<
     cadence: '/ año',
     equivalent: 'Equivalente a $20.75 / mes',
     savingsBadge: 'Ahorra 28%',
-    copy: '12 meses pagados de una sola vez.'
+    copy: 'Un solo pago al año. Se renueva automáticamente.'
   }
 };
 
@@ -95,15 +96,15 @@ export function SubscribeCard({ compact = false }: { compact?: boolean }) {
             BilClimb.ai Pro
           </p>
           <h1 className="mt-2 text-3xl font-extrabold leading-tight">
-            Empezá con 30 días gratis
+            Empieza con 30 días gratis
           </h1>
           <p className="mt-3 text-sm leading-6 text-white/72">
-            Probás planes y chat sin cargo. Después elegís cómo seguir.
+            Pruebas planes y chat sin cargo. Después eliges cómo seguir.
           </p>
 
           <fieldset
             className="mt-6 grid gap-3 sm:grid-cols-2"
-            aria-label="Elegí tu ciclo de cobro"
+            aria-label="Elige tu ciclo de cobro"
           >
             <PlanOption
               cycle="annual"
@@ -126,7 +127,11 @@ export function SubscribeCard({ compact = false }: { compact?: boolean }) {
               icon={ShieldCheck}
               text="Planes personalizados con guardrails y chat contextual."
             />
-            <Bullet icon={CreditCard} text="Pago seguro vía Stripe. Cancelás cuando querés." />
+            <Bullet icon={CreditCard} text="Pago seguro vía Stripe. Cancelas cuando quieras." />
+            <Bullet
+              icon={Clock3}
+              text="Se cobra automáticamente al terminar los 30 días si no cancelas. Cancelar toma un click desde Ajustes."
+            />
           </div>
 
           <label className="mt-5 block">
