@@ -12,6 +12,7 @@ import { ChatRequestSchema } from '@/lib/schemas/user-profile';
 import { checkWeightDerivation } from '@/lib/brain/detection/section-03-15-orchestrator';
 import { buildFixedResponseStream } from '@/lib/brain/detection/fixed-response-stream';
 import { getDerivationMessage } from '@/lib/brain/messages/section-03-15';
+import { checkChatHints } from '@/lib/brain/orchestrator/chat-hints';
 import { ConsoleLogSink } from '@/lib/brain/logging';
 import type { ConversationTurn } from '@/lib/brain/detection/weight-intent-classifier';
 
@@ -191,6 +192,17 @@ export async function POST(request: Request) {
     });
   }
 
+  // ---------- §10.3 / §10.4 — hints reactivos, corren DESPUÉS de §3.15 ----------
+  //
+  // Detección liviana de síntomas de enfermedad (§10.3) y N+ intentos en un
+  // proyecto (§10.4). Distinto de §3.15: NO silencia a Bill; le pasa un
+  // system message extra para que contextualice la respuesta en su voz.
+  // §3.15 tiene precedencia (si derivó arriba, este bloque no corre).
+  const chatHints = checkChatHints(lastUserMessage);
+  for (const evt of chatHints.logEvents) {
+    console.log(JSON.stringify(evt));
+  }
+
   // Flujo normal — no hay derivación, Bill responde con streaming.
   const stream = new ReadableStream({
     async start(controller) {
@@ -208,6 +220,12 @@ export async function POST(request: Request) {
                 checkIns
               })
             },
+            // Hints §10.3/§10.4 como system messages adicionales — Bill los
+            // lee como instrucción del sistema, no como turno de conversación.
+            ...chatHints.hints.map((hint) => ({
+              role: 'system' as const,
+              content: hint
+            })),
             ...messages.map((message) => ({
               role: message.role,
               content: message.content
