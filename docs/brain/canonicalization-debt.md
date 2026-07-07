@@ -472,3 +472,76 @@ literal. Riesgo bajo en frecuencia (solo dispara tras 3 retries fallidos,
 que en el sanity de u16 no se activó), pero cuando lo haga, el texto
 placeholder se ve raro. Reemplazar el string por el mensaje #17 real
 cuando aterrice `mensajes-tono-belay-partners.md`.
+
+## Fase 4 Pieza 2 (Senda) — deudas abiertas para auditoría 360
+
+### Voz de Senda en listas queda en infinitivo impersonal
+
+Estado post-merge (2026-07-07): el refuerzo del bloque VOZ Y TONO logró
+que Senda arranque las respuestas con acknowledge + nombre del tema por
+su nombre. Los imperativos secos ("Ajusta", "Considera") desaparecieron.
+Pero en LISTAS/BULLETS el LLM eligió infinitivo impersonal en vez del
+registro de par experta pedido:
+
+Sanity real (gpt-4o-mini, 2026-07-07):
+  Usuario: "estoy en mis días y no tengo energía para entrenar hoy"
+  Senda:   "Gracias por contarme. En días de menstruación, es normal…
+           - Trabajar técnica de pies en la pared.
+           - Hacer movilidad suave, enfocándote en cadera y hombros.
+           - Considerar descansar y escuchar a tu cuerpo.
+           Lo importante es que te sientas bien."
+
+Los infinitivos ("Trabajar", "Hacer", "Considerar") son mejora sobre
+imperativos secos pero NO llegaron al registro de par experta buscado
+("podés hacer técnica de pies", "algo que a mí me servía era yoga
+suave", "probá con"). El cierre motivacional "Lo importante es que te
+sientas bien" rozó el extremo condescendiente que también prevenimos.
+
+Solución diferida (auditoría 360, NO ahora): agregar ejemplos LITERALES
+de bullets en voz Senda dentro del prompt (no instrucción abstracta),
+mismo patrón que usamos con los formatos de ejercicio de Bill. Instrucción
+abstracta ("registro de par experta") no basta para el modelo — necesita
+ejemplos concretos de bullets ya escritos en la voz correcta.
+
+Cero impacto de safety: la respuesta técnica es correcta (orientación a
+sesión suave / aeróbico / mobility / descanso). Es tema de textura de
+marca, no de seguridad.
+
+### Classifier prefiere amenorrhea con training link presente
+
+`cycle-signal-classifier.ts` con prompt reforzado explícitamente para
+priorizar `clinical-red-s` cuando training link + ausencia co-ocurren.
+gpt-4o-mini NO obedece el refuerzo — sigue eligiendo
+`clinical-amenorrhea` con 4 meses de ausencia + link explícito al
+entrenamiento.
+
+Sanity real (gpt-4o-mini, 2026-07-07):
+  Usuario: "hace como 4 meses que no me baja la menstruación, desde
+           que aumenté el entrenamiento"
+  Layer 1: absence=1, trainingLink=1, monthsElapsed=4
+  Layer 2 elige: clinical-amenorrhea (esperado: clinical-red-s)
+  Núcleo servido: SENDA_DERIVATION_2_AMENORRHEA verbatim
+  Warmth: OK (no viola blacklist).
+
+Cero impacto de safety: ambas derivaciones (Derivación 1 RED-S y
+Derivación 2 amenorrhea) derivan a consulta con profesional. La
+usuaria recibe un mensaje aprobado que la orienta a lo correcto. La
+diferencia es matiz clínico (mencionar training-link explícitamente
+vs solo "varios meses"), no criticidad.
+
+Solución diferida (auditoría 360, NO ahora): sacar la decisión red-s
+vs amenorrhea del LLM y hacerla REGLA DETERMINÍSTICA en el
+orquestador:
+
+```
+if (layer1.domains.absence.length > 0 && layer1.domains.trainingLink.length > 0) {
+  return { category: 'clinical-red-s', ... };
+}
+// resto va al classifier LLM
+```
+
+Esto elimina la dependencia del LLM para el caso más frecuente y más
+importante (RED-S) y deja al LLM solo los casos verdaderamente
+ambiguos. Decisión de Giuliana (2026-07-07): NO subir el modelo del
+classifier a gpt-4o — resolver por lógica determinística cuando llegue
+el momento.
