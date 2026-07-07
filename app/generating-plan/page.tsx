@@ -253,6 +253,28 @@ export default function GeneratingPlanPage() {
               <Button variant="mustard" href="/subscribe" size="lg" className="w-full">
                 Activar suscripción
               </Button>
+            ) : errorCode === 'plan_unsafe_after_retry' ? (
+              // Fallback #17 · audit-360 fix: el usuario tenía solo "Reintentar",
+              // que con el mismo perfil devolvía el mismo fallback en loop. Ahora
+              // el primario lleva a editar el perfil; "Reintentar con el perfil
+              // actual" queda como opción explícita y honesta.
+              <>
+                <Button
+                  href="/profile"
+                  size="lg"
+                  className="w-full"
+                >
+                  Ajustar mi perfil
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="mt-3 w-full"
+                  onClick={() => window.location.reload()}
+                >
+                  Reintentar con el perfil actual
+                </Button>
+              </>
             ) : (
               <Button
                 variant="mustard"
