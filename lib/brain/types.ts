@@ -167,6 +167,12 @@ export type ProfileForRules = {
   //   'bad'     = <5 hrs   (DISPARA reducción de intensidad)
   //   ''        = sin dato (NO dispara — asume ok)
   sleep: string;
+  // Fase 4 Pieza 2 — coach activo para variar el mensaje user-facing
+  // en §1.3 (dolor ≥3/10) entre Bill (texto neutro histórico) y Senda
+  // (Derivación 3 verbatim). NO cambia la lógica de detección — solo
+  // el `userMessage` del verdict emitido. Opcional para compat con
+  // callers viejos (default a Bill si no viene).
+  character?: 'bill' | 'senda';
 };
 
 // -------------------- RuleModule --------------------

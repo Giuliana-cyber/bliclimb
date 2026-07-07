@@ -101,13 +101,20 @@ const PAIN_THRESHOLD = 3;
 
 function check_1_3(profile: ProfileForRules): Verdict[] {
   const verdicts: Verdict[] = [];
+  // Fase 4 Pieza 2 — selección de mensaje por coach activo. Cero cambio
+  // en lógica de detección (threshold, zonas, verdict shape) — solo el
+  // texto del `userMessage`. Default a Bill si `character` no viene.
+  const messageEntry =
+    profile.character === 'senda'
+      ? SECTION_01_MESSAGES.activePainSenda
+      : SECTION_01_MESSAGES.activePain;
   const emitZone = (zone: BlockedZone) => {
     verdicts.push({
       kind: 'block-zone',
       rule: '1.3',
       zone,
-      userMessage: SECTION_01_MESSAGES.activePain.text,
-      source: SECTION_01_MESSAGES.activePain.source
+      userMessage: messageEntry.text,
+      source: messageEntry.source
     });
   };
   if (profile.currentFingerPain >= PAIN_THRESHOLD) emitZone('fingers-pulleys');
