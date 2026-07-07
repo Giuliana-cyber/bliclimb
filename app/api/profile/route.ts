@@ -17,6 +17,10 @@ export const runtime = 'nodejs';
 
 // Shape que aceptamos del cliente. Todos opcionales: si el onboarding
 // se completa parcialmente, guardamos lo que haya.
+// Bloque 4 audit-360: schema recortado (14 campos out) + agregados
+// climbingDaysPerWeek/trainingDaysPerWeek + los que ya se capturaban
+// pero no persistían (disciplines, setting, availableDays,
+// maxSessionDuration, pullUpAbility, fingerTrainingExperience).
 const ProfileSchema = z.object({
   character: z.enum(['bill', 'senda']).optional(),
   language: z.enum(['es', 'en']).optional(),
@@ -24,19 +28,20 @@ const ProfileSchema = z.object({
   age: z.string().optional(),
   sex: z.string().optional(),
   weight: z.number().nullable().optional(),
-  height: z.number().nullable().optional(),
   climbingTime: z.string().optional(),
+  disciplines: z.array(z.string()).optional(),
   level: z.string().optional(),
+  setting: z.string().optional(),
   goals: z.array(z.string()).optional(),
   goalDescription: z.string().optional(),
-  project: z.string().optional(),
-  projectDescription: z.string().optional(),
-  trainingHistory: z.string().optional(),
-  previousTraining: z.string().optional(),
   equipment: z.array(z.string()).optional(),
   equipmentNotes: z.string().optional(),
   daysPerWeek: z.number().int().optional(),
+  climbingDaysPerWeek: z.number().int().min(0).max(7).optional(),
+  trainingDaysPerWeek: z.number().int().min(0).max(7).optional(),
+  availableDays: z.array(z.string()).optional(),
   sessionDuration: z.number().int().optional(),
+  maxSessionDuration: z.number().int().optional(),
   planDuration: z.number().int().optional(),
   injuries: z.array(z.string()).optional(),
   injuryDescription: z.string().optional(),
@@ -46,24 +51,22 @@ const ProfileSchema = z.object({
   currentElbowPain: z.number().int().optional(),
   wantsConservativePlan: z.boolean().optional(),
   trainingAggressiveness: z.string().optional(),
-  energyLevel: z.string().optional(),
-  energy: z.string().optional(),
   sleepQuality: z.string().optional(),
   sleep: z.string().optional(),
+  pullUpAbility: z.string().optional(),
+  fingerTrainingExperience: z.string().optional(),
   pullupsBodyweight: z.number().int().nullable().optional(),
   pullupsAddedWeight5Reps: z.number().int().nullable().optional(),
   hangboard20mmSeconds: z.number().int().nullable().optional(),
-  hangboard20mmAddedWeight7s: z.number().int().nullable().optional(),
-  benchPress1Rm: z.number().int().nullable().optional(),
-  squat1Rm: z.number().int().nullable().optional(),
-  deadlift1Rm: z.number().int().nullable().optional()
+  hangboard20mmAddedWeight7s: z.number().int().nullable().optional()
 });
 
-type ProfileInput = z.infer<typeof ProfileSchema>;
+export type ProfileInput = z.infer<typeof ProfileSchema>;
+export { ProfileSchema };
 
 // Map camelCase → snake_case. Solo incluimos campos con valor definido;
 // undefined → omitido. null sí se respeta (limpiar un valor previo).
-function toDbRow(p: ProfileInput): Record<string, unknown> {
+export function toDbRow(p: ProfileInput): Record<string, unknown> {
   const row: Record<string, unknown> = {};
   const set = <K extends keyof ProfileInput>(col: string, key: K) => {
     if (p[key] !== undefined) row[col] = p[key];
@@ -74,19 +77,20 @@ function toDbRow(p: ProfileInput): Record<string, unknown> {
   set('age', 'age');
   set('sex', 'sex');
   set('weight', 'weight');
-  set('height', 'height');
   set('climbing_time', 'climbingTime');
+  set('disciplines', 'disciplines');
   set('level', 'level');
+  set('setting', 'setting');
   set('goals', 'goals');
   set('goal_description', 'goalDescription');
-  set('project', 'project');
-  set('project_description', 'projectDescription');
-  set('training_history', 'trainingHistory');
-  set('previous_training', 'previousTraining');
   set('equipment', 'equipment');
   set('equipment_notes', 'equipmentNotes');
   set('days_per_week', 'daysPerWeek');
+  set('climbing_days_per_week', 'climbingDaysPerWeek');
+  set('training_days_per_week', 'trainingDaysPerWeek');
+  set('available_days', 'availableDays');
   set('session_duration', 'sessionDuration');
+  set('max_session_duration', 'maxSessionDuration');
   set('plan_duration', 'planDuration');
   set('injuries', 'injuries');
   set('injury_description', 'injuryDescription');
@@ -96,17 +100,14 @@ function toDbRow(p: ProfileInput): Record<string, unknown> {
   set('current_elbow_pain', 'currentElbowPain');
   set('wants_conservative_plan', 'wantsConservativePlan');
   set('training_aggressiveness', 'trainingAggressiveness');
-  set('energy_level', 'energyLevel');
-  set('energy', 'energy');
   set('sleep_quality', 'sleepQuality');
   set('sleep', 'sleep');
+  set('pull_up_ability', 'pullUpAbility');
+  set('finger_training_experience', 'fingerTrainingExperience');
   set('pullups_bodyweight', 'pullupsBodyweight');
   set('pullups_added_weight_5reps', 'pullupsAddedWeight5Reps');
   set('hangboard_20mm_seconds', 'hangboard20mmSeconds');
   set('hangboard_20mm_added_weight_7s', 'hangboard20mmAddedWeight7s');
-  set('bench_press_1rm', 'benchPress1Rm');
-  set('squat_1rm', 'squat1Rm');
-  set('deadlift_1rm', 'deadlift1Rm');
   return row;
 }
 

@@ -391,24 +391,58 @@ export default function OnboardingPage() {
     setRehydrated(false);
   }
 
+  // Bloque 4 audit-360: gate simplificado (recortes de warmup/energy en paso 4,
+  // previousTraining en paso 5) + gate final útil que lista qué falta.
   const stepsDone = useMemo(() => {
     return {
       1: Boolean(form.character),
       2: Boolean(form.climbingTime && form.disciplines.length && form.level && form.setting),
       3: Boolean(form.age && form.sex),
-      4: Boolean(form.injuries.length && form.warmup && form.sleep && form.energy),
+      4: Boolean(form.injuries.length && form.sleep),
       5: Boolean(
-        // H-03: exigimos que la suma sea >= 1 — el user tiene que declarar
-        // al menos un día de actividad (escalada o entrenamiento extra).
         (form.climbingDaysPerWeek + form.trainingDaysPerWeek) >= 1 &&
           form.availableDays.length &&
           form.sessionDuration &&
-          form.equipment.length &&
-          form.previousTraining
+          form.equipment.length
       ),
       6: Boolean((form.goals.length || form.goalDescription.trim()) && form.durationChoice),
       7: true
     };
+  }, [form]);
+
+  // Bloque 4 audit-360: gate final útil. Cuando falta algo, devolvemos
+  // por paso los nombres user-facing de los campos incompletos. Se usa en
+  // la lista al pie del paso 7.
+  const missingByStep = useMemo(() => {
+    const missing: Array<{ step: number; title: string; fields: string[] }> = [];
+    if (!form.character) {
+      missing.push({ step: 1, title: 'Elige tu compañer@', fields: ['Compañer@'] });
+    }
+    const step2: string[] = [];
+    if (!form.climbingTime) step2.push('Tiempo escalando');
+    if (!form.disciplines.length) step2.push('Disciplinas');
+    if (!form.level) step2.push('Nivel');
+    if (!form.setting) step2.push('Dónde escalas');
+    if (step2.length) missing.push({ step: 2, title: 'Tu escalada', fields: step2 });
+    const step3: string[] = [];
+    if (!form.age) step3.push('Rango de edad');
+    if (!form.sex) step3.push('Sexo biológico');
+    if (step3.length) missing.push({ step: 3, title: 'Sobre ti', fields: step3 });
+    const step4: string[] = [];
+    if (!form.injuries.length) step4.push('Lesiones');
+    if (!form.sleep) step4.push('Sueño');
+    if (step4.length) missing.push({ step: 4, title: 'Tu cuerpo', fields: step4 });
+    const step5: string[] = [];
+    if (form.climbingDaysPerWeek + form.trainingDaysPerWeek < 1) step5.push('Días');
+    if (!form.availableDays.length) step5.push('Días disponibles');
+    if (!form.sessionDuration) step5.push('Duración sesión');
+    if (!form.equipment.length) step5.push('Equipo');
+    if (step5.length) missing.push({ step: 5, title: 'Tu entrenamiento', fields: step5 });
+    const step6: string[] = [];
+    if (!form.goals.length && !form.goalDescription.trim()) step6.push('Objetivo');
+    if (!form.durationChoice) step6.push('Duración del ciclo');
+    if (step6.length) missing.push({ step: 6, title: 'Tu objetivo', fields: step6 });
+    return missing;
   }, [form]);
 
   const completedSteps = Object.values(stepsDone).filter(Boolean).length;
@@ -436,6 +470,7 @@ export default function OnboardingPage() {
 
     const now = new Date().toISOString();
     const goals = form.goals.length ? form.goals : ['other'];
+    // Bloque 4 audit-360: solo campos que sobreviven al recorte del paso 5.
     const profile: UserProfile = {
       id: createId(),
       character: form.character,
@@ -443,19 +478,13 @@ export default function OnboardingPage() {
       age: form.age,
       sex: form.sex,
       weight: toOptionalNumber(form.weight),
-      height: toOptionalNumber(form.height),
       climbingTime: form.climbingTime,
       disciplines: form.disciplines,
       level: form.level,
       setting: form.setting,
       injuries: form.injuries,
       injuryNotes: form.injuryNotes.trim(),
-      warmup: form.warmup,
       sleep: form.sleep,
-      energy: form.energy,
-      // H-03: `daysPerWeek` es el total derivado. El motor recibe además el
-      // desglose por dos campos nuevos en el perfil (climbingDaysPerWeek,
-      // trainingDaysPerWeek) que van al prompt en profileToPrompt.
       daysPerWeek: totalDaysPerWeek,
       climbingDaysPerWeek: form.climbingDaysPerWeek,
       trainingDaysPerWeek: form.trainingDaysPerWeek,
@@ -464,36 +493,26 @@ export default function OnboardingPage() {
       maxSessionDuration: form.maxSessionDuration,
       equipment: form.equipment,
       equipmentNotes: form.equipmentNotes.trim(),
-      previousTraining: form.previousTraining,
-      trainingHistory: form.previousTraining,
       accessToCampusBoard: form.equipment.includes('campus'),
       accessToHangboard: form.equipment.includes('hangboard'),
       accessToTRX: form.equipment.includes('trx'),
       accessToWeights: form.equipment.includes('weights'),
       pullUpAbility: form.pullUpAbility || 'unknown',
       fingerTrainingExperience: form.fingerTrainingExperience || 'unknown',
-      campusExperience: form.campusExperience || 'none',
       currentFingerPain: form.currentFingerPain,
       currentShoulderPain: form.currentShoulderPain,
       currentElbowPain: form.currentElbowPain,
       wantsConservativePlan: form.trainingAggressiveness === 'conservative',
       trainingAggressiveness: form.trainingAggressiveness,
-      outdoorFrequency: form.outdoorFrequency || 'unknown',
       pullupsBodyweight: toOptionalInt(form.pullupsBodyweight),
       pullupsAddedWeight5Reps: toOptionalInt(form.pullupsAddedWeight5Reps),
       hangboard20mmSeconds: toOptionalInt(form.hangboard20mmSeconds),
       hangboard20mmAddedWeight7s: toOptionalInt(form.hangboard20mmAddedWeight7s),
-      benchPress1Rm: toOptionalInt(form.benchPress1Rm),
-      squat1Rm: toOptionalInt(form.squat1Rm),
-      deadlift1Rm: toOptionalInt(form.deadlift1Rm),
       goal: goals[0],
       goals,
+      // Bloque 4: textareas del paso 6 fusionadas — una sola.
       goalDescription: form.goalDescription.trim(),
-      project: form.project.trim(),
-      projectDescription: form.project.trim(),
-      rockProjectDescription: form.rockProjectDescription.trim() || form.project.trim(),
       sleepQuality: form.sleep,
-      energyLevel: form.energy,
       injuryDescription: form.injuryNotes.trim(),
       planDuration: durationWeeks,
       createdAt: now,
@@ -516,25 +535,28 @@ export default function OnboardingPage() {
     // si el usuario tiene red lenta y la página de generating-plan
     // empieza a leer el perfil server-side. Si falla, navegamos igual
     // — localStorage está intacto y el reconciliador puede reintentar.
+    // Bloque 4 audit-360: payload alineado con /api/profile ProfileSchema +
+    // migración 0013. Cero campos huérfanos que el server descarte.
     const dbPayload = {
       character: profile.character,
       name: profile.name,
       age: profile.age,
       sex: profile.sex,
       weight: profile.weight,
-      height: profile.height,
       climbingTime: profile.climbingTime,
+      disciplines: profile.disciplines,
       level: profile.level,
+      setting: profile.setting,
       goals: profile.goals,
       goalDescription: profile.goalDescription,
-      project: profile.project,
-      projectDescription: profile.projectDescription,
-      trainingHistory: profile.trainingHistory,
-      previousTraining: profile.previousTraining,
       equipment: profile.equipment,
       equipmentNotes: profile.equipmentNotes,
       daysPerWeek: profile.daysPerWeek,
+      climbingDaysPerWeek: profile.climbingDaysPerWeek,
+      trainingDaysPerWeek: profile.trainingDaysPerWeek,
+      availableDays: profile.availableDays,
       sessionDuration: profile.sessionDuration,
+      maxSessionDuration: profile.maxSessionDuration,
       planDuration: profile.planDuration,
       injuries: profile.injuries,
       injuryDescription: profile.injuryDescription,
@@ -544,17 +566,14 @@ export default function OnboardingPage() {
       currentElbowPain: profile.currentElbowPain,
       wantsConservativePlan: profile.wantsConservativePlan,
       trainingAggressiveness: profile.trainingAggressiveness,
-      energyLevel: profile.energyLevel,
-      energy: profile.energy,
       sleepQuality: profile.sleepQuality,
       sleep: profile.sleep,
+      pullUpAbility: profile.pullUpAbility,
+      fingerTrainingExperience: profile.fingerTrainingExperience,
       pullupsBodyweight: profile.pullupsBodyweight,
       pullupsAddedWeight5Reps: profile.pullupsAddedWeight5Reps,
       hangboard20mmSeconds: profile.hangboard20mmSeconds,
-      hangboard20mmAddedWeight7s: profile.hangboard20mmAddedWeight7s,
-      benchPress1Rm: profile.benchPress1Rm,
-      squat1Rm: profile.squat1Rm,
-      deadlift1Rm: profile.deadlift1Rm
+      hangboard20mmAddedWeight7s: profile.hangboard20mmAddedWeight7s
     };
     try {
       // eslint-disable-next-line no-console
@@ -774,13 +793,7 @@ export default function OnboardingPage() {
               inputMode="decimal"
               onChange={(value) => setForm((current) => ({ ...current, weight: value }))}
             />
-            <InputField
-              label="Estatura (cm)"
-              optional
-              value={form.height}
-              inputMode="decimal"
-              onChange={(value) => setForm((current) => ({ ...current, height: value }))}
-            />
+            {/* Bloque 4 audit-360: campo "Estatura" recortado (sin uso en motor). */}
           </div>
         </StepSection>
 
@@ -831,19 +844,8 @@ export default function OnboardingPage() {
             onChange={(value) => setForm((current) => ({ ...current, currentElbowPain: value }))}
           />
 
-          <FieldGroup title="¿Calientas antes de escalar?">
-            <OptionGrid>
-              {warmupOptions.map((option) => (
-                <OptionButton
-                  key={option.value}
-                  active={form.warmup === option.value}
-                  onClick={() => setForm((current) => ({ ...current, warmup: option.value }))}
-                >
-                  {option.label}
-                </OptionButton>
-              ))}
-            </OptionGrid>
-          </FieldGroup>
+          {/* Bloque 4 audit-360: "¿Calientas antes de escalar?" y "¿Cómo es
+              tu energía general?" recortados (sin uso en motor ni safety). */}
 
           <FieldGroup title="¿Cómo duermes normalmente?">
             <OptionGrid>
@@ -852,20 +854,6 @@ export default function OnboardingPage() {
                   key={option.value}
                   active={form.sleep === option.value}
                   onClick={() => setForm((current) => ({ ...current, sleep: option.value }))}
-                >
-                  {option.label}
-                </OptionButton>
-              ))}
-            </OptionGrid>
-          </FieldGroup>
-
-          <FieldGroup title="¿Cómo es tu energía general?">
-            <OptionGrid>
-              {energyOptions.map((option) => (
-                <OptionButton
-                  key={option.value}
-                  active={form.energy === option.value}
-                  onClick={() => setForm((current) => ({ ...current, energy: option.value }))}
                 >
                   {option.label}
                 </OptionButton>
@@ -1027,21 +1015,7 @@ export default function OnboardingPage() {
             onChange={(value) => setForm((current) => ({ ...current, equipmentNotes: value }))}
           />
 
-          <FieldGroup title="¿Has seguido algún plan de entrenamiento antes?">
-            <OptionGrid>
-              {previousTrainingOptions.map((option) => (
-                <OptionButton
-                  key={option.value}
-                  active={form.previousTraining === option.value}
-                  onClick={() =>
-                    setForm((current) => ({ ...current, previousTraining: option.value }))
-                  }
-                >
-                  {option.label}
-                </OptionButton>
-              ))}
-            </OptionGrid>
-          </FieldGroup>
+          {/* Bloque 4 audit-360: "¿Has seguido algún plan antes?" recortado. */}
 
           <FieldGroup title="Dominadas estrictas actuales">
             <OptionGrid columns={3}>
@@ -1078,37 +1052,8 @@ export default function OnboardingPage() {
             </OptionGrid>
           </FieldGroup>
 
-          <FieldGroup title="Experiencia con campus board">
-            <OptionGrid>
-              {campusExperienceOptions.map((option) => (
-                <OptionButton
-                  key={option.value}
-                  active={form.campusExperience === option.value}
-                  onClick={() =>
-                    setForm((current) => ({ ...current, campusExperience: option.value }))
-                  }
-                >
-                  {option.label}
-                </OptionButton>
-              ))}
-            </OptionGrid>
-          </FieldGroup>
-
-          <FieldGroup title="Frecuencia en roca">
-            <OptionGrid>
-              {outdoorFrequencyOptions.map((option) => (
-                <OptionButton
-                  key={option.value}
-                  active={form.outdoorFrequency === option.value}
-                  onClick={() =>
-                    setForm((current) => ({ ...current, outdoorFrequency: option.value }))
-                  }
-                >
-                  {option.label}
-                </OptionButton>
-              ))}
-            </OptionGrid>
-          </FieldGroup>
+          {/* Bloque 4 audit-360: "Experiencia con campus" y "Frecuencia en
+              roca" recortados. */}
 
           <StrengthFields form={form} setForm={setForm} />
 
@@ -1154,32 +1099,19 @@ export default function OnboardingPage() {
             </OptionGrid>
           </FieldGroup>
 
+          {/* Bloque 4 audit-360: las 3 textareas (goalDescription + project +
+              rockProjectDescription) se fusionan en una sola. El motor recibe
+              todo el texto en `goalDescription`. */}
           <TextareaField
-            label="Redacta lo que buscas"
+            label="Cuéntame más de tu objetivo o proyecto (opcional)"
             value={form.goalDescription}
-            placeholder="Quiero sentirme más fuerte en desplomes, mejorar lectura de boulder y llegar sin dolor de dedos a mi viaje de roca..."
+            placeholder="Por ejemplo: quiero encadenar La Catrina 5.12a en El Salto antes de diciembre. Es un desplome, crux en el paso 5. Vengo de dos meses sin escalar por trabajo."
             onChange={(value) =>
               setForm((current) => ({
                 ...current,
                 goalDescription: value,
                 goals: value.trim() && !current.goals.length ? ['other'] : current.goals
               }))
-            }
-          />
-
-          <TextareaField
-            label="¿Tienes un proyecto o ruta específica?"
-            value={form.project}
-            placeholder="Quiero encadenar La Catrina 5.12a en El Salto antes de diciembre"
-            onChange={(value) => setForm((current) => ({ ...current, project: value }))}
-          />
-
-          <TextareaField
-            label="Contexto del proyecto en roca"
-            value={form.rockProjectDescription}
-            placeholder="Tipo de ruta, estilo, crux, agarres, desplome/placa, fecha del viaje, miedos o limitantes..."
-            onChange={(value) =>
-              setForm((current) => ({ ...current, rockProjectDescription: value }))
             }
           />
 
@@ -1269,10 +1201,21 @@ export default function OnboardingPage() {
           </button>
 
           {!canSubmit ? (
-            <p className="text-center text-xs text-white/55">
-              Te faltan {7 - completedSteps} {7 - completedSteps === 1 ? 'paso' : 'pasos'} para
-              poder generar el plan.
-            </p>
+            // Bloque 4 audit-360: gate final útil — lista concreta de qué falta.
+            <div
+              className="rounded-xl border border-brand-mustard/30 bg-brand-mustard/[0.08] px-4 py-3 text-xs leading-6 text-white/72"
+              data-testid="onboarding-missing-list"
+            >
+              <p className="font-extrabold text-brand-mustard">Te falta completar:</p>
+              <ul className="mt-2 space-y-1">
+                {missingByStep.map((entry) => (
+                  <li key={`missing-step-${entry.step}`}>
+                    <span className="font-bold text-white">Paso {entry.step} — {entry.title}:</span>{' '}
+                    {entry.fields.join(' · ')}
+                  </li>
+                ))}
+              </ul>
+            </div>
           ) : null}
         </StepSection>
       </div>
@@ -1477,95 +1420,79 @@ function StrengthFields({
   form: OnboardingForm;
   setForm: React.Dispatch<React.SetStateAction<OnboardingForm>>;
 }) {
+  // Bloque 4 audit-360: colapsado por defecto. Copy en tono "está bien no
+  // saberlas" para bajar la fricción del paso 5. Bench/squat/deadlift OUT.
+  const [open, setOpen] = useState(false);
   return (
-    <div className="space-y-5 rounded-2xl border border-brand-cyan/15 bg-brand-cyan/[0.04] p-5">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-cyan">
-          Fuerza actual
-        </p>
-        <p className="mt-2 text-sm leading-6 text-white/72">
-          Estos datos ayudan a Bill y Senda a calcular intensidades reales para tu plan. Si
-          no sabes alguno, déjalo en blanco — lo iremos calibrando con tus check-ins.
-        </p>
-      </div>
+    <div className="rounded-2xl border border-brand-cyan/15 bg-brand-cyan/[0.04]">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-3 rounded-2xl p-5 text-left"
+        aria-expanded={open}
+        data-testid="onboarding-strength-disclosure"
+      >
+        <span className="text-sm font-extrabold text-white">
+          ¿Conoces tus marcas de fuerza? (opcional — la mayoría no las sabe y
+          está perfecto)
+        </span>
+        <span className="text-xs font-bold uppercase tracking-[0.10em] text-brand-cyan">
+          {open ? 'Cerrar' : 'Abrir'}
+        </span>
+      </button>
+      {open ? (
+        <div className="space-y-5 p-5 pt-0">
+          <div className="space-y-4">
+            <p className="text-sm font-extrabold text-white">Dominadas</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <InputField
+                label="A peso corporal (máx reps)"
+                value={form.pullupsBodyweight}
+                inputMode="numeric"
+                placeholder="ej. 12 dominadas"
+                onChange={(value) =>
+                  setForm((current) => ({ ...current, pullupsBodyweight: value }))
+                }
+              />
+              <InputField
+                label="Peso extra para 5 reps (kg)"
+                optional
+                value={form.pullupsAddedWeight5Reps}
+                inputMode="numeric"
+                placeholder="ej. 15 kg"
+                onChange={(value) =>
+                  setForm((current) => ({ ...current, pullupsAddedWeight5Reps: value }))
+                }
+              />
+            </div>
+          </div>
 
-      <div className="space-y-4">
-        <p className="text-sm font-extrabold text-white">Dominadas</p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <InputField
-            label="A peso corporal (máx reps)"
-            value={form.pullupsBodyweight}
-            inputMode="numeric"
-            placeholder="ej. 12 dominadas"
-            onChange={(value) => setForm((current) => ({ ...current, pullupsBodyweight: value }))}
-          />
-          <InputField
-            label="Peso extra para 5 reps (kg)"
-            optional
-            value={form.pullupsAddedWeight5Reps}
-            inputMode="numeric"
-            placeholder="ej. 15 kg"
-            onChange={(value) =>
-              setForm((current) => ({ ...current, pullupsAddedWeight5Reps: value }))
-            }
-          />
+          <div className="space-y-4">
+            <p className="text-sm font-extrabold text-white">Suspensión en regleta de 20 mm</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <InputField
+                label="Segundos a peso corporal"
+                value={form.hangboard20mmSeconds}
+                inputMode="numeric"
+                placeholder="ej. 15 seg"
+                onChange={(value) =>
+                  setForm((current) => ({ ...current, hangboard20mmSeconds: value }))
+                }
+              />
+              <InputField
+                label="Peso extra para 7 seg (kg)"
+                optional
+                value={form.hangboard20mmAddedWeight7s}
+                inputMode="numeric"
+                placeholder="ej. 10 kg"
+                onChange={(value) =>
+                  setForm((current) => ({ ...current, hangboard20mmAddedWeight7s: value }))
+                }
+              />
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div className="space-y-4">
-        <p className="text-sm font-extrabold text-white">Suspensión en regleta de 20mm</p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <InputField
-            label="Segundos a peso corporal"
-            value={form.hangboard20mmSeconds}
-            inputMode="numeric"
-            placeholder="ej. 15 seg"
-            onChange={(value) =>
-              setForm((current) => ({ ...current, hangboard20mmSeconds: value }))
-            }
-          />
-          <InputField
-            label="Peso extra para 7 seg (kg)"
-            optional
-            value={form.hangboard20mmAddedWeight7s}
-            inputMode="numeric"
-            placeholder="ej. 10 kg"
-            onChange={(value) =>
-              setForm((current) => ({ ...current, hangboard20mmAddedWeight7s: value }))
-            }
-          />
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <p className="text-sm font-extrabold text-white">Pesas (opcional)</p>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <InputField
-            label="Press banca 1RM (kg)"
-            optional
-            value={form.benchPress1Rm}
-            inputMode="numeric"
-            placeholder="ej. 80"
-            onChange={(value) => setForm((current) => ({ ...current, benchPress1Rm: value }))}
-          />
-          <InputField
-            label="Sentadilla 1RM (kg)"
-            optional
-            value={form.squat1Rm}
-            inputMode="numeric"
-            placeholder="ej. 110"
-            onChange={(value) => setForm((current) => ({ ...current, squat1Rm: value }))}
-          />
-          <InputField
-            label="Peso muerto 1RM (kg)"
-            optional
-            value={form.deadlift1Rm}
-            inputMode="numeric"
-            placeholder="ej. 140"
-            onChange={(value) => setForm((current) => ({ ...current, deadlift1Rm: value }))}
-          />
-        </div>
-      </div>
+      ) : null}
     </div>
   );
 }

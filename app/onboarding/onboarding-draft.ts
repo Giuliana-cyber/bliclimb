@@ -12,22 +12,23 @@ import type { UserProfile } from '@/lib/profile';
 
 type DurationChoice = '' | '2' | '3' | '4' | 'starter';
 
+// Bloque 4 audit-360: recortes aprobados por Giuliana.
+// OUT: height, warmup, energy, previousTraining, campusExperience,
+// outdoorFrequency, benchPress1Rm, squat1Rm, deadlift1Rm, project,
+// rockProjectDescription. `goalDescription` sobrevive como textarea única.
 export type OnboardingForm = {
   character: UserProfile['character'];
   name: string;
   age: string;
   sex: string;
   weight: string;
-  height: string;
   climbingTime: string;
   disciplines: string[];
   level: string;
   setting: string;
   injuries: string[];
   injuryNotes: string;
-  warmup: string;
   sleep: string;
-  energy: string;
   // Bloque 3 audit-360 (H-03): dos campos separados en lugar de un solo
   // "daysPerWeek". `daysPerWeek` se sigue derivando como suma en handleSubmit
   // para no romper el motor ni el schema server. El desglose viaja aparte al
@@ -39,26 +40,18 @@ export type OnboardingForm = {
   maxSessionDuration: number;
   equipment: string[];
   equipmentNotes: string;
-  previousTraining: string;
   pullUpAbility: string;
   fingerTrainingExperience: string;
-  campusExperience: string;
   currentFingerPain: number;
   currentShoulderPain: number;
   currentElbowPain: number;
   trainingAggressiveness: string;
-  outdoorFrequency: string;
   pullupsBodyweight: string;
   pullupsAddedWeight5Reps: string;
   hangboard20mmSeconds: string;
   hangboard20mmAddedWeight7s: string;
-  benchPress1Rm: string;
-  squat1Rm: string;
-  deadlift1Rm: string;
   goals: string[];
   goalDescription: string;
-  project: string;
-  rockProjectDescription: string;
   durationChoice: DurationChoice;
 };
 
@@ -68,16 +61,13 @@ export const initialForm: OnboardingForm = {
   age: '',
   sex: '',
   weight: '',
-  height: '',
   climbingTime: '',
   disciplines: [],
   level: '',
   setting: '',
   injuries: [],
   injuryNotes: '',
-  warmup: '',
   sleep: '',
-  energy: '',
   climbingDaysPerWeek: 0,
   trainingDaysPerWeek: 0,
   availableDays: [],
@@ -85,26 +75,18 @@ export const initialForm: OnboardingForm = {
   maxSessionDuration: 90,
   equipment: [],
   equipmentNotes: '',
-  previousTraining: '',
   pullUpAbility: '',
   fingerTrainingExperience: '',
-  campusExperience: '',
   currentFingerPain: 0,
   currentShoulderPain: 0,
   currentElbowPain: 0,
   trainingAggressiveness: 'balanced',
-  outdoorFrequency: '',
   pullupsBodyweight: '',
   pullupsAddedWeight5Reps: '',
   hangboard20mmSeconds: '',
   hangboard20mmAddedWeight7s: '',
-  benchPress1Rm: '',
-  squat1Rm: '',
-  deadlift1Rm: '',
   goals: [],
   goalDescription: '',
-  project: '',
-  rockProjectDescription: '',
   durationChoice: ''
 };
 
