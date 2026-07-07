@@ -40,6 +40,8 @@ export function SettingsContent({ subscriptionPanel }: SettingsContentProps = {}
   const [session, setSession] = useState<LocalSession | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     setSession(loadLocalSession());
@@ -68,8 +70,33 @@ export function SettingsContent({ subscriptionPanel }: SettingsContentProps = {}
     setProfile(updated);
   }
 
-  function handleDeleteAllData() {
+  async function handleDeleteAllData() {
     if (typeof window === 'undefined') return;
+    // Segunda confirmación por lo permanente — un click accidental sobre
+    // el botón rojo no puede borrar la cuenta entera sin este check.
+    const confirmed = window.confirm(
+      'Vas a borrar todos tus datos permanentemente. ¿Continuar?'
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch('/api/user/all-data', { method: 'POST' });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? 'delete_failed');
+      }
+    } catch {
+      setDeleting(false);
+      setDeleteError(
+        'No pudimos borrar tus datos. Vuelve a intentar en unos segundos o escríbenos a soporte.'
+      );
+      return;
+    }
+
+    // Server ya borró auth.users + cascade a todo. Limpiamos el rastro
+    // local para que la siguiente pantalla no vea datos huérfanos.
     const keys: string[] = [];
     for (let i = 0; i < window.localStorage.length; i += 1) {
       const key = window.localStorage.key(i);
@@ -78,6 +105,13 @@ export function SettingsContent({ subscriptionPanel }: SettingsContentProps = {}
       }
     }
     keys.forEach((key) => window.localStorage.removeItem(key));
+
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {
+      // ignore — la sesión igual queda inválida en el server
+    }
     clearLocalSession();
     router.push('/sign-in');
   }
@@ -206,8 +240,8 @@ export function SettingsContent({ subscriptionPanel }: SettingsContentProps = {}
             <div className="min-w-0 flex-1">
               <p className="text-sm font-extrabold text-white">Almacenamiento</p>
               <p className="mt-1 text-xs leading-5 text-white/55">
-                Tu perfil, plan y check-ins están en tu navegador y se sincronizan a
-                Supabase. Borrarlos no se puede deshacer.
+                Tu perfil, plan y check-ins están en tu navegador y en nuestros
+                servidores. Borrarlos no se puede deshacer.
               </p>
             </div>
           </div>
@@ -215,12 +249,22 @@ export function SettingsContent({ subscriptionPanel }: SettingsContentProps = {}
             <div className="mt-4 rounded-xl border border-red-400/30 bg-red-400/[0.08] p-4">
               <p className="text-sm font-bold text-red-200">¿Borrar todos los datos?</p>
               <p className="mt-1 text-xs leading-5 text-white/65">
-                Se borra perfil, plan, check-ins y sesión. Tendrás que volver a empezar.
+                Esto borra permanentemente tu perfil, planes y check-ins de nuestros
+                servidores. No se puede deshacer. Tu suscripción no se cancela con esto
+                — hazlo desde el panel de suscripción antes si quieres darte de baja.
+                Esto borra tu cuenta completa; tendrás que crear una nueva si quieres
+                volver.
               </p>
+              {deleteError ? (
+                <p className="mt-3 rounded-md border border-red-400/40 bg-red-400/[0.10] p-2 text-xs font-bold text-red-100">
+                  {deleteError}
+                </p>
+              ) : null}
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 <Button
                   variant="secondary"
                   onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleting}
                   className="w-full"
                 >
                   Cancelar
@@ -228,10 +272,11 @@ export function SettingsContent({ subscriptionPanel }: SettingsContentProps = {}
                 <button
                   type="button"
                   onClick={handleDeleteAllData}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-500/90 px-5 text-sm font-bold text-white transition hover:bg-red-500"
+                  disabled={deleting}
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-500/90 px-5 text-sm font-bold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Trash2 size={16} />
-                  Sí, borrar todo
+                  {deleting ? 'Borrando…' : 'Sí, borrar todo'}
                 </button>
               </div>
             </div>

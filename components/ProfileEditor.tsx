@@ -97,11 +97,22 @@ const energyOptions: Option[] = [
   { label: 'Variable', value: 'variable' }
 ];
 
-const daysOptions = [
-  { label: '1-2', value: 2 },
+// Bloque 4 audit-360: dos grids separados (mismo shape que onboarding).
+const profileClimbingDaysOptions = [
+  { label: '0', value: 0 },
+  { label: '1', value: 1 },
+  { label: '2', value: 2 },
   { label: '3', value: 3 },
-  { label: '4-5', value: 5 },
+  { label: '4', value: 4 },
+  { label: '5', value: 5 },
   { label: '6+', value: 6 }
+];
+const profileTrainingDaysOptions = [
+  { label: '0', value: 0 },
+  { label: '1', value: 1 },
+  { label: '2', value: 2 },
+  { label: '3', value: 3 },
+  { label: '4', value: 4 }
 ];
 
 const availableDayOptions: Option[] = [
@@ -228,15 +239,17 @@ export function ProfileEditor() {
     setNeedsRegeneration(loadProfileNeedsRegeneration());
   }, []);
 
+  // Bloque 4 audit-360: campos cortados eliminados de la comparación.
   const significantChange = useMemo(() => {
     if (!initialProfile || !profile) return false;
     return (
       initialProfile.goal !== profile.goal ||
       initialProfile.goals.join(',') !== profile.goals.join(',') ||
       initialProfile.goalDescription !== profile.goalDescription ||
-      initialProfile.project !== profile.project ||
       initialProfile.level !== profile.level ||
       initialProfile.daysPerWeek !== profile.daysPerWeek ||
+      (initialProfile.climbingDaysPerWeek ?? 0) !== (profile.climbingDaysPerWeek ?? 0) ||
+      (initialProfile.trainingDaysPerWeek ?? 0) !== (profile.trainingDaysPerWeek ?? 0) ||
       initialProfile.availableDays.join(',') !== profile.availableDays.join(',') ||
       initialProfile.sessionDuration !== profile.sessionDuration ||
       initialProfile.maxSessionDuration !== profile.maxSessionDuration ||
@@ -249,11 +262,8 @@ export function ProfileEditor() {
       initialProfile.currentShoulderPain !== profile.currentShoulderPain ||
       initialProfile.currentElbowPain !== profile.currentElbowPain ||
       initialProfile.fingerTrainingExperience !== profile.fingerTrainingExperience ||
-      initialProfile.campusExperience !== profile.campusExperience ||
       initialProfile.pullUpAbility !== profile.pullUpAbility ||
-      initialProfile.trainingAggressiveness !== profile.trainingAggressiveness ||
-      initialProfile.outdoorFrequency !== profile.outdoorFrequency ||
-      initialProfile.rockProjectDescription !== profile.rockProjectDescription
+      initialProfile.trainingAggressiveness !== profile.trainingAggressiveness
     );
   }, [initialProfile, profile]);
 
@@ -278,6 +288,8 @@ export function ProfileEditor() {
     event.preventDefault();
     if (!profile) return;
 
+    // Bloque 4 audit-360: sin alias huérfanos (projectDescription,
+    // energyLevel, trainingHistory) — el shape del UserProfile ya no los tiene.
     const nextProfile = {
       ...profile,
       accessToCampusBoard: profile.equipment.includes('campus'),
@@ -285,11 +297,8 @@ export function ProfileEditor() {
       accessToTRX: profile.equipment.includes('trx'),
       accessToWeights: profile.equipment.includes('weights'),
       wantsConservativePlan: profile.trainingAggressiveness === 'conservative',
-      projectDescription: profile.project.trim(),
       sleepQuality: profile.sleep,
-      energyLevel: profile.energy,
       injuryDescription: profile.injuryNotes.trim(),
-      trainingHistory: profile.previousTraining,
       updatedAt: new Date().toISOString()
     };
 
@@ -482,12 +491,7 @@ export function ProfileEditor() {
             inputMode="decimal"
             onChange={(value) => updateProfileField('weight', toNumberOrNull(value))}
           />
-          <InputField
-            label="Estatura (cm)"
-            value={profile.height?.toString() ?? ''}
-            inputMode="decimal"
-            onChange={(value) => updateProfileField('height', toNumberOrNull(value))}
-          />
+          {/* Bloque 4 audit-360: campo "Estatura" recortado. */}
         </div>
       </ProfileSection>
 
@@ -527,19 +531,7 @@ export function ProfileEditor() {
           value={profile.currentElbowPain}
           onChange={(value) => updateProfileField('currentElbowPain', value)}
         />
-        <FieldGroup title="Calentamiento">
-          <OptionGrid>
-            {warmupOptions.map((option) => (
-              <OptionButton
-                key={option.value}
-                active={profile.warmup === option.value}
-                onClick={() => updateProfileField('warmup', option.value)}
-              >
-                {option.label}
-              </OptionButton>
-            ))}
-          </OptionGrid>
-        </FieldGroup>
+        {/* Bloque 4 audit-360: Calentamiento, Energía recortados. */}
         <FieldGroup title="Sueño">
           <OptionGrid>
             {sleepOptions.map((option) => (
@@ -553,29 +545,75 @@ export function ProfileEditor() {
             ))}
           </OptionGrid>
         </FieldGroup>
-        <FieldGroup title="Energía">
+      </ProfileSection>
+
+      <ProfileSection title="Entrenamiento">
+        {/* Bloque 4 audit-360: compat legacy — si tenía daysPerWeek pero
+            aún no desglosa entre escalada y entrenamiento extra, ofrecemos
+            un aviso discreto (no bloqueante). El daysPerWeek se derivará
+            al guardar (suma de los dos nuevos). */}
+        {profile.daysPerWeek > 0 &&
+        (profile.climbingDaysPerWeek ?? 0) === 0 &&
+        (profile.trainingDaysPerWeek ?? 0) === 0 ? (
+          <p
+            className="rounded-xl border border-brand-cyan/25 bg-brand-cyan/[0.08] px-3 py-2 text-xs font-bold text-brand-cyan"
+            data-testid="profileeditor-legacy-days-banner"
+          >
+            Cambiamos cómo preguntamos por tus días. Desglosa tus{' '}
+            {profile.daysPerWeek} días semanales entre escalada y entrenamiento
+            extra.
+          </p>
+        ) : null}
+        <FieldGroup
+          title="¿Cuántos días por semana escalas?"
+          hint="Días que vas al gym de escalada o a roca."
+        >
           <OptionGrid>
-            {energyOptions.map((option) => (
+            {profileClimbingDaysOptions.map((option) => (
               <OptionButton
-                key={option.value}
-                active={profile.energy === option.value}
-                onClick={() => updateProfileField('energy', option.value)}
+                key={`climb-${option.value}`}
+                active={(profile.climbingDaysPerWeek ?? 0) === option.value}
+                onClick={() => {
+                  const newTotal = option.value + (profile.trainingDaysPerWeek ?? 0);
+                  setProfile((current) =>
+                    current
+                      ? {
+                          ...current,
+                          climbingDaysPerWeek: option.value,
+                          daysPerWeek: newTotal || current.daysPerWeek
+                        }
+                      : current
+                  );
+                  setSaved(false);
+                }}
               >
                 {option.label}
               </OptionButton>
             ))}
           </OptionGrid>
         </FieldGroup>
-      </ProfileSection>
-
-      <ProfileSection title="Entrenamiento">
-        <FieldGroup title="Días por semana">
+        <FieldGroup
+          title="¿Cuántos días extra puedes dedicar a entrenar?"
+          hint="Días en el gym de pesas, tabla de suspensión (hangboard) en casa, o cualquier trabajo que NO sea escalar. Puede ser 0."
+        >
           <OptionGrid>
-            {daysOptions.map((option) => (
+            {profileTrainingDaysOptions.map((option) => (
               <OptionButton
-                key={option.value}
-                active={profile.daysPerWeek === option.value}
-                onClick={() => updateProfileField('daysPerWeek', option.value)}
+                key={`train-${option.value}`}
+                active={(profile.trainingDaysPerWeek ?? 0) === option.value}
+                onClick={() => {
+                  const newTotal = (profile.climbingDaysPerWeek ?? 0) + option.value;
+                  setProfile((current) =>
+                    current
+                      ? {
+                          ...current,
+                          trainingDaysPerWeek: option.value,
+                          daysPerWeek: newTotal || current.daysPerWeek
+                        }
+                      : current
+                  );
+                  setSaved(false);
+                }}
               >
                 {option.label}
               </OptionButton>
@@ -641,19 +679,7 @@ export function ProfileEditor() {
           value={profile.equipmentNotes}
           onChange={(value) => updateProfileField('equipmentNotes', value)}
         />
-        <FieldGroup title="Plan anterior">
-          <OptionGrid>
-            {previousTrainingOptions.map((option) => (
-              <OptionButton
-                key={option.value}
-                active={profile.previousTraining === option.value}
-                onClick={() => updateProfileField('previousTraining', option.value)}
-              >
-                {option.label}
-              </OptionButton>
-            ))}
-          </OptionGrid>
-        </FieldGroup>
+        {/* Bloque 4 audit-360: "Plan anterior" recortado. */}
         <FieldGroup title="Dominadas estrictas actuales">
           <OptionGrid>
             {pullUpAbilityOptions.map((option) => (
@@ -680,32 +706,7 @@ export function ProfileEditor() {
             ))}
           </OptionGrid>
         </FieldGroup>
-        <FieldGroup title="Experiencia con campus board">
-          <OptionGrid>
-            {campusExperienceOptions.map((option) => (
-              <OptionButton
-                key={option.value}
-                active={profile.campusExperience === option.value}
-                onClick={() => updateProfileField('campusExperience', option.value)}
-              >
-                {option.label}
-              </OptionButton>
-            ))}
-          </OptionGrid>
-        </FieldGroup>
-        <FieldGroup title="Frecuencia en roca">
-          <OptionGrid>
-            {outdoorFrequencyOptions.map((option) => (
-              <OptionButton
-                key={option.value}
-                active={profile.outdoorFrequency === option.value}
-                onClick={() => updateProfileField('outdoorFrequency', option.value)}
-              >
-                {option.label}
-              </OptionButton>
-            ))}
-          </OptionGrid>
-        </FieldGroup>
+        {/* Bloque 4 audit-360: "Experiencia con campus" y "Frecuencia en roca" recortados. */}
         <FieldGroup title="Qué tan agresivo quieres el plan">
           <OptionGrid>
             {trainingAggressivenessOptions.map((option) => (
@@ -735,10 +736,13 @@ export function ProfileEditor() {
             ))}
           </OptionGrid>
         </FieldGroup>
+        {/* Bloque 4 audit-360: 3 textareas fusionadas en una — el motor
+            recibe todo el texto en `goalDescription`. Copy distinto al del
+            onboarding porque acá el user ya es existente. */}
         <TextareaField
-          label="Redacta lo que buscas"
+          label="Cuéntame más de tu objetivo o proyecto (opcional)"
           value={profile.goalDescription}
-          placeholder="Quiero mejorar técnica en placa, tener más resistencia para rutas largas…"
+          placeholder="Actualiza aquí si tu objetivo cambió: proyecto nuevo, viaje, o cómo te sientes con el plan actual."
           onChange={(value) => {
             const goals = value.trim() && !profile.goals.length ? ['other'] : profile.goals;
             setProfile((current) =>
@@ -753,18 +757,6 @@ export function ProfileEditor() {
             );
             setSaved(false);
           }}
-        />
-        <TextareaField
-          label="Proyecto o ruta específica"
-          value={profile.project}
-          placeholder="Ruta, boulder, fecha, zona o grado que traes en mente…"
-          onChange={(value) => updateProfileField('project', value)}
-        />
-        <TextareaField
-          label="Contexto del proyecto en roca"
-          value={profile.rockProjectDescription}
-          placeholder="Tipo de ruta, estilo, crux, agarres, desplome/placa, fecha del viaje…"
-          onChange={(value) => updateProfileField('rockProjectDescription', value)}
         />
         <FieldGroup title="Duración del plan">
           <OptionGrid>
@@ -840,11 +832,20 @@ function ProfileSection({ title, children }: { title: string; children: React.Re
   );
 }
 
-function FieldGroup({ title, children }: { title: string; children: React.ReactNode }) {
+function FieldGroup({
+  title,
+  hint,
+  children
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
-      <p className="mb-2 text-sm font-extrabold text-white/82">{title}</p>
-      {children}
+      <p className="text-sm font-extrabold text-white/82">{title}</p>
+      {hint ? <p className="mt-1 text-xs text-white/50">{hint}</p> : null}
+      <div className="mt-2">{children}</div>
     </div>
   );
 }

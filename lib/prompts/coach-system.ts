@@ -13,7 +13,7 @@ function summarizeProfile(profile: UserProfile | null) {
   if (profile.disciplines?.length) parts.push(`Disciplinas: ${profile.disciplines.join(', ')}`);
   if (profile.goals?.length) parts.push(`Objetivos: ${profile.goals.join(', ')}`);
   if (profile.goalDescription) parts.push(`Objetivo libre: ${profile.goalDescription}`);
-  if (profile.project) parts.push(`Proyecto: ${profile.project}`);
+  // Bloque 4 audit-360: `project` fusionado con `goalDescription`.
   if (profile.equipment?.length) parts.push(`Equipo: ${profile.equipment.join(', ')}`);
   if (profile.daysPerWeek) parts.push(`Días/sem: ${profile.daysPerWeek}`);
   if (profile.sessionDuration) parts.push(`Duración sesión: ${profile.sessionDuration}min`);
@@ -37,9 +37,7 @@ function summarizeProfile(profile: UserProfile | null) {
   ) {
     strength.push(`regleta 20mm 7s +${profile.hangboard20mmAddedWeight7s}kg`);
   }
-  if (profile.benchPress1Rm) strength.push(`banca ${profile.benchPress1Rm}kg`);
-  if (profile.squat1Rm) strength.push(`sentadilla ${profile.squat1Rm}kg`);
-  if (profile.deadlift1Rm) strength.push(`peso muerto ${profile.deadlift1Rm}kg`);
+  // Bloque 4 audit-360: bench/squat/deadlift recortados. Solo dominadas y regleta.
   if (strength.length) parts.push(`Fuerza: ${strength.join(' · ')}`);
   if (profile.injuries?.length && !profile.injuries.includes('none')) {
     parts.push(`Lesiones: ${profile.injuries.join(', ')}`);
@@ -49,7 +47,7 @@ function summarizeProfile(profile: UserProfile | null) {
     `Dolor: dedos ${profile.currentFingerPain}/10 · hombro ${profile.currentShoulderPain}/10 · codo ${profile.currentElbowPain}/10`
   );
   if (profile.sleep) parts.push(`Sueño: ${profile.sleep}`);
-  if (profile.energy) parts.push(`Energía: ${profile.energy}`);
+  // Bloque 4 audit-360: `energy` recortada del perfil (se auto-reporta por check-in).
   return parts.join(' · ');
 }
 
