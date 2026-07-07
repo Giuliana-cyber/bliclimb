@@ -37,6 +37,9 @@ import { stripExplicitAttributions } from '@/lib/brain/sanitizers/citation-sanit
 import { UserProfileSchema } from '@/lib/schemas/user-profile';
 import type { TrainingPlan, Week, Session, Exercise } from '@/lib/plan';
 import type { UserProfile } from '@/lib/profile';
+// Bloque 4 audit-360 · fix build: profileToPrompt vive en un módulo
+// aparte porque Next.js prohíbe exports arbitrarios desde `route.ts`.
+import { profileToPrompt } from './profile-to-prompt';
 
 export const runtime = 'nodejs';
 // Vercel Pro permite hasta 300s. Subimos al máximo para que la
@@ -63,90 +66,11 @@ function isUserProfile(value: unknown): value is UserProfile {
   );
 }
 
-export function profileToPrompt(profile: UserProfile) {
-  const lines: string[] = [];
-  lines.push(`Coach: ${profile.character === 'senda' ? 'Senda' : 'Bill'}`);
-  if (profile.name) lines.push(`Nombre: ${profile.name}`);
-  if (profile.age) lines.push(`Edad: ${profile.age}`);
-  if (profile.sex) lines.push(`Sexo: ${profile.sex}`);
-  if (profile.weight) lines.push(`Peso: ${profile.weight} kg`);
-  // Bloque 4 audit-360: estatura / proyecto / contexto proyecto se
-  // eliminaron del onboarding. goalDescription unifica los tres textareas.
-  lines.push(`Tiempo escalando: ${profile.climbingTime}`);
-  if (profile.disciplines?.length) lines.push(`Disciplinas: ${profile.disciplines.join(', ')}`);
-  if (profile.level) lines.push(`Nivel: ${profile.level}`);
-  if (profile.setting) lines.push(`Setting: ${profile.setting}`);
-  if (profile.goals?.length) lines.push(`Objetivos: ${profile.goals.join(', ')}`);
-  if (profile.goalDescription) lines.push(`Descripción objetivo: ${profile.goalDescription}`);
-  lines.push(`Días por semana: ${profile.daysPerWeek}`);
-  // H-03 audit-360 Bloque 3: desglose entre escalada y entrenamiento extra.
-  // El motor lo necesita para no armar sesiones de gym cuando el user ya
-  // dedica todos sus días a escalada, y viceversa. Ambos son opcionales en
-  // el schema para no romper perfiles previos.
-  if (
-    profile.climbingDaysPerWeek !== null &&
-    profile.climbingDaysPerWeek !== undefined &&
-    profile.trainingDaysPerWeek !== null &&
-    profile.trainingDaysPerWeek !== undefined
-  ) {
-    lines.push(
-      `Desglose: Escalada ${profile.climbingDaysPerWeek} días · Entrenamiento extra ${profile.trainingDaysPerWeek} días`
-    );
-  }
-  if (profile.availableDays?.length)
-    lines.push(`Días disponibles: ${profile.availableDays.join(', ')}`);
-  lines.push(
-    `Duración sesión: ${profile.sessionDuration} min (máx ${profile.maxSessionDuration})`
-  );
-  if (profile.equipment?.length) lines.push(`Equipo: ${profile.equipment.join(', ')}`);
-  if (profile.equipmentNotes) lines.push(`Setup: ${profile.equipmentNotes}`);
-  // Bloque 4 audit-360: `previousTraining` recortado del onboarding.
-  if (profile.pullUpAbility) lines.push(`Dominadas (categoría): ${profile.pullUpAbility}`);
-  if (profile.fingerTrainingExperience)
-    lines.push(`Exp. dedos: ${profile.fingerTrainingExperience}`);
-
-  // ---- Fuerza absoluta (B1) — datos que el coach usa para fijar intensidades
-  // reales, no inventadas. Si vienen null se omiten para no inducir al modelo
-  // a usar el valor cero como "cap" real.
-  const strengthLines: string[] = [];
-  if (profile.pullupsBodyweight !== null && profile.pullupsBodyweight !== undefined) {
-    strengthLines.push(`Dominadas BW máx reps: ${profile.pullupsBodyweight}`);
-  }
-  if (
-    profile.pullupsAddedWeight5Reps !== null &&
-    profile.pullupsAddedWeight5Reps !== undefined
-  ) {
-    strengthLines.push(`Dominadas con peso para 5 reps: +${profile.pullupsAddedWeight5Reps} kg`);
-  }
-  if (profile.hangboard20mmSeconds !== null && profile.hangboard20mmSeconds !== undefined) {
-    strengthLines.push(`Regleta 20mm BW: ${profile.hangboard20mmSeconds} seg`);
-  }
-  if (
-    profile.hangboard20mmAddedWeight7s !== null &&
-    profile.hangboard20mmAddedWeight7s !== undefined
-  ) {
-    strengthLines.push(
-      `Regleta 20mm con peso para 7 seg: +${profile.hangboard20mmAddedWeight7s} kg`
-    );
-  }
-  // Bloque 4 audit-360: bench/squat/deadlift recortados. Solo quedan
-  // los cuatro anclas de dominadas + regleta 20 mm, específicos de escalada.
-  if (strengthLines.length) {
-    lines.push('Fuerza (USAR para calibrar intensidades reales, no inventar):');
-    for (const item of strengthLines) lines.push(`  ${item}`);
-  }
-  // Bloque 4 audit-360: campusExperience, outdoorFrequency, energy y warmup
-  // recortados. `sleep` se conserva porque §5.3 lo consume.
-  lines.push(`Agresividad: ${profile.trainingAggressiveness ?? 'balanced'}`);
-  if (profile.injuries?.length) lines.push(`Lesiones: ${profile.injuries.join(', ')}`);
-  if (profile.injuryNotes) lines.push(`Notas lesión: ${profile.injuryNotes}`);
-  lines.push(
-    `Dolor actual — dedos ${profile.currentFingerPain}/10, hombro ${profile.currentShoulderPain}/10, codo ${profile.currentElbowPain}/10`
-  );
-  if (profile.sleep) lines.push(`Sueño: ${profile.sleep}`);
-  lines.push(`Duración plan: ${profile.planDuration} semanas`);
-  return lines.join('\n');
-}
+// profileToPrompt vive en `./profile-to-prompt.ts` (import arriba). Next.js
+// prohíbe exports arbitrarios desde archivos `route.ts` — solo permite
+// GET/POST/etc. y `runtime`/`dynamic`/`maxDuration`. Al importarla en vez
+// de definirla aquí, el build pasa y los tests pueden importarla directo
+// del módulo.
 
 const METADATA_PROMPT = `Eres un coach de escalada profesional del calibre de Lattice Training, Eric Hörst y Power Company. Diseñas planes serios para escaladores comprometidos. Hablas como entrenador que sabe escalar, no como app genérica.
 

@@ -16,9 +16,9 @@
 //      Calentamiento / Press banca / Sentadilla / Peso muerto).
 
 import { describe, expect, it } from 'vitest';
-import { toDbRow, type ProfileInput } from './route';
+import { toDbRow, type ProfileInput } from './schema';
 import { profileToRow, rowToProfile, type ProfileRow } from '@/lib/db/profile';
-import { profileToPrompt } from '@/app/api/generate-plan/route';
+import { profileToPrompt } from '@/app/api/generate-plan/profile-to-prompt';
 import type { UserProfile } from '@/lib/profile';
 
 // Simula la fila que Supabase devuelve. Vive tipada contra el ProfileRow

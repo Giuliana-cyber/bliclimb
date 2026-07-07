@@ -3,7 +3,7 @@
 // no sabía cuántos días eran de escalada vs gym.
 
 import { describe, expect, it } from 'vitest';
-import { profileToPrompt } from './route';
+import { profileToPrompt } from './profile-to-prompt';
 import type { UserProfile } from '@/lib/profile';
 
 // Base mínima válida — sólo los campos que profileToPrompt lee.
