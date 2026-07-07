@@ -30,6 +30,10 @@ export const UserProfileSchema = z.object({
   sleep: z.string().optional().default(''),
   energy: z.string().optional().default(''),
   daysPerWeek: z.number().int().min(1).max(7),
+  // Bloque 3 audit-360 (H-03): desglose. Aceptamos ausentes en perfiles
+  // viejos, y aceptamos 0 (el user puede tener 0 días de gym extra).
+  climbingDaysPerWeek: z.number().int().min(0).max(7).optional(),
+  trainingDaysPerWeek: z.number().int().min(0).max(7).optional(),
   equipment: z.array(z.string()).optional().default([]),
   equipmentNotes: z.string().optional().default(''),
   previousTraining: z.string().optional().default(''),

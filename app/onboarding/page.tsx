@@ -104,11 +104,24 @@ const energyOptions: Option[] = [
   { label: 'Variable', value: 'variable' }
 ];
 
-const daysOptions = [
-  { label: '1-2', value: 2 },
+// H-03 (audit-360 Bloque 3): dos grids separados. Nos pasamos a un valor
+// numérico exacto (no rangos) porque ahora el total combinado es el que
+// alimenta el motor — necesitamos precisión, no un bucket.
+const climbingDaysOptions = [
+  { label: '0', value: 0 },
+  { label: '1', value: 1 },
+  { label: '2', value: 2 },
   { label: '3', value: 3 },
-  { label: '4-5', value: 5 },
+  { label: '4', value: 4 },
+  { label: '5', value: 5 },
   { label: '6+', value: 6 }
+];
+const trainingDaysOptions = [
+  { label: '0', value: 0 },
+  { label: '1', value: 1 },
+  { label: '2', value: 2 },
+  { label: '3', value: 3 },
+  { label: '4', value: 4 }
 ];
 
 const availableDayOptions: Option[] = [
@@ -385,7 +398,9 @@ export default function OnboardingPage() {
       3: Boolean(form.age && form.sex),
       4: Boolean(form.injuries.length && form.warmup && form.sleep && form.energy),
       5: Boolean(
-        form.daysPerWeek &&
+        // H-03: exigimos que la suma sea >= 1 — el user tiene que declarar
+        // al menos un día de actividad (escalada o entrenamiento extra).
+        (form.climbingDaysPerWeek + form.trainingDaysPerWeek) >= 1 &&
           form.availableDays.length &&
           form.sessionDuration &&
           form.equipment.length &&
@@ -401,7 +416,18 @@ export default function OnboardingPage() {
   const progressPercent = (completedSteps / 7) * 100;
 
   const durationWeeks = form.durationChoice === 'starter' ? 4 : Number(form.durationChoice);
-  const daysLabel = daysOptions.find((option) => option.value === form.daysPerWeek)?.label;
+  // H-03: total derivado (escalada + entrenamiento extra). Es el número que
+  // ve el motor como `daysPerWeek`. El desglose viaja aparte al prompt.
+  const totalDaysPerWeek = form.climbingDaysPerWeek + form.trainingDaysPerWeek;
+  const daysLabel = totalDaysPerWeek > 0 ? `${totalDaysPerWeek}` : null;
+  const daysMismatch =
+    totalDaysPerWeek > 0 && form.availableDays.length > 0
+      ? form.availableDays.length < totalDaysPerWeek
+      : false;
+  // H-02: hint honesto cuando pide "subir de grado" con ciclo corto.
+  const showGradeShortCycleHint =
+    form.goals.includes('grade') &&
+    (form.durationChoice === '2' || form.durationChoice === '3');
   const durationLabel =
     durationOptions.find((option) => option.value === form.durationChoice)?.label ?? 'Pendiente';
 
@@ -427,7 +453,12 @@ export default function OnboardingPage() {
       warmup: form.warmup,
       sleep: form.sleep,
       energy: form.energy,
-      daysPerWeek: form.daysPerWeek,
+      // H-03: `daysPerWeek` es el total derivado. El motor recibe además el
+      // desglose por dos campos nuevos en el perfil (climbingDaysPerWeek,
+      // trainingDaysPerWeek) que van al prompt en profileToPrompt.
+      daysPerWeek: totalDaysPerWeek,
+      climbingDaysPerWeek: form.climbingDaysPerWeek,
+      trainingDaysPerWeek: form.trainingDaysPerWeek,
       availableDays: form.availableDays,
       sessionDuration: form.sessionDuration,
       maxSessionDuration: form.maxSessionDuration,
@@ -844,14 +875,20 @@ export default function OnboardingPage() {
         </StepSection>
 
         <StepSection number={5} title="Tu entrenamiento" icon={Dumbbell} done={stepsDone[5]}>
-          <FieldGroup title="¿Cuántos días por semana puedes entrenar?">
-            <OptionGrid>
-              {daysOptions.map((option) => (
+          <FieldGroup
+            title="¿Cuántos días por semana escalas?"
+            hint="Días que vas al gym de escalada o a roca."
+          >
+            <OptionGrid columns={4}>
+              {climbingDaysOptions.map((option) => (
                 <OptionButton
-                  key={option.label}
-                  active={form.daysPerWeek === option.value}
+                  key={`climb-${option.value}`}
+                  active={form.climbingDaysPerWeek === option.value}
                   onClick={() =>
-                    setForm((current) => ({ ...current, daysPerWeek: option.value }))
+                    setForm((current) => ({
+                      ...current,
+                      climbingDaysPerWeek: option.value
+                    }))
                   }
                 >
                   {option.label}
@@ -859,6 +896,37 @@ export default function OnboardingPage() {
               ))}
             </OptionGrid>
           </FieldGroup>
+
+          <FieldGroup
+            title="¿Cuántos días extra puedes dedicar a entrenar?"
+            hint="Días en el gym de pesas, tabla de suspensión (hangboard) en casa, o cualquier trabajo que NO sea escalar. Puede ser 0."
+          >
+            <OptionGrid columns={5}>
+              {trainingDaysOptions.map((option) => (
+                <OptionButton
+                  key={`train-${option.value}`}
+                  active={form.trainingDaysPerWeek === option.value}
+                  onClick={() =>
+                    setForm((current) => ({
+                      ...current,
+                      trainingDaysPerWeek: option.value
+                    }))
+                  }
+                >
+                  {option.label}
+                </OptionButton>
+              ))}
+            </OptionGrid>
+          </FieldGroup>
+
+          {totalDaysPerWeek > 0 ? (
+            <p
+              className="-mt-2 text-sm font-bold text-brand-cyan"
+              data-testid="onboarding-days-total"
+            >
+              En total van {totalDaysPerWeek} {totalDaysPerWeek === 1 ? 'día' : 'días'} por semana.
+            </p>
+          ) : null}
 
           <FieldGroup title="¿Qué días sueles tener disponibles?">
             <div className="grid grid-cols-7 gap-2">
@@ -888,6 +956,15 @@ export default function OnboardingPage() {
                 );
               })}
             </div>
+            {daysMismatch ? (
+              <p
+                className="mt-3 rounded-xl border border-brand-mustard/40 bg-brand-mustard/[0.10] px-3 py-2 text-xs font-bold text-brand-mustard"
+                data-testid="onboarding-days-mismatch"
+              >
+                Marcaste {totalDaysPerWeek} días de actividad pero elegiste solo{' '}
+                {form.availableDays.length} disponibles. Ajusta uno de los dos.
+              </p>
+            ) : null}
           </FieldGroup>
 
           <FieldGroup title="¿Cuánto dura normalmente tu sesión?">
@@ -1120,6 +1197,15 @@ export default function OnboardingPage() {
                 </OptionButton>
               ))}
             </OptionGrid>
+            {showGradeShortCycleHint ? (
+              <p
+                className="mt-3 rounded-xl border border-brand-cyan/30 bg-brand-cyan/[0.08] px-3 py-2 text-xs font-bold text-brand-cyan"
+                data-testid="onboarding-grade-hint"
+              >
+                Subir de grado suele tomar 8–12 semanas. Este ciclo corto trabaja las
+                bases que te acercan.
+              </p>
+            ) : null}
           </FieldGroup>
         </StepSection>
 
@@ -1256,9 +1342,16 @@ function OptionGrid({
   columns = 2
 }: {
   children: React.ReactNode;
-  columns?: 2 | 3;
+  columns?: 2 | 3 | 4 | 5;
 }) {
-  const classes = columns === 3 ? 'grid gap-2 grid-cols-3' : 'grid gap-2 sm:grid-cols-2';
+  const classes =
+    columns === 5
+      ? 'grid gap-2 grid-cols-5'
+      : columns === 4
+        ? 'grid gap-2 grid-cols-4'
+        : columns === 3
+          ? 'grid gap-2 grid-cols-3'
+          : 'grid gap-2 sm:grid-cols-2';
   return <div className={classes}>{children}</div>;
 }
 

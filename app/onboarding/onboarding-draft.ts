@@ -28,7 +28,12 @@ export type OnboardingForm = {
   warmup: string;
   sleep: string;
   energy: string;
-  daysPerWeek: number;
+  // Bloque 3 audit-360 (H-03): dos campos separados en lugar de un solo
+  // "daysPerWeek". `daysPerWeek` se sigue derivando como suma en handleSubmit
+  // para no romper el motor ni el schema server. El desglose viaja aparte al
+  // prompt de generación (ver profileToPrompt).
+  climbingDaysPerWeek: number;
+  trainingDaysPerWeek: number;
   availableDays: string[];
   sessionDuration: number;
   maxSessionDuration: number;
@@ -73,7 +78,8 @@ export const initialForm: OnboardingForm = {
   warmup: '',
   sleep: '',
   energy: '',
-  daysPerWeek: 0,
+  climbingDaysPerWeek: 0,
+  trainingDaysPerWeek: 0,
   availableDays: [],
   sessionDuration: 90,
   maxSessionDuration: 90,

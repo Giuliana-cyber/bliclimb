@@ -63,7 +63,7 @@ function isUserProfile(value: unknown): value is UserProfile {
   );
 }
 
-function profileToPrompt(profile: UserProfile) {
+export function profileToPrompt(profile: UserProfile) {
   const lines: string[] = [];
   lines.push(`Coach: ${profile.character === 'senda' ? 'Senda' : 'Bill'}`);
   if (profile.name) lines.push(`Nombre: ${profile.name}`);
@@ -81,6 +81,20 @@ function profileToPrompt(profile: UserProfile) {
   if (profile.rockProjectDescription)
     lines.push(`Contexto proyecto: ${profile.rockProjectDescription}`);
   lines.push(`Días por semana: ${profile.daysPerWeek}`);
+  // H-03 audit-360 Bloque 3: desglose entre escalada y entrenamiento extra.
+  // El motor lo necesita para no armar sesiones de gym cuando el user ya
+  // dedica todos sus días a escalada, y viceversa. Ambos son opcionales en
+  // el schema para no romper perfiles previos.
+  if (
+    profile.climbingDaysPerWeek !== null &&
+    profile.climbingDaysPerWeek !== undefined &&
+    profile.trainingDaysPerWeek !== null &&
+    profile.trainingDaysPerWeek !== undefined
+  ) {
+    lines.push(
+      `Desglose: Escalada ${profile.climbingDaysPerWeek} días · Entrenamiento extra ${profile.trainingDaysPerWeek} días`
+    );
+  }
   if (profile.availableDays?.length)
     lines.push(`Días disponibles: ${profile.availableDays.join(', ')}`);
   lines.push(

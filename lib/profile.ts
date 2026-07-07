@@ -20,7 +20,12 @@ export interface UserProfile {
   warmup: string; // 'always' | 'sometimes' | 'rarely'
   sleep: string; // 'good' | 'regular' | 'bad'
   energy: string; // 'high' | 'normal' | 'low' | 'variable'
-  daysPerWeek: number; // 1-7
+  daysPerWeek: number; // 1-7 — total (climbing + training extra), derivado en onboarding
+  // Bloque 3 audit-360 (H-03): desglose de los "días por semana" para que
+  // el motor sepa cuántos son de escalada vs entrenamiento extra. `optional`
+  // por compatibilidad con perfiles guardados antes de este bloque.
+  climbingDaysPerWeek?: number;
+  trainingDaysPerWeek?: number;
   equipment: string[]; // ['gym', 'hangboard', ...]
   equipmentNotes: string;
   previousTraining: string; // 'never' | 'informal' | 'structured' | 'coach'
