@@ -4,7 +4,7 @@
 
 **Audiencia:** cualquier sesión de desarrollo que arranque sin contexto previo. Léelo antes de proponer trabajo.
 
-**Última actualización:** 2026-07-08
+**Última actualización:** 2026-07-08 (madrugada — añadido hallazgo del catálogo desconectado)
 
 ---
 
@@ -18,6 +18,7 @@ Consecuencias operativas:
 - Los pasos irreversibles (migraciones `DROP`) van en archivo separado y se ejecutan al final, después de verificar.
 - Ningún reporte de desarrollo se acepta sin salida cruda. Una afirmación en prosa no es evidencia.
 - Las mejoras sin instrumentación son inmensurables. Analytics antes de rediseño.
+- **Lo que no está escrito en el repo, se pierde.** Un plan de fases que vive en una conversación no sobrevive a la conversación. Cada PR puede mergearse limpio, con tests verdes, y aun así dejar sin hacer el paso que le daba sentido. Ver el hallazgo del catálogo desconectado abajo — se perdió exactamente así.
 
 ---
 
@@ -31,14 +32,66 @@ Lo que estabiliza la base. Nada de Nivel 2 o 3 arranca hasta que esto cierre.
 
 **Estado:** Fase 5, en curso.
 
+---
+
+#### 🔴 HALLAZGO CRÍTICO — El catálogo nunca se conectó al motor
+
+**Descubierto:** 2026-07-08, madrugada.
+
+**El hecho:** `public.exercises` (483 ejercicios) **nunca fue consultado en runtime**. Verificado con `git log -S` (pickaxe) sobre toda la historia del repo: cero matches para `public.exercises`, `exercises_eligible`, `exerciseId`, `exercise_id` bajo `app/` o `lib/`. El pickaxe capta agregados *y* eliminaciones — "nunca aparece" significa que nunca vivió en runtime, ni siquiera efímeramente.
+
+Los únicos consumidores de la tabla: `scripts/seed-exercises.ts` (el seeder) y las migraciones `0010` / `0012`.
+
+**Qué hace el motor hoy:**
+
+- `groundFromLibrary()` (`generate-plan/route.ts:431-470`) hace RAG sobre el **vector store de OpenAI** (los PDFs) + web search allowlisted
+- Ese "brief de biblioteca" se inyecta como **texto libre en el prompt** (`route.ts:603`)
+- El LLM **inventa** los ejercicios. `FastExerciseSchema` tiene `name: z.string()` — cualquier string. **No hay `exerciseId` ni FK al catálogo.**
+
+**Cómo se perdió:** el diagnóstico de Fase 0 confirmó que "los ejercicios se generan on-the-fly, no viven en catálogo", y la conexión estaba prevista para Fase 4. Fase 4 se llenó de otro trabajo (citas académicas, capa B de RAG, personas Bill/Senda). El paso nunca se ejecutó. **No estaba escrito en ningún lado.** Este documento existe para que eso no vuelva a pasar.
+
+**Tres consecuencias, en orden de gravedad:**
+
+1. **El §1.gating no tiene dientes.** El enum restringe `blockCategory` — la *etiqueta* que el propio LLM eligió. No restringe qué ejercicio pone. El LLM puede escribir "campus board" y etiquetarlo `blockCategory: "strength"`; el gating no lo atrapa. Esto explica el gating slip: no es que el LLM se salte una regla, es que la regla nunca tuvo con qué agarrarlo.
+
+2. **Los ejercicios son genéricos.** "Haz movilidad", "traverse en el muro" — sin `howTo`, sin `cues`, sin `commonMistakes` reales. El LLM escribe lo que le sale. Los 483 ejercicios curados con setup, ejecución, errores comunes y alternativas están en la base y nadie los lee.
+
+3. **El hilo narrativo (3.1) no se puede construir encima.** No se puede explicar *por qué este ejercicio* si el ejercicio no existe en ningún catálogo con razón de ser.
+
+**El fix, alineado con el principio rector:**
+
+> Restringir vía enum, no instruir al LLM. Solo que el enum tiene que ser **de ejercicios**, no de categorías.
+
+Forma aproximada (dimensionar con el dev antes de comprometer):
+
+1. Código filtra `exercises_eligible` por perfil + reglas de safety → lista de IDs permitidos
+2. El LLM arma la sesión **eligiendo de esa lista**, no inventando
+3. El plan persiste `exerciseId`
+4. La pantalla renderiza `howTo` / `cues` / `commonMistakes` desde la tabla
+
+Resuelve las tres consecuencias de un tiro. Y hace estructuralmente imposible el gating slip.
+
+**Implicación para Fase 5:**
+
+**La migración 0014 no cierra Fase 5.** Cerrarla ahora sería declarar terminada una fase construida sobre la premisa de que el cerebro está conectado. No lo está.
+
+**Decisión pendiente de Giuliana:** si este trabajo entra a Fase 5 o abre una fase propia. Argumento para que entre: el §1.gating no funciona sin él, y el gating rompe planes en producción hoy.
+
+**Riesgo a dimensionar antes de arrancar:** el conteo de ejercicios disponibles por perfil tras aplicar §1.2/§1.3. Un principiante con lesión y poco equipo podría quedar con muy pocas opciones. La decisión de "plan adaptado, no bloqueado" mitiga esto (un plan suave necesita menos ejercicios), pero hay que verificarlo con un conteo real contra `exercises_eligible`, no asumirlo.
+
+---
+
 Pendientes conocidos:
 
 | Item | Estado |
 |---|---|
-| Bug #1 — perfil no persiste (PATCH 200, filas en 0) | Sin evidencia. Faltan logs `profile_save`. |
-| §1.gating — ejercicio prohibido se cuela → fallback → 422 | Fix aprobado (enum). Rompe planes en prod hoy. |
-| Fix de lesión (Opción A) | Implementado. Smoke determinístico pasa. Falta end-to-end. |
-| Migración 0014 (`DROP` columnas legacy) | **Bloqueada** hasta verificar todo lo anterior. |
+| **Conectar catálogo al motor** | 🔴 **Ver hallazgo crítico arriba.** Bloquea el cierre de Fase 5. |
+| Bug #1 — perfil no persiste | ✅ **CERRADO. No existía.** Logs de prod (commit `538145a`) muestran `attempt_update.rowSample` y `update_ok_verify.verifiedFields` **idénticos**, `rowNull: false`. El PATCH persiste. Las filas en 0 eran perfiles creados por el trigger de signup que nunca guardaron, levantados por un `order by created_at desc limit 1` equivocado. |
+| §1.gating — ejercicio prohibido se cuela → fallback → 422 | Enum commiteado (`f35116c`). **Fix parcial:** restringe la etiqueta, no el ejercicio. Ver hallazgo crítico. |
+| Fix de lesión (Opción A) | Implementado, commiteado. Smoke determinístico pasa (§1.3 rama codo y §5.3 disparan). Falta end-to-end. |
+| §3.9 — anaeróbico sin base aeróbica | No cubierta por Opción 6. Sigue siendo prompt, no schema. El LLM la viola y la corrige por reintento, moviéndola de semana. Frágil. Candidata a restricción estructural. |
+| Instrumentación `TEMPORARY` en `profile/route.ts` | Barrer (`grep TEMPORARY`). Bug #1 cerrado, ya no se necesita. |
+| Migración 0014 (`DROP` columnas legacy) | **Bloqueada.** No cierra Fase 5 mientras el catálogo no esté conectado. |
 | Auditoría de pantalla Settings | Pendiente. Verificar que cancelar suscripción en trial sea obvio y de un paso. |
 | Tabla de field mapping pre-Block 4 | Pendiente. Campo por campo: ¿lo usa `profileToPrompt`? Con evidencia `file:line`. |
 | Segunda pasada auditoría panel B2B (H-17) | Pendiente. Superficie más cara del producto, sin auditar. |
@@ -100,7 +153,10 @@ Es un problema de retención y confianza disfrazado de problema de diseño.
 | ¿Por qué esto hoy? | **Voz del coach** (Bill/Senda). El motor debe generar Y PERSISTIR el razonamiento real de por qué ese estímulo esa semana. |
 | ¿Hacia dónde va? | **Mixto.** Barra visual sutil ("esto te acerca a: [objetivo]") + refuerzo del coach en momentos clave (fin de semana). |
 
-**Dependencia dura:** el motor hoy descarta su razonamiento. Solo guarda ejercicios, no el porqué. Hay que generar y persistir rationale semanal/diario. Toca generación *y* presentación.
+**Dependencias duras:**
+
+1. **El catálogo debe estar conectado primero** (ver hallazgo crítico en Nivel 1). No se puede explicar *por qué este ejercicio* si el ejercicio lo inventó el LLM y no existe en ningún catálogo. El contenido pedagógico que la narrativa necesita (`howTo`, `cues`, `commonMistakes`) vive en `public.exercises` y hoy no se lee.
+2. **El motor descarta su razonamiento.** Solo guarda ejercicios, no el porqué. Hay que generar y persistir rationale semanal/diario. Toca generación *y* presentación.
 
 **Primer paso al arrancar:** verlo dibujado (wireframe/sketch) antes de comprometer código. Dimensionar con el dev el costo de persistir el rationale.
 
