@@ -62,62 +62,13 @@ export async function POST(request: Request) {
   }
 
   const row = toDbRow(parsed.data);
-
-  // TEMPORARY · Bug #1 diagnosis (2026-07-08) ==========================
-  // Sacar cuando Bug #1 (PATCH 200 → filas en 0) esté cerrado. La
-  // instrumentación anterior loggeaba solo `Object.keys(row)`, lo que no
-  // permite distinguir: (1) cliente no mandó los valores, (2) PATCH
-  // silenció el write, (3) RLS bloqueó sin errorear. Con estos tres logs
-  // se puede triangular en Vercel:
-  //   - attempt_update.rowSample muestra qué valores llegaron al server
-  //   - update_ok_verify.verifiedFields muestra qué quedó en la DB tras el PATCH
-  //   - update_failed.errorSerialized incluye code/details/hint de PostgREST
-  //
-  // Barrer todo el bloque TEMPORARY (definición de FIELDS_TO_VERIFY,
-  // pickSample, select post-update, y el evento update_ok_verify)
-  // restaurando el `attempt_update`/`update_ok` slim que estaba antes.
-  const FIELDS_TO_VERIFY = [
-    'injuries',
-    'injury_notes',
-    'disciplines',
-    'setting',
-    'available_days',
-    'max_session_duration',
-    'pull_up_ability',
-    'finger_training_experience',
-    'climbing_days_per_week',
-    'training_days_per_week',
-    'sleep'
-  ] as const;
-  const pickSample = (source: Record<string, unknown>) => {
-    const out: Record<string, unknown> = {};
-    for (const key of FIELDS_TO_VERIFY) {
-      if (key in source) out[key] = source[key];
-    }
-    return out;
-  };
-  log({
-    event: 'attempt_update',
-    userId: user.id,
-    fields: Object.keys(row),
-    rowSample: pickSample(row)
-  });
-  // === END TEMPORARY block header ===
+  log({ event: 'attempt_update', userId: user.id, fields: Object.keys(row) });
 
   const admin = createAdminClient();
   const { error } = await (admin as unknown as {
     from: (t: string) => {
       update: (v: Record<string, unknown>) => {
-        eq: (col: string, value: string) => Promise<{
-          error:
-            | {
-                message: string;
-                code?: string;
-                details?: string;
-                hint?: string;
-              }
-            | null;
-        }>;
+        eq: (col: string, value: string) => Promise<{ error: { message: string } | null }>;
       };
     };
   })
@@ -125,20 +76,7 @@ export async function POST(request: Request) {
     .update(row)
     .eq('id', user.id);
   if (error) {
-    // TEMPORARY · Bug #1 diagnosis: incluir code/details/hint además de
-    // message. PostgREST silencia RLS con message vacío pero code/hint
-    // pueden delatar el motivo real.
-    log({
-      event: 'update_failed',
-      userId: user.id,
-      message: error.message,
-      errorSerialized: {
-        message: error.message,
-        code: error.code ?? null,
-        details: error.details ?? null,
-        hint: error.hint ?? null
-      }
-    });
+    log({ event: 'update_failed', userId: user.id, message: error.message });
     return NextResponse.json(
       { error: 'save_failed', detail: error.message },
       { status: 500 }
@@ -146,53 +84,5 @@ export async function POST(request: Request) {
   }
 
   log({ event: 'update_ok', userId: user.id, fieldCount: Object.keys(row).length });
-
-  // TEMPORARY · Bug #1 diagnosis: relectura post-PATCH. Si el UPDATE dijo
-  // OK pero verifiedFields != rowSample, el bug está entre PostgREST y
-  // Postgres (RLS silencioso, trigger que revierte, etc). Si vienen
-  // iguales, el bug es upstream (cliente no mandó valores nuevos, o el
-  // browser tiene un cache viejo).
-  try {
-    const { data: verifyRow, error: verifyError } = await (admin as unknown as {
-      from: (t: string) => {
-        select: (cols: string) => {
-          eq: (col: string, value: string) => {
-            maybeSingle: () => Promise<{
-              data: Record<string, unknown> | null;
-              error: { message: string } | null;
-            }>;
-          };
-        };
-      };
-    })
-      .from('profiles')
-      .select(FIELDS_TO_VERIFY.join(','))
-      .eq('id', user.id)
-      .maybeSingle();
-    if (verifyError) {
-      log({
-        event: 'update_ok_verify',
-        userId: user.id,
-        verifyFailed: true,
-        verifyError: verifyError.message
-      });
-    } else {
-      log({
-        event: 'update_ok_verify',
-        userId: user.id,
-        verifiedFields: verifyRow ? pickSample(verifyRow) : null,
-        rowNull: verifyRow === null
-      });
-    }
-  } catch (verifyThrown) {
-    log({
-      event: 'update_ok_verify',
-      userId: user.id,
-      verifyThrown:
-        verifyThrown instanceof Error ? verifyThrown.message : String(verifyThrown)
-    });
-  }
-  // === END TEMPORARY block ===
-
   return NextResponse.json({ ok: true, fieldsUpdated: Object.keys(row).length });
 }
