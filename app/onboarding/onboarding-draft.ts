@@ -42,9 +42,9 @@ export type OnboardingForm = {
   equipmentNotes: string;
   pullUpAbility: string;
   fingerTrainingExperience: string;
-  currentFingerPain: number;
-  currentShoulderPain: number;
-  currentElbowPain: number;
+  // Audit-360 · rediseño lesión (07/07/2026): los 3 dolores se recortaron
+  // del onboarding. Dolor de dedos se captura en el check-in; codo/hombro
+  // por lesión declarada.
   trainingAggressiveness: string;
   pullupsBodyweight: string;
   pullupsAddedWeight5Reps: string;
@@ -77,9 +77,7 @@ export const initialForm: OnboardingForm = {
   equipmentNotes: '',
   pullUpAbility: '',
   fingerTrainingExperience: '',
-  currentFingerPain: 0,
-  currentShoulderPain: 0,
-  currentElbowPain: 0,
+  // Los 3 currentXPain removidos del initialForm — ver comentario arriba.
   trainingAggressiveness: 'balanced',
   pullupsBodyweight: '',
   pullupsAddedWeight5Reps: '',

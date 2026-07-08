@@ -66,7 +66,7 @@ describe('ruta (a) — llenar parcial + recargar → rehidrata', () => {
       character: 'senda',
       age: '26-35',
       climbingTime: '1to3',
-      currentFingerPain: 3,
+      injuryNotes: 'molestia leve en dedos',
       injuries: ['dedos', 'hombro'],
       goals: ['grade', 'technique']
     };
@@ -79,7 +79,7 @@ describe('ruta (a) — llenar parcial + recargar → rehidrata', () => {
     expect(rehydrated.character).toBe('senda');
     expect(rehydrated.age).toBe('26-35');
     expect(rehydrated.climbingTime).toBe('1to3');
-    expect(rehydrated.currentFingerPain).toBe(3);
+    expect(rehydrated.injuryNotes).toBe('molestia leve en dedos');
     expect(rehydrated.injuries).toEqual(['dedos', 'hombro']);
     expect(rehydrated.goals).toEqual(['grade', 'technique']);
   });
@@ -119,7 +119,7 @@ describe('ruta (c) — cambio de cuenta → no rehidrata datos de otra cuenta', 
     writeDraft(OWNER_A, {
       ...initialForm,
       character: 'senda',
-      currentFingerPain: 4,
+      injuryNotes: 'dedos anular derecho',
       injuries: ['dedos']
     });
 
@@ -148,7 +148,7 @@ describe('ruta (d) — "Empezar de nuevo" → form limpio', () => {
       ...initialForm,
       character: 'senda',
       injuries: ['dedos', 'hombro'],
-      currentFingerPain: 5,
+      injuryNotes: 'dolor 5/10',
       goalDescription: 'quiero subir de grado'
     });
 

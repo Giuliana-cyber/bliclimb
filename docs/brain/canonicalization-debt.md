@@ -548,6 +548,96 @@ el momento.
 
 ---
 
+## Deuda #5 — Dolor de codo y hombro sin canal directo de captura (2026-07-07)
+
+Contexto del rediseño (audit-360 · rediseño lesión, 07/07/2026):
+
+- El onboarding ya no pregunta `currentFingerPain / currentElbowPain /
+  currentShoulderPain`. El perfil los mantiene como opcionales solo
+  por compat legacy (usuarios pre-rediseño ya los tienen guardados).
+- Dolor de dedos: capturado en el check-in diario. `deriveFingerPain`
+  aplica `max(dolor_check_in, lesión_declarada ? 5 : 0)`, con fallback
+  a `profile.currentFingerPain` legacy.
+- Dolor de codo y hombro: NO tienen check-in propio. Solo se activan
+  las ramas §1.3 codo / hombro cuando el usuario declara una lesión
+  en esa zona (equivale a dolor 5/10), o cuando tiene el legacy field
+  con valor > 0.
+
+Deuda concreta — caso fuera de cobertura:
+
+Un usuario que:
+1. NO se considera "lesionado" (no marca la zona en /profile), y
+2. Está progresivamente empeorando codo o hombro sesión a sesión,
+
+…no tiene forma de comunicarle al motor esa señal de dolor sub-clínico.
+El motor sigue programando §14.2 codo-prevención igual, pero nunca
+levanta las adaptaciones de §1.3 rama codo (`limitDeepLockOff`, etc.)
+ni las de §1.3 rama hombro (`limitOverheadVolume`, etc.).
+
+Por qué se aceptó la deuda: Giuliana priorizó cortar preguntas del
+onboarding sobre esta cobertura. Codo/hombro sin lesión previa es
+minoritario vs. usuarios que declaran una lesión franca. El disclaimer
+del chat ("esto lo tiene que ver un profesional — un fisio te va a
+decir mejor que yo qué puedes y qué no") funciona como red de
+seguridad conversacional.
+
+Cuándo revisitarla: si la telemetría del chat muestra >5% de usuarios
+mencionando "codo" o "hombro" con dolor sin haber declarado lesión,
+volver a agregar la captura — probablemente en el check-in (paridad
+con dedos), no en el onboarding.
+
+Solución mínima si se decide capturarlo:
+- Extender check-in con 2 escalas opcionales adicionales (0-5 codo,
+  0-5 hombro).
+- Extender `deriveElbowPain` / `deriveShoulderPain` para leer del
+  check-in latest antes del fallback legacy.
+- Cero cambio en `lib/brain/rules/section-01-profile-filters.ts` — el
+  candado se mantiene.
+
+---
+
+## Deuda #6 — Perfil canónico vive en localStorage, no en DB (2026-07-07)
+
+Contexto: `app/generating-plan/page.tsx:61` llama `loadProfile()` de
+`lib/profile.ts`, que lee `bilclimb:profile` de localStorage. El
+request a `/api/generate-plan` viaja con ese objeto — la DB de Supabase
+NO se consulta para armar el perfil que ve el motor.
+
+Consecuencia inmediata:
+
+- Un usuario que cambia de dispositivo (celular → laptop, o navegador
+  privado) llega al home sin perfil visible, aunque en la DB tenga uno
+  completo. Se le pide onboarding de nuevo.
+- Limpiar caché / cookies del navegador equivale a perder el perfil
+  desde la perspectiva del cliente. La DB conserva el registro pero
+  el usuario re-onboardea.
+- Bug #1 (PATCH devuelve 200, filas quedan en 0) no rompe el flujo de
+  generación de plan mientras el usuario siga en el mismo browser —
+  el smoke test post-rediseño lesión es válido en ese escenario, pero
+  esta desconexión oculta el bug hasta que aparece otro dispositivo.
+
+Deuda separada de bug #1: bug #1 es "el PATCH no persiste"; deuda #6
+es "aunque el PATCH persistiera, nadie lo re-hidrata al abrir el app
+en otro contexto". Arreglar solo bug #1 no cierra deuda #6.
+
+Solución mínima cuando se atienda:
+
+- Al montar `/` (o el AppShell), hacer `fetch('/rest/v1/profiles?user_id=eq.<uid>')`,
+  merge con `loadProfile()` (localStorage) usando `updatedAt` como
+  tiebreaker → sobrescribir localStorage y usarlo como cache.
+- Regla de conflicto: la DB gana si su `updatedAt` es más nuevo. Si
+  el cliente es más nuevo (usuario editó offline), disparar sync a la
+  DB antes de leer.
+- Alternativa más simple si se acepta latencia: leer siempre de DB en
+  `/generating-plan` y en `/profile`, dejar localStorage solo como
+  cache warm de UI (dashboard, chat).
+
+No hay decisión de producto tomada. Punto de reevaluación: cuando
+llegue el primer usuario reportando "perdí mi perfil" o cuando se
+sume soporte multi-dispositivo formal.
+
+---
+
 ## Deuda #7 — §1.gating fallback permisivo con `blockCategory: null` (2026-07-08)
 
 Contexto: al implementar la Opción A del §1.gating (enum dinámico de

@@ -133,7 +133,6 @@ const sessionDurationOptions = [
   { label: '120 min', value: 120 }
 ];
 
-const painScaleOptions = [0, 1, 2, 3, 4, 5];
 
 const equipmentOptions: Option[] = [
   { label: 'Gym de escalada', value: 'gym' },
@@ -258,9 +257,6 @@ export function ProfileEditor() {
       initialProfile.injuries.join(',') !== profile.injuries.join(',') ||
       initialProfile.equipment.join(',') !== profile.equipment.join(',') ||
       initialProfile.equipmentNotes !== profile.equipmentNotes ||
-      initialProfile.currentFingerPain !== profile.currentFingerPain ||
-      initialProfile.currentShoulderPain !== profile.currentShoulderPain ||
-      initialProfile.currentElbowPain !== profile.currentElbowPain ||
       initialProfile.fingerTrainingExperience !== profile.fingerTrainingExperience ||
       initialProfile.pullUpAbility !== profile.pullUpAbility ||
       initialProfile.trainingAggressiveness !== profile.trainingAggressiveness
@@ -268,7 +264,19 @@ export function ProfileEditor() {
   }, [initialProfile, profile]);
 
   function updateProfileField<K extends keyof UserProfile>(key: K, value: UserProfile[K]) {
-    setProfile((current) => (current ? { ...current, [key]: value } : current));
+    setProfile((current) => {
+      if (!current) return current;
+      const next: UserProfile = { ...current, [key]: value };
+      // Audit-360 · rediseño lesión: si el usuario cambia sus lesiones y el
+      // set nuevo es distinto al viejo, invalidamos el ack para que el chat
+      // vuelva a mostrar el disclaimer. "Cambiar" incluye pasar a "none".
+      if (key === 'injuries') {
+        const prev = current.injuries.slice().sort().join(',');
+        const now = (value as string[]).slice().sort().join(',');
+        if (prev !== now) next.injuryDisclaimerAcknowledgedAt = null;
+      }
+      return next;
+    });
     setSaved(false);
   }
 
@@ -516,22 +524,13 @@ export function ProfileEditor() {
           value={profile.injuryNotes}
           onChange={(value) => updateProfileField('injuryNotes', value)}
         />
-        <PainScaleField
-          title="Dolor de dedos hoy"
-          value={profile.currentFingerPain}
-          onChange={(value) => updateProfileField('currentFingerPain', value)}
-        />
-        <PainScaleField
-          title="Dolor de hombro hoy"
-          value={profile.currentShoulderPain}
-          onChange={(value) => updateProfileField('currentShoulderPain', value)}
-        />
-        <PainScaleField
-          title="Dolor de codo hoy"
-          value={profile.currentElbowPain}
-          onChange={(value) => updateProfileField('currentElbowPain', value)}
-        />
-        {/* Bloque 4 audit-360: Calentamiento, Energía recortados. */}
+        {/*
+          Audit-360 · rediseño lesión (07/07/2026): las 3 escalas de dolor
+          se retiraron también de /profile para no dejar un canal de edición
+          fantasma. Dedos → check-in diario; codo/hombro → lesión declarada
+          arriba. La lesión declarada equivale a dolor 5/10 en §1.3.
+          Bloque 4 audit-360: Calentamiento, Energía recortados.
+        */}
         <FieldGroup title="Sueño">
           <OptionGrid>
             {sleepOptions.map((option) => (
@@ -852,41 +851,6 @@ function FieldGroup({
 
 function OptionGrid({ children }: { children: React.ReactNode }) {
   return <div className="grid gap-2 sm:grid-cols-3">{children}</div>;
-}
-
-function PainScaleField({
-  title,
-  value,
-  onChange
-}: {
-  title: string;
-  value: number;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <FieldGroup title={`${title} (0-5)`}>
-      <div className="grid grid-cols-6 gap-2">
-        {painScaleOptions.map((score) => {
-          const active = value === score;
-          return (
-            <button
-              key={score}
-              type="button"
-              onClick={() => onChange(score)}
-              className={cn(
-                'grid h-11 place-items-center rounded-xl border text-sm font-extrabold transition active:scale-[0.97]',
-                active
-                  ? 'border-brand-coral/55 bg-brand-coral/[0.15] text-brand-coral'
-                  : 'border-white/10 bg-white/[0.03] text-white/68 hover:border-white/22'
-              )}
-            >
-              {score}
-            </button>
-          );
-        })}
-      </div>
-    </FieldGroup>
-  );
 }
 
 function OptionButton({

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { MountainBackdrop } from '@/components/ui/MountainBackdrop';
 import { RateLimitBanner } from '@/components/ui/RateLimitBanner';
 import { clearProfileNeedsRegeneration, loadProfile } from '@/lib/profile';
+import { loadCheckIns } from '@/lib/checkin';
 import { saveTrainingPlan, type TrainingPlan } from '@/lib/plan';
 
 const generationSteps = [
@@ -66,11 +67,17 @@ export default function GeneratingPlanPage() {
         return;
       }
 
+      // Audit-360 · rediseño lesión: el último check-in alimenta §1.3 rama
+      // dedos con dolor reciente. El motor lo aplica solo si viene, con
+      // fallback a lesión declarada / legacy currentFingerPain.
+      const checkIns = loadCheckIns();
+      const latestCheckIn = checkIns.length > 0 ? checkIns[0] : null;
+
       try {
         const response = await fetch('/api/generate-plan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ profile })
+          body: JSON.stringify({ profile, latestCheckIn })
         });
 
         const data = (await response.json()) as {

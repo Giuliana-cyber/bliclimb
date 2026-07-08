@@ -435,7 +435,7 @@ export default function OnboardingPage() {
     if (!form.sex) step3.push('Sexo biológico');
     if (step3.length) missing.push({ step: 3, title: 'Sobre ti', fields: step3 });
     const step4: string[] = [];
-    if (!form.injuries.length) step4.push('Lesiones');
+    if (!form.injuries.length) step4.push('Lesión activa (sí/no + zona)');
     if (!form.sleep) step4.push('Sueño');
     if (step4.length) missing.push({ step: 4, title: 'Tu cuerpo', fields: step4 });
     const step5: string[] = [];
@@ -507,9 +507,9 @@ export default function OnboardingPage() {
       accessToWeights: form.equipment.includes('weights'),
       pullUpAbility: form.pullUpAbility || 'unknown',
       fingerTrainingExperience: form.fingerTrainingExperience || 'unknown',
-      currentFingerPain: form.currentFingerPain,
-      currentShoulderPain: form.currentShoulderPain,
-      currentElbowPain: form.currentElbowPain,
+      // Audit-360 · rediseño lesión: los 3 dolores se movieron al check-in
+      // (solo dedos) + lesión declarada. No los llenamos desde el onboarding
+      // nuevo. `deriveXPain` en generate-plan los reconstruye para §1.3.
       wantsConservativePlan: form.trainingAggressiveness === 'conservative',
       trainingAggressiveness: form.trainingAggressiveness,
       pullupsBodyweight: toOptionalInt(form.pullupsBodyweight),
@@ -569,9 +569,7 @@ export default function OnboardingPage() {
       injuries: profile.injuries,
       injuryDescription: profile.injuryDescription,
       injuryNotes: profile.injuryNotes,
-      currentFingerPain: profile.currentFingerPain,
-      currentShoulderPain: profile.currentShoulderPain,
-      currentElbowPain: profile.currentElbowPain,
+      // Audit-360 · rediseño lesión: no van al dbPayload (no existen en el profile nuevo).
       wantsConservativePlan: profile.wantsConservativePlan,
       trainingAggressiveness: profile.trainingAggressiveness,
       sleepQuality: profile.sleepQuality,
@@ -799,51 +797,81 @@ export default function OnboardingPage() {
         </StepSection>
 
         <StepSection number={4} title="Tu cuerpo" icon={HeartPulse} done={stepsDone[4]}>
-          <FieldGroup title="¿Tienes alguna lesión o molestia?" hint="Selecciona todas">
-            <OptionGrid>
-              {injuryOptions.map((option) => (
-                <OptionButton
-                  key={option.value}
-                  active={form.injuries.includes(option.value)}
-                  onClick={() =>
-                    setForm((current) => ({
-                      ...current,
-                      injuries: toggleExclusiveList(current.injuries, option.value, ['none'])
-                    }))
-                  }
-                >
-                  {option.label}
-                </OptionButton>
-              ))}
-            </OptionGrid>
+          <p className="text-sm leading-6 text-white/64">
+            Bill/Senda adapta el plan según lo que reportes. Si tienes alguna molestia, cuéntanos.
+          </p>
+
+          <FieldGroup title="¿Tienes alguna lesión activa o algo que te impida escalar normalmente?">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <OptionButton
+                active={form.injuries.length > 0 && form.injuries.includes('none')}
+                onClick={() =>
+                  setForm((current) => ({
+                    ...current,
+                    injuries: ['none'],
+                    injuryNotes: ''
+                  }))
+                }
+              >
+                No, estoy bien
+              </OptionButton>
+              <OptionButton
+                active={form.injuries.length > 0 && !form.injuries.includes('none')}
+                onClick={() =>
+                  setForm((current) => {
+                    // Si venía en 'none' o vacío, arrancamos con array vacío
+                    // para que muestre el multi-select. Si ya tenía zonas, no las tocamos.
+                    if (current.injuries.length === 0 || current.injuries.includes('none')) {
+                      return { ...current, injuries: [] };
+                    }
+                    return current;
+                  })
+                }
+              >
+                Sí
+              </OptionButton>
+            </div>
           </FieldGroup>
 
-          <TextareaField
-            label="Si tienes lesión, descríbela brevemente"
-            value={form.injuryNotes}
-            placeholder="Me duele el anular de la mano izquierda desde hace 2 semanas cuando crimpo fuerte..."
-            onChange={(value) => setForm((current) => ({ ...current, injuryNotes: value }))}
-          />
+          {form.injuries.length > 0 && !form.injuries.includes('none') ? (
+            <>
+              <FieldGroup title="¿Dónde?" hint="Marca todas las que apliquen">
+                <OptionGrid>
+                  {injuryOptions
+                    .filter((option) => option.value !== 'none')
+                    .map((option) => (
+                      <OptionButton
+                        key={option.value}
+                        active={form.injuries.includes(option.value)}
+                        onClick={() =>
+                          setForm((current) => ({
+                            ...current,
+                            injuries: current.injuries.includes(option.value)
+                              ? current.injuries.filter((item) => item !== option.value)
+                              : [...current.injuries, option.value]
+                          }))
+                        }
+                      >
+                        {option.label}
+                      </OptionButton>
+                    ))}
+                </OptionGrid>
+              </FieldGroup>
 
-          <PainScaleField
-            title="Dolor de dedos hoy"
-            value={form.currentFingerPain}
-            onChange={(value) => setForm((current) => ({ ...current, currentFingerPain: value }))}
-          />
+              <TextareaField
+                label="Cuéntanos más si quieres"
+                value={form.injuryNotes}
+                placeholder="Cuándo empezó, qué la agrava, si vas al fisio..."
+                onChange={(value) => setForm((current) => ({ ...current, injuryNotes: value }))}
+              />
+            </>
+          ) : null}
 
-          <PainScaleField
-            title="Dolor de hombro hoy"
-            value={form.currentShoulderPain}
-            onChange={(value) =>
-              setForm((current) => ({ ...current, currentShoulderPain: value }))
-            }
-          />
-
-          <PainScaleField
-            title="Dolor de codo hoy"
-            value={form.currentElbowPain}
-            onChange={(value) => setForm((current) => ({ ...current, currentElbowPain: value }))}
-          />
+          {/* Audit-360 · rediseño lesión (07/07/2026): los 3 sliders de dolor
+              (dedos/hombro/codo) se quitaron del onboarding. Dolor de dedos se
+              captura en el check-in; codo/hombro se cubren por lesión declarada
+              arriba (equivale a dolor 5/10 en esa zona). Ver
+              lib/brain/derive-pain-signals.ts. */}
 
           {/* Bloque 4 audit-360: "¿Calientas antes de escalar?" y "¿Cómo es
               tu energía general?" recortados (sin uso en motor ni safety). */}
@@ -1174,10 +1202,9 @@ export default function OnboardingPage() {
               <SummaryRow label="Duración sesión" value={`${form.sessionDuration} min`} />
               <SummaryRow label="Equipo" value={getLabels(equipmentOptions, form.equipment)} />
               <SummaryRow label="Lesión" value={getLabels(injuryOptions, form.injuries)} />
-              <SummaryRow
-                label="Dolor actual"
-                value={`Dedos ${form.currentFingerPain}/5 · hombro ${form.currentShoulderPain}/5 · codo ${form.currentElbowPain}/5`}
-              />
+              {/* Audit-360 · rediseño lesión: fila "Dolor actual" removida.
+                  El dolor de dedos se captura en el check-in; codo/hombro por
+                  lesión declarada. */}
               <SummaryRow
                 label="Carga"
                 value={getLabel(trainingAggressivenessOptions, form.trainingAggressiveness)}

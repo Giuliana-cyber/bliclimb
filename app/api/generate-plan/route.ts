@@ -44,6 +44,12 @@ import { profileToPrompt } from './profile-to-prompt';
 // Opción 6 audit-360 (fix bug #2): post-procesador determinístico +
 // helper de conteo para el log agregado plan_violations_summary.
 import { postProcessWeek, countViolationsByRule } from '@/lib/ai/plan-post-process';
+// Audit-360 · rediseño lesión (07/07/2026): fuente única de dolor para §1.3.
+import {
+  deriveElbowPain,
+  deriveFingerPain,
+  deriveShoulderPain
+} from '@/lib/brain/derive-pain-signals';
 
 export const runtime = 'nodejs';
 // Vercel Pro permite hasta 300s. Subimos al máximo para que la
@@ -762,9 +768,12 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { profile?: unknown };
+  // Audit-360 · rediseño lesión: el body puede incluir opcionalmente el
+  // `latestCheckIn` (del localStorage cliente) para alimentar §1.3 rama
+  // dedos con dolor reciente. Ver lib/brain/derive-pain-signals.ts.
+  let body: { profile?: unknown; latestCheckIn?: unknown };
   try {
-    body = (await request.json()) as { profile?: unknown };
+    body = (await request.json()) as { profile?: unknown; latestCheckIn?: unknown };
   } catch {
     return NextResponse.json(
       { error: 'invalid_profile', issues: [{ message: 'Body no es JSON válido.' }] },
@@ -891,12 +900,25 @@ export async function POST(request: Request) {
     // El objetivo es que Bill *ya* respete la prohibición desde la primera
     // generación. El validador section01PlanGating es la red posterior por si
     // igual mete algo prohibido.
+    // Audit-360 · rediseño lesión (07/07/2026): los 3 dolores por zona ya
+    // no vienen del perfil (o vienen como legacy). Se derivan de:
+    //   - Dolor de dedos: max(latestCheckIn.fingerPain, injuries.fingers ? 5 : 0)
+    //   - Codo/hombro: solo injuries (check-in no captura estos).
+    // Compat: si no hay check-in ni lesión, fallback a legacy currentXPain.
+    const latestCheckInForRules =
+      body.latestCheckIn && typeof body.latestCheckIn === 'object'
+        ? (body.latestCheckIn as { fingerPain?: number })
+        : null;
     const profileForRules: ProfileForRules = {
       age: profile.age ?? '',
       climbingTime: profile.climbingTime ?? '',
-      currentFingerPain: profile.currentFingerPain ?? 0,
-      currentShoulderPain: profile.currentShoulderPain ?? 0,
-      currentElbowPain: profile.currentElbowPain ?? 0,
+      currentFingerPain: deriveFingerPain(
+        profile.injuries,
+        latestCheckInForRules,
+        profile
+      ),
+      currentShoulderPain: deriveShoulderPain(profile.injuries, profile),
+      currentElbowPain: deriveElbowPain(profile.injuries, profile),
       injuries: profile.injuries ?? [],
       sleep: profile.sleep ?? '',
       // Fase 4 Pieza 2 — pasa el coach activo para que §1.3 (dolor ≥3)

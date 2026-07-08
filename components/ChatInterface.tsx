@@ -17,9 +17,13 @@ import { CharacterAvatar } from '@/components/ui/CharacterAvatar';
 import { RateLimitBanner } from '@/components/ui/RateLimitBanner';
 import { loadCheckIns } from '@/lib/checkin';
 import { loadTrainingPlan } from '@/lib/plan';
-import { loadProfile, saveProfile } from '@/lib/profile';
+import { loadProfile, saveProfile, updateProfile } from '@/lib/profile';
 import type { UserProfile } from '@/lib/profile';
 import type { LibraryTraceability } from '@/lib/ai/response-sources';
+import {
+  getInjuryDisclaimer,
+  shouldShowInjuryDisclaimer
+} from '@/lib/chat/injury-disclaimer';
 
 type ChatMessage = {
   role: 'user' | 'assistant';
@@ -71,15 +75,20 @@ function parseSseEvents(buffer: string) {
   return { events, remainder };
 }
 
+const DEFAULT_GREETING =
+  'Cuéntame qué duda tienes de tu entrenamiento y lo vemos con tu contexto.';
+
 export function ChatInterface() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [character, setCharacter] = useState<UserProfile['character']>('bill');
   const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: 'assistant',
-      content: 'Cuéntame qué duda tienes de tu entrenamiento y lo vemos con tu contexto.'
-    }
+    { role: 'assistant', content: DEFAULT_GREETING }
   ]);
+  // Audit-360 · rediseño lesión (07/07/2026): flag efímero para saber si el
+  // primer mensaje del asistente es el disclaimer. Al enviar el primer
+  // mensaje del usuario marcamos `injuryDisclaimerAcknowledgedAt` (opción
+  // C·2: acknowledge silencioso, sin banner ni persistencia visible).
+  const acknowledgeDisclaimerRef = useRef(false);
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -111,6 +120,22 @@ export function ChatInterface() {
     setProfile(nextProfile);
     setCharacter(nextCharacter);
     if (ask) setDraft(ask);
+
+    // Disclaimer de lesión como primer mensaje del coach cuando corresponda.
+    // Regla: shouldShowInjuryDisclaimer devuelve true si hay lesión activa y
+    // no fue acknowledged. Se marca como visto al enviar el primer mensaje.
+    if (
+      nextProfile &&
+      shouldShowInjuryDisclaimer(
+        nextProfile.injuries,
+        nextProfile.injuryDisclaimerAcknowledgedAt ?? null
+      )
+    ) {
+      setMessages([
+        { role: 'assistant', content: getInjuryDisclaimer(nextCharacter) }
+      ]);
+      acknowledgeDisclaimerRef.current = true;
+    }
   }, []);
 
   useEffect(() => {
@@ -128,6 +153,18 @@ export function ChatInterface() {
     setDraft('');
     setLoading(true);
     setError('');
+
+    // Acknowledge silencioso del disclaimer (opción C·2): al primer mensaje
+    // del usuario marcamos el timestamp para que no re-aparezca. Si sigue
+    // teniendo lesión, el motor sigue adaptando; solo dejamos de mostrar el
+    // aviso de fisio en cada apertura del chat.
+    if (acknowledgeDisclaimerRef.current) {
+      acknowledgeDisclaimerRef.current = false;
+      const updated = updateProfile({
+        injuryDisclaimerAcknowledgedAt: new Date().toISOString()
+      });
+      if (updated) setProfile(updated);
+    }
 
     try {
       const response = await fetch('/api/chat', {
@@ -244,6 +281,14 @@ export function ChatInterface() {
 
   function selectCharacter(nextCharacter: UserProfile['character']) {
     setCharacter(nextCharacter);
+    // Si el disclaimer sigue como primer mensaje (no fue acknowledged todavía),
+    // lo regeneramos con la voz del nuevo coach para que no quede una copia
+    // desalineada con el avatar visible.
+    if (acknowledgeDisclaimerRef.current) {
+      setMessages([
+        { role: 'assistant', content: getInjuryDisclaimer(nextCharacter) }
+      ]);
+    }
     if (!profile) return;
     const nextProfile = saveProfile({
       ...profile,

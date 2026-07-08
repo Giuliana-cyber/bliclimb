@@ -47,9 +47,18 @@ export interface UserProfile {
   accessToWeights: boolean;
   pullUpAbility: string;
   fingerTrainingExperience: string;
-  currentFingerPain: number;
-  currentShoulderPain: number;
-  currentElbowPain: number;
+  // Audit-360 · rediseño lesión (07/07/2026): los 3 dolores por zona
+  // se movieron al check-in (solo dedos) + lesión declarada como equivalente
+  // a dolor 5/10 en esa zona. Estos campos se conservan como opcionales
+  // por compat legacy (usuarios pre-cambio ya los tienen guardados).
+  // §1.3 los lee via lib/brain/derive-pain-signals.ts.
+  currentFingerPain?: number;
+  currentShoulderPain?: number;
+  currentElbowPain?: number;
+  // Timestamp ISO cuando el usuario ve el disclaimer de lesión en el chat.
+  // null = mostrar disclaimer al abrir /chat. Se marca al enviar el primer
+  // mensaje o cerrar el chat. Se limpia si actualiza `injuries` en /profile.
+  injuryDisclaimerAcknowledgedAt?: string | null;
   wantsConservativePlan: boolean;
   trainingAggressiveness: string;
   sleepQuality: string;
@@ -164,6 +173,13 @@ function normalizeProfile(profile: UserProfile | null) {
     sleepQuality: sleep,
     injuryNotes,
     injuryDescription: injuryNotes,
+    // Audit-360 · rediseño lesión: flag persistente para el disclaimer del
+    // chat. Se preserva si el legacy lo tiene; default null (mostrar).
+    injuryDisclaimerAcknowledgedAt:
+      typeof profile.injuryDisclaimerAcknowledgedAt === 'string' &&
+      profile.injuryDisclaimerAcknowledgedAt
+        ? profile.injuryDisclaimerAcknowledgedAt
+        : null,
     pullupsBodyweight:
       typeof profile.pullupsBodyweight === 'number' ? profile.pullupsBodyweight : null,
     pullupsAddedWeight5Reps:
