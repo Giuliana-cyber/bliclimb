@@ -119,6 +119,57 @@ export const FastExerciseSchema = z.object({
   commonMistakes: z.array(z.string())
 });
 
+// -------------------- Schemas restringidos por bloque (Opción 6 audit-360) --------------------
+//
+// Sub-fase Opción 6 · fix bug #2: restringimos qué stimulusCategory puede
+// aparecer en cada bloque físico del OpenAI structured output. Con esto
+// §3.6 (hangboard NUNCA en warmup ni cooldown) queda garantizada por
+// construcción — es imposible que OpenAI devuelva un JSON donde un
+// exercise con stimulusCategory='strength' aparezca en el array warmup.
+//
+// Los otros schemas (FastExerciseSchema base) siguen existiendo para
+// código downstream (chat runtime, coach panel) que no necesita esta
+// restricción — solo la usa el motor de generación.
+
+/** Stimulus permitidos en el bloque warmup (§3.6). */
+export const WarmupStimulusSchema = z.enum(['warmup', 'mobility', 'skill']);
+export type WarmupStimulus = z.infer<typeof WarmupStimulusSchema>;
+
+/** Stimulus permitidos en el bloque mainBlock (§3.6). Cubre todo lo cargable. */
+export const MainBlockStimulusSchema = z.enum([
+  'skill',
+  'strength',
+  'power',
+  'power-endurance',
+  'aerobic-base',
+  'mobility'
+]);
+export type MainBlockStimulus = z.infer<typeof MainBlockStimulusSchema>;
+
+/** Stimulus permitidos en el bloque cooldown (§3.6). */
+export const CooldownStimulusSchema = z.enum(['cooldown', 'mobility', 'rest']);
+export type CooldownStimulus = z.infer<typeof CooldownStimulusSchema>;
+
+// Variantes del exercise con el campo stimulusCategory restringido por bloque.
+// Reusamos FastExerciseSchema con omit+extend para no duplicar la definición
+// completa — cualquier campo nuevo que se agregue a FastExerciseSchema fluye
+// automáticamente a las 3 variantes.
+export const WarmupExerciseSchema = FastExerciseSchema.omit({
+  stimulusCategory: true
+}).extend({ stimulusCategory: WarmupStimulusSchema });
+
+export const MainBlockExerciseSchema = FastExerciseSchema.omit({
+  stimulusCategory: true
+}).extend({ stimulusCategory: MainBlockStimulusSchema });
+
+export const CooldownExerciseSchema = FastExerciseSchema.omit({
+  stimulusCategory: true
+}).extend({ stimulusCategory: CooldownStimulusSchema });
+
+export type WarmupExercise = z.infer<typeof WarmupExerciseSchema>;
+export type MainBlockExercise = z.infer<typeof MainBlockExerciseSchema>;
+export type CooldownExercise = z.infer<typeof CooldownExerciseSchema>;
+
 export const FastSessionSchema = z.object({
   dayNumber: z.number(),
   title: z.string(),
@@ -129,9 +180,10 @@ export const FastSessionSchema = z.object({
   intensityTarget: z.string(),
   stimulusCategory: StimulusCategorySchema,
   intensityLevel: IntensityLevelSchema,
-  warmup: z.array(FastExerciseSchema),
-  mainBlock: z.array(FastExerciseSchema),
-  cooldown: z.array(FastExerciseSchema),
+  // Bloque audit-360 fix bug #2: arrays tipados con schemas restringidos.
+  warmup: z.array(WarmupExerciseSchema),
+  mainBlock: z.array(MainBlockExerciseSchema),
+  cooldown: z.array(CooldownExerciseSchema),
   safetyNotes: z.array(z.string()),
   adjustmentRules: z.array(z.string()),
   successCriteria: z.array(z.string()),

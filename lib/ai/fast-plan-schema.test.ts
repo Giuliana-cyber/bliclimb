@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CooldownExerciseSchema,
   FastExerciseSchema,
   FastPlanMetadataSchema,
   FastSessionSchema,
   FastWeekSchema,
   IntensityLevelSchema,
+  MainBlockExerciseSchema,
   RiskLevelSchema,
   StimulusCategorySchema,
+  WarmupExerciseSchema,
   WeekPhaseSchema
 } from './fast-plan-schema';
 
@@ -107,6 +110,27 @@ const VALID_EXERCISE = {
   commonMistakes: ['no perder técnica en el último segundo']
 };
 
+// Bloque Opción 6 audit-360: los schemas de warmup y cooldown están
+// restringidos por §3.6 — no aceptan 'strength'/'power'/'power-endurance'.
+// El fixture VALID_SESSION antes reusaba VALID_EXERCISE (strength) para
+// todos los bloques; ahora usamos exercises con stimulusCategory apto.
+const VALID_WARMUP_EXERCISE = {
+  ...VALID_EXERCISE,
+  name: 'Movilidad de hombros con banda',
+  stimulusCategory: 'mobility' as const,
+  blockCategory: null,
+  equipment: null,
+  riskLevel: 'bajo' as const
+};
+const VALID_COOLDOWN_EXERCISE = {
+  ...VALID_EXERCISE,
+  name: 'Estiramiento de flexores',
+  stimulusCategory: 'cooldown' as const,
+  blockCategory: null,
+  equipment: null,
+  riskLevel: 'bajo' as const
+};
+
 const VALID_SESSION = {
   dayNumber: 1,
   title: 'Día 1 — Fuerza dedos',
@@ -117,9 +141,9 @@ const VALID_SESSION = {
   intensityTarget: 'RPE 8-9',
   stimulusCategory: 'strength' as const,
   intensityLevel: 'hard' as const,
-  warmup: [VALID_EXERCISE],
+  warmup: [VALID_WARMUP_EXERCISE],
   mainBlock: [VALID_EXERCISE, VALID_EXERCISE, VALID_EXERCISE, VALID_EXERCISE],
-  cooldown: [VALID_EXERCISE, VALID_EXERCISE],
+  cooldown: [VALID_COOLDOWN_EXERCISE, VALID_COOLDOWN_EXERCISE],
   safetyNotes: ['no pasar dolor 3/10'],
   adjustmentRules: ['Si dolor supera 3/10, reducir carga 10%'],
   successCriteria: ['completar 5 series con técnica limpia'],
@@ -324,5 +348,118 @@ describe('FastPlanMetadataSchema — weekThemes requieren phase', () => {
       ]
     };
     expect(FastPlanMetadataSchema.safeParse(bad).success).toBe(false);
+  });
+});
+
+// -------------------- Opción 6 audit-360: schema restringido por bloque --------------------
+//
+// Estos tests garantizan la regla §3.6 por construcción: OpenAI structured
+// output NO puede devolver un JSON donde un exercise con stimulusCategory
+// prohibido aparezca en warmup o cooldown.
+
+describe('WarmupStimulusSchema — solo permite {warmup, mobility, skill} (§3.6)', () => {
+  it.each(['warmup', 'mobility', 'skill'] as const)(
+    "stimulusCategory='%s' pasa en warmup",
+    (v) => {
+      expect(
+        WarmupExerciseSchema.safeParse({ ...VALID_EXERCISE, stimulusCategory: v }).success
+      ).toBe(true);
+    }
+  );
+
+  it.each([
+    'strength',
+    'power',
+    'power-endurance',
+    'aerobic-base',
+    'mental',
+    'cooldown',
+    'rest'
+  ] as const)("stimulusCategory='%s' es rechazado en warmup", (v) => {
+    expect(
+      WarmupExerciseSchema.safeParse({ ...VALID_EXERCISE, stimulusCategory: v }).success
+    ).toBe(false);
+  });
+
+  it('session con warmup que contiene strength → schema rechaza', () => {
+    const badSession = {
+      ...VALID_SESSION,
+      warmup: [{ ...VALID_EXERCISE, stimulusCategory: 'strength' as const }]
+    };
+    expect(FastSessionSchema.safeParse(badSession).success).toBe(false);
+  });
+
+  it('session con warmup que contiene hangboard (blockCategory=hangboard) pero stimulusCategory=mobility → pasa', () => {
+    // Edge case: si el LLM etiqueta blockCategory='hangboard' con
+    // stimulusCategory='mobility' (activación suave), pasa. Es decisión del
+    // brain rule si eso también viola §1.x, pero §3.6 solo mira stimulusCategory.
+    const okSession = {
+      ...VALID_SESSION,
+      warmup: [
+        {
+          ...VALID_EXERCISE,
+          stimulusCategory: 'mobility' as const,
+          blockCategory: 'hangboard' as const
+        }
+      ]
+    };
+    expect(FastSessionSchema.safeParse(okSession).success).toBe(true);
+  });
+});
+
+describe('MainBlockStimulusSchema — permite todas las cargables (§3.6)', () => {
+  it.each([
+    'skill',
+    'strength',
+    'power',
+    'power-endurance',
+    'aerobic-base',
+    'mobility'
+  ] as const)("stimulusCategory='%s' pasa en mainBlock", (v) => {
+    expect(
+      MainBlockExerciseSchema.safeParse({ ...VALID_EXERCISE, stimulusCategory: v }).success
+    ).toBe(true);
+  });
+
+  it.each(['warmup', 'cooldown', 'mental', 'rest'] as const)(
+    "stimulusCategory='%s' rechazado en mainBlock",
+    (v) => {
+      expect(
+        MainBlockExerciseSchema.safeParse({ ...VALID_EXERCISE, stimulusCategory: v }).success
+      ).toBe(false);
+    }
+  );
+});
+
+describe('CooldownStimulusSchema — solo permite {cooldown, mobility, rest} (§3.6)', () => {
+  it.each(['cooldown', 'mobility', 'rest'] as const)(
+    "stimulusCategory='%s' pasa en cooldown",
+    (v) => {
+      expect(
+        CooldownExerciseSchema.safeParse({ ...VALID_EXERCISE, stimulusCategory: v }).success
+      ).toBe(true);
+    }
+  );
+
+  it.each([
+    'strength',
+    'power',
+    'power-endurance',
+    'aerobic-base',
+    'skill',
+    'warmup',
+    'mental'
+  ] as const)("stimulusCategory='%s' rechazado en cooldown", (v) => {
+    expect(
+      CooldownExerciseSchema.safeParse({ ...VALID_EXERCISE, stimulusCategory: v }).success
+    ).toBe(false);
+  });
+
+  it('session con cooldown que contiene power → schema rechaza', () => {
+    const badSession = {
+      ...VALID_SESSION,
+      cooldown: [{ ...VALID_EXERCISE, stimulusCategory: 'power' as const }]
+    };
+    expect(FastSessionSchema.safeParse(badSession).success).toBe(false);
   });
 });

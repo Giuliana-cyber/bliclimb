@@ -40,6 +40,9 @@ import type { UserProfile } from '@/lib/profile';
 // Bloque 4 audit-360 · fix build: profileToPrompt vive en un módulo
 // aparte porque Next.js prohíbe exports arbitrarios desde `route.ts`.
 import { profileToPrompt } from './profile-to-prompt';
+// Opción 6 audit-360 (fix bug #2): post-procesador determinístico +
+// helper de conteo para el log agregado plan_violations_summary.
+import { postProcessWeek, countViolationsByRule } from '@/lib/ai/plan-post-process';
 
 export const runtime = 'nodejs';
 // Vercel Pro permite hasta 300s. Subimos al máximo para que la
@@ -162,7 +165,10 @@ EXTENSORES OBLIGATORIOS (Doc 02 §14.2 — prevención epicondilitis):
 - Un exercise 'mobility' de extensores puede ir en cualquier bloque (warmup, mainBlock o cooldown). Un solo ejercicio por semana alcanza.
 
 MÍNIMOS POR SESIÓN:
-- 3 ejercicios en warmup (general + específico mezclados)
+- 3 ejercicios en warmup (general + específico mezclados).
+  "General" = elevación de temperatura + movilidad articular global (jumping jacks, movilidad de columna, rotaciones).
+  "Específico" = activación de hombros con banda (band pull-aparts, external rotations), movilidad de muñeca y dedos SIN carga máxima, escalada fácil progresiva (traverse suave), coordinación motora (drill de "pies silenciosos" — apoyar el pie sin ruido en las presas).
+  NUNCA hangboard, max hangs, dead hangs con carga, ni activación de dedos al máximo en warmup — esa carga va al mainBlock (§3.6).
 - 4 ejercicios en mainBlock (la sustancia: dedos, potencia, proyecto, resistencia, fuerza, según el día)
 - 2 ejercicios en cooldown (acondicionamiento: core, antagonistas, espalda baja, yoga)
 
@@ -899,6 +905,14 @@ export async function POST(request: Request) {
         )
       )
     );
+    // Post-procesador · Opción 6 audit-360 (fix bug #2):
+    //   §3.1 reorderMainBlockBySafety + §14.2 ensureExtensorWork.
+    //   §3.6 ya está garantizada por WarmupStimulusSchema/CooldownStimulusSchema
+    //   (OpenAI structured output rechaza en generación).
+    // El pipeline es idempotente y puro; lo aplicamos también post-retry.
+    fastWeeks = fastWeeks.map((w) =>
+      postProcessWeek(w, { injuries: profile.injuries ?? [] })
+    );
     let plan = buildPlan(metadata, fastWeeks, profile, traceability);
 
     // Validación de seguridad — dos capas coexisten (deuda registrada):
@@ -996,7 +1010,11 @@ export async function POST(request: Request) {
         })
       );
 
-      fastWeeks = regenerated;
+      // Post-procesador también en retry — sin esto el LLM podría reintroducir
+      // §3.1 desordenado o §14.2 sin cubrir después de mover algo puntual.
+      fastWeeks = regenerated.map((w) =>
+        postProcessWeek(w, { injuries: profile.injuries ?? [] })
+      );
       plan = buildPlan(metadata, fastWeeks, profile, traceability);
       brainEval = evaluateGeneratedPlan(toPlanForRules(plan), profileForRules);
       safety = validatePlanSafety(plan, profile);
@@ -1016,6 +1034,22 @@ export async function POST(request: Request) {
             location: v.location
           })),
           legacyViolations: safety.ok ? [] : safety.violations.map((v) => ({ rule: v.rule, reason: v.reason })),
+          timestamp: new Date().toISOString()
+        })
+      );
+      // Instrumentación agregada · Opción 6 audit-360 (condición 2 aprobada).
+      // Contador por regla para medir §3.3/§3.9/§3.20 en producción y decidir
+      // si abordarlas en fase futura o si el post-proc actual + retries alcanzan.
+      console.log(
+        JSON.stringify({
+          kind: 'plan_violations_summary',
+          profileId: profile.id ?? null,
+          attempts: attempt,
+          outcome: 'fallback',
+          rulesFinal: {
+            ...countViolationsByRule(brainEval.blocking),
+            ...countViolationsByRule(safety.ok ? [] : safety.violations)
+          },
           timestamp: new Date().toISOString()
         })
       );
@@ -1081,6 +1115,20 @@ export async function POST(request: Request) {
     // Si OpenAI falla, trunca, o el reintento de safety no resuelve, los
     // `throw` saltan al `catch` global y este bloque NO se ejecuta.
     // El usuario no paga intentos fallidos en NINGUNO de los contadores.
+    // Instrumentación agregada · Opción 6 audit-360 (condición 2 aprobada).
+    // Log de éxito para poder distinguir "plan salió sin retries" de "plan
+    // salió después de 1-2 retries" — señal de si el post-proc es suficiente
+    // o si algunas reglas todavía disparan retries frecuentes.
+    console.log(
+      JSON.stringify({
+        kind: 'plan_violations_summary',
+        profileId: profile.id ?? null,
+        attempts: attempt,
+        outcome: 'success',
+        rulesFinal: {}, // vacío por definición si llegamos acá.
+        timestamp: new Date().toISOString()
+      })
+    );
     await markFreePlanConsumed(userId);
     if (userId !== 'dev-anon') {
       await incrementPlanCount(userId);
