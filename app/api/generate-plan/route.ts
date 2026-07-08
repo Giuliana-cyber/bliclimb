@@ -9,6 +9,7 @@ import {
 } from '@/lib/entitlements';
 import { checkRateLimit, commitRateLimit } from '@/lib/rate-limit';
 import {
+  buildRestrictedFastWeekSchema,
   FastPlanMetadataSchema,
   FastWeekSchema,
   type FastPlanMetadata,
@@ -561,8 +562,15 @@ async function generateWeek(
   // Cuando el perfil dispara §1.1 (menores) o §1.2 (<2 años), Bill recibe
   // acá la lista de blockCategory que NO puede usar. El validador
   // section01PlanGating es la red que atrapa si igual se le cuela.
+  // §1.gating · Opción A: el schema ya rechaza estas categorías en el enum
+  // de blockCategory, así que un ejercicio prohibido con etiqueta honesta
+  // es estructuralmente imposible. El prompt ahora insta a NO incluir esos
+  // ejercicios (en vez de "etiquetá honestamente aunque marques prohibido"
+  // — que ya no es una opción). Si el LLM igual mete el ejercicio con
+  // blockCategory=null, §1.gating post-hoc con fallback permisivo lo deja
+  // pasar; deuda residual documentada.
   const prohibitedBlock = blockedCategories.length
-    ? `\n\n🚫 CATEGORÍAS PROHIBIDAS PARA ESTE ATLETA (regla dura de seguridad §1.x):\n${blockedCategories.map((c) => `- ${c}`).join('\n')}\n\nNO incluyas NINGÚN ejercicio que caiga en esas categorías. Reemplaza por alternativas de skill / mobility / aerobic-base / ejercicios técnicos sin carga directa de dedos. Si un ejercicio cae en una categoría prohibida, cambialo por otro que no. Y ETIQUETA HONESTAMENTE blockCategory de cada exercise (aunque tengas que marcar algo prohibido, marcalo — el middleware necesita saber).`
+    ? `\n\n🚫 CATEGORÍAS PROHIBIDAS PARA ESTE ATLETA (regla dura de seguridad §1.x):\n${blockedCategories.map((c) => `- ${c}`).join('\n')}\n\nNO incluyas NINGÚN ejercicio que caiga en esas categorías. Reemplaza por alternativas de skill / mobility / aerobic-base / ejercicios técnicos sin carga directa de dedos. El schema del response format NO acepta estas categorías en el campo blockCategory — cualquier intento de etiquetar un ejercicio con ellas hará que la respuesta sea rechazada. Elegí ejercicios que legítimamente puedas etiquetar con una categoría permitida o con null.`
     : '';
 
   const messages = [
@@ -596,6 +604,17 @@ Devuelve la semana con weekNumber=${weekMeta.weekNumber}.`
     messages.push({ role: 'user' as const, content: retryCorrection });
   }
 
+  // §1.gating · Opción A audit-360: schema restringido per-request. Cuando
+  // el perfil dispara §1.1 / §1.2, `blockedCategories` viene poblado y el
+  // schema recorta el enum de `blockCategory` para que OpenAI structured
+  // output rechace ejercicios etiquetados con categoría prohibida en
+  // generación (mismo mecanismo que Opción 6 usa para §3.6). Si no hay
+  // bloqueos, reusamos el FastWeekSchema estático para no pagar el rebuild.
+  const weekSchema =
+    blockedCategories.length > 0
+      ? buildRestrictedFastWeekSchema(blockedCategories)
+      : FastWeekSchema;
+
   // Helper interno: una llamada parse + chequeo de truncación. Si se
   // corta, mapea el error a algo descriptivo y lo tira.
   const attempt = async (maxTokens: number, label: string) => {
@@ -603,7 +622,7 @@ Devuelve la semana con weekNumber=${weekMeta.weekNumber}.`
       .parse({
         model,
         max_tokens: maxTokens,
-        response_format: zodResponseFormat(FastWeekSchema, 'week'),
+        response_format: zodResponseFormat(weekSchema, 'week'),
         messages
       })
       .catch((error: unknown) => {

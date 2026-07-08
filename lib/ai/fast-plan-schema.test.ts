@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildAllowedBlockCategorySchema,
+  buildRestrictedExerciseSchemas,
+  buildRestrictedFastWeekSchema,
   CooldownExerciseSchema,
   FastExerciseSchema,
   FastPlanMetadataSchema,
@@ -461,5 +464,262 @@ describe('CooldownStimulusSchema — solo permite {cooldown, mobility, rest} (§
       cooldown: [{ ...VALID_EXERCISE, stimulusCategory: 'power' as const }]
     };
     expect(FastSessionSchema.safeParse(badSession).success).toBe(false);
+  });
+});
+
+// -------------------- §1.gating · enum dinámico de blockCategory --------------------
+//
+// Estos tests cubren el fix del gating slip reportado en prod: el LLM
+// etiquetaba honestamente un ejercicio con categoría prohibida (pullups-weighted,
+// hangboard, etc). El schema restringido lo hace estructuralmente imposible.
+
+describe('buildAllowedBlockCategorySchema — restricción dinámica', () => {
+  it('sin blocked (array vacío) → acepta las 8 categorías y null', () => {
+    const schema = buildAllowedBlockCategorySchema([]);
+    const all = [
+      'hangboard',
+      'hangboard-intense',
+      'campus',
+      'full-crimp',
+      'hit',
+      'pullups-weighted',
+      'max-tests',
+      'finger-training-any'
+    ] as const;
+    for (const c of all) {
+      expect(schema.safeParse(c).success).toBe(true);
+    }
+    expect(schema.safeParse(null).success).toBe(true);
+  });
+
+  it('blocked=["pullups-weighted"] → rechaza esa, acepta resto y null', () => {
+    const schema = buildAllowedBlockCategorySchema(['pullups-weighted']);
+    expect(schema.safeParse('pullups-weighted').success).toBe(false);
+    expect(schema.safeParse('hangboard').success).toBe(true);
+    expect(schema.safeParse('campus').success).toBe(true);
+    expect(schema.safeParse(null).success).toBe(true);
+  });
+
+  it('blocked=set de u16 (§1.1) → rechaza las 5, acepta resto y null', () => {
+    // §1.1 u16 bloquea: hangboard, campus, full-crimp, hit, finger-training-any.
+    const schema = buildAllowedBlockCategorySchema([
+      'hangboard',
+      'campus',
+      'full-crimp',
+      'hit',
+      'finger-training-any'
+    ]);
+    // Prohibidas:
+    for (const c of ['hangboard', 'campus', 'full-crimp', 'hit', 'finger-training-any']) {
+      expect(schema.safeParse(c).success).toBe(false);
+    }
+    // Permitidas:
+    for (const c of ['hangboard-intense', 'pullups-weighted', 'max-tests']) {
+      expect(schema.safeParse(c).success).toBe(true);
+    }
+    expect(schema.safeParse(null).success).toBe(true);
+  });
+
+  it('blocked=union u16 + <2años (las 8) → solo null pasa', () => {
+    const schema = buildAllowedBlockCategorySchema([
+      'hangboard',
+      'hangboard-intense',
+      'campus',
+      'full-crimp',
+      'hit',
+      'pullups-weighted',
+      'max-tests',
+      'finger-training-any'
+    ]);
+    for (const c of [
+      'hangboard',
+      'hangboard-intense',
+      'campus',
+      'full-crimp',
+      'hit',
+      'pullups-weighted',
+      'max-tests',
+      'finger-training-any'
+    ]) {
+      expect(schema.safeParse(c).success).toBe(false);
+    }
+    expect(schema.safeParse(null).success).toBe(true);
+  });
+
+  it('blocked con strings extraños (no matchean enum) → los ignora silenciosamente', () => {
+    const schema = buildAllowedBlockCategorySchema([
+      'weight', // typo/custom, no está en el enum
+      'pullups-weighted' // real
+    ]);
+    expect(schema.safeParse('pullups-weighted').success).toBe(false);
+    expect(schema.safeParse('hangboard').success).toBe(true); // no fue tocada por 'weight'
+    expect(schema.safeParse(null).success).toBe(true);
+  });
+});
+
+describe('buildRestrictedExerciseSchemas — cross-check por bloque', () => {
+  const VALID_MAIN = {
+    ...VALID_EXERCISE,
+    // Fuerza: 'strength' es válido en mainBlock.
+    stimulusCategory: 'strength' as const,
+    blockCategory: null
+  };
+
+  it('con blocked=["pullups-weighted"], mainBlock exercise con esa etiqueta → rechaza', () => {
+    const { mainBlock } = buildRestrictedExerciseSchemas(['pullups-weighted']);
+    const badExercise = {
+      ...VALID_MAIN,
+      name: 'Dominadas con lastre',
+      blockCategory: 'pullups-weighted' as const
+    };
+    expect(mainBlock.safeParse(badExercise).success).toBe(false);
+  });
+
+  it('con blocked=["pullups-weighted"], mainBlock exercise con "hangboard" → pasa', () => {
+    const { mainBlock } = buildRestrictedExerciseSchemas(['pullups-weighted']);
+    const okExercise = {
+      ...VALID_MAIN,
+      name: 'MaxHangs 20mm',
+      blockCategory: 'hangboard' as const
+    };
+    expect(mainBlock.safeParse(okExercise).success).toBe(true);
+  });
+
+  it('con blocked=["hangboard"], mainBlock exercise con "hangboard" → rechaza', () => {
+    const { mainBlock } = buildRestrictedExerciseSchemas(['hangboard']);
+    const badExercise = {
+      ...VALID_MAIN,
+      name: 'MaxHangs 20mm',
+      blockCategory: 'hangboard' as const
+    };
+    expect(mainBlock.safeParse(badExercise).success).toBe(false);
+  });
+
+  it('mainBlock retiene la restricción de stimulusCategory (no acepta warmup)', () => {
+    // Regresión: al hacer omit+extend de blockCategory NO debemos romper
+    // el omit+extend de stimulusCategory del sub-fase Opción 6.
+    const { mainBlock } = buildRestrictedExerciseSchemas([]);
+    const badStimulus = { ...VALID_MAIN, stimulusCategory: 'warmup' as const };
+    expect(mainBlock.safeParse(badStimulus).success).toBe(false);
+  });
+
+  it('warmup y cooldown retienen sus restricciones de stimulusCategory', () => {
+    const { warmup, cooldown } = buildRestrictedExerciseSchemas([]);
+    // warmup NO acepta 'strength' (Opción 6 §3.6)
+    expect(
+      warmup.safeParse({
+        ...VALID_WARMUP_EXERCISE,
+        stimulusCategory: 'strength' as const
+      }).success
+    ).toBe(false);
+    // cooldown NO acepta 'strength'
+    expect(
+      cooldown.safeParse({
+        ...VALID_COOLDOWN_EXERCISE,
+        stimulusCategory: 'strength' as const
+      }).success
+    ).toBe(false);
+  });
+
+  it('perfil u16-principiante (8 bloqueadas): mainBlock exercise con cualquier blockCategory !== null → rechaza', () => {
+    const allBlocked = [
+      'hangboard',
+      'hangboard-intense',
+      'campus',
+      'full-crimp',
+      'hit',
+      'pullups-weighted',
+      'max-tests',
+      'finger-training-any'
+    ];
+    const { mainBlock } = buildRestrictedExerciseSchemas(allBlocked);
+    for (const c of allBlocked) {
+      expect(
+        mainBlock.safeParse({ ...VALID_MAIN, blockCategory: c }).success
+      ).toBe(false);
+    }
+    // null sigue pasando → single vía honesta que le queda al LLM.
+    expect(mainBlock.safeParse({ ...VALID_MAIN, blockCategory: null }).success).toBe(
+      true
+    );
+  });
+});
+
+describe('buildRestrictedFastWeekSchema — integración plan-level', () => {
+  const OK_MAIN = {
+    ...VALID_EXERCISE,
+    stimulusCategory: 'strength' as const,
+    blockCategory: null
+  };
+  const BAD_WEIGHTED_PULLUP = {
+    ...VALID_EXERCISE,
+    name: 'Dominadas con lastre',
+    stimulusCategory: 'strength' as const,
+    blockCategory: 'pullups-weighted' as const
+  };
+  const OK_SESSION = {
+    ...VALID_SESSION,
+    warmup: [VALID_WARMUP_EXERCISE],
+    mainBlock: [OK_MAIN, OK_MAIN, OK_MAIN, OK_MAIN],
+    cooldown: [VALID_COOLDOWN_EXERCISE, VALID_COOLDOWN_EXERCISE]
+  };
+  const OK_WEEK = {
+    weekNumber: 1,
+    theme: 't',
+    objective: 'o',
+    focusAreas: ['a'],
+    loadLevel: 'medium',
+    deloadWeek: false,
+    phase: 'base' as const,
+    sessions: [OK_SESSION]
+  };
+
+  it('semana limpia (todas blockCategory=null) pasa con cualquier blocked set', () => {
+    const schema = buildRestrictedFastWeekSchema(['pullups-weighted']);
+    expect(schema.safeParse(OK_WEEK).success).toBe(true);
+  });
+
+  it('semana con mainBlock exercise etiquetado con categoría bloqueada → rechaza plan entero', () => {
+    const schema = buildRestrictedFastWeekSchema(['pullups-weighted']);
+    const badWeek = {
+      ...OK_WEEK,
+      sessions: [
+        {
+          ...OK_SESSION,
+          mainBlock: [OK_MAIN, OK_MAIN, BAD_WEIGHTED_PULLUP, OK_MAIN]
+        }
+      ]
+    };
+    expect(schema.safeParse(badWeek).success).toBe(false);
+  });
+
+  it('semana con warmup exercise etiquetado con categoría bloqueada → rechaza (blockCategory se propaga a los 3 bloques)', () => {
+    const schema = buildRestrictedFastWeekSchema(['hangboard']);
+    // El LLM podría intentar meter un hangboard mislabeled como warmup.
+    // WarmupStimulusSchema ya rechaza stimulus='strength' — probamos que
+    // aun con stimulus='mobility' válido, blockCategory='hangboard' cae.
+    const badWarmup = {
+      ...VALID_WARMUP_EXERCISE,
+      blockCategory: 'hangboard' as const
+    };
+    const badWeek = {
+      ...OK_WEEK,
+      sessions: [{ ...OK_SESSION, warmup: [badWarmup] }]
+    };
+    expect(schema.safeParse(badWeek).success).toBe(false);
+  });
+
+  it('sin bloqueadas → cualquier exercise con enum válido pasa', () => {
+    const schema = buildRestrictedFastWeekSchema([]);
+    const looseWeek = {
+      ...OK_WEEK,
+      sessions: [
+        {
+          ...OK_SESSION,
+          mainBlock: [OK_MAIN, OK_MAIN, BAD_WEIGHTED_PULLUP, OK_MAIN]
+        }
+      ]
+    };
+    expect(schema.safeParse(looseWeek).success).toBe(true);
   });
 });

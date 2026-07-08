@@ -231,3 +231,105 @@ export type FastPlanMetadata = z.infer<typeof FastPlanMetadataSchema>;
 export type FastWeek = z.infer<typeof FastWeekSchema>;
 export type FastSession = z.infer<typeof FastSessionSchema>;
 export type FastExercise = z.infer<typeof FastExerciseSchema>;
+
+// -------------------- §1.gating · enum dinámico de blockCategory --------------------
+//
+// Opción A del audit-360: cuando el perfil dispara §1.1 / §1.2, el enum de
+// blockCategory se recorta para que OpenAI structured output NO pueda emitir
+// un ejercicio etiquetado con una categoría prohibida. Antes: el LLM
+// etiquetaba "honestamente" y §1.gating lo atrapaba post-hoc (2 slips en P2
+// → fallback → 422). Ahora: la restricción vive en el schema, así que el
+// slip se hace estructuralmente imposible en el eje "honesto".
+//
+// Camino residual (LLM mislabel con null): §1.gating con `blockCategory: null`
+// mantiene su fallback permisivo. Ese hueco es más difícil de disparar
+// porque el prompt sigue pidiendo etiquetado honesto y los ejercicios
+// prohibidos tienen forma canónica (weighted pull-ups, MaxHangs, etc).
+// Documentado como deuda separada si aparece en logs.
+//
+// Edge case: blocked.length === 8 (o inferido igual → all). En u16 principiante
+// caen las 8 categorías. El schema colapsa a `z.null()` — el LLM NO puede
+// gatear NADA, solo poner null. Correcto: para ese perfil no hay ningún
+// ejercicio gateable permitido.
+
+/**
+ * Construye el schema restringido de `blockCategory` para un request.
+ *
+ * @param blocked Categorías prohibidas para el perfil (evaluateProfile output).
+ *                Se aceptan strings arbitrarios; los que no matcheen con
+ *                `BlockCategorySchema.options` se ignoran silenciosamente
+ *                (evita hard fail si alguien pasa 'weight' o algo custom).
+ * @returns z.null() si TODAS las categorías están bloqueadas, o
+ *          z.enum(allowed).nullable() para todo el resto de casos.
+ */
+export function buildAllowedBlockCategorySchema(blocked: readonly string[]) {
+  const blockedSet = new Set<BlockCategory>();
+  for (const item of blocked) {
+    if ((BlockCategorySchema.options as readonly string[]).includes(item)) {
+      blockedSet.add(item as BlockCategory);
+    }
+  }
+  const allowed = BlockCategorySchema.options.filter(
+    (c) => !blockedSet.has(c)
+  );
+  if (allowed.length === 0) {
+    return z.null();
+  }
+  return z.enum(allowed as [BlockCategory, ...BlockCategory[]]).nullable();
+}
+
+/**
+ * Construye las 3 variantes por-bloque (warmup / mainBlock / cooldown) del
+ * FastExerciseSchema con `blockCategory` restringido. Sigue el mismo patrón
+ * omit+extend que usa `stimulusCategory` en cada bloque (Opción 6).
+ */
+export function buildRestrictedExerciseSchemas(blocked: readonly string[]) {
+  const blockCategorySchema = buildAllowedBlockCategorySchema(blocked);
+  const warmup = FastExerciseSchema.omit({
+    stimulusCategory: true,
+    blockCategory: true
+  }).extend({
+    stimulusCategory: WarmupStimulusSchema,
+    blockCategory: blockCategorySchema
+  });
+  const mainBlock = FastExerciseSchema.omit({
+    stimulusCategory: true,
+    blockCategory: true
+  }).extend({
+    stimulusCategory: MainBlockStimulusSchema,
+    blockCategory: blockCategorySchema
+  });
+  const cooldown = FastExerciseSchema.omit({
+    stimulusCategory: true,
+    blockCategory: true
+  }).extend({
+    stimulusCategory: CooldownStimulusSchema,
+    blockCategory: blockCategorySchema
+  });
+  return { warmup, mainBlock, cooldown };
+}
+
+/**
+ * Construye el `FastWeekSchema` completo con exercise variants restringidas
+ * por perfil. Reemplaza `FastWeekSchema` en `zodResponseFormat` cuando el
+ * perfil trae categorías prohibidas de §1.1 / §1.2.
+ *
+ * Si `blocked` está vacío, el schema resultante es equivalente al estático —
+ * se recomienda usar `FastWeekSchema` directo en ese caso para no pagar
+ * el costo del rebuild (helper que sigue).
+ */
+export function buildRestrictedFastWeekSchema(blocked: readonly string[]) {
+  const { warmup, mainBlock, cooldown } = buildRestrictedExerciseSchemas(blocked);
+  const session = FastSessionSchema.omit({
+    warmup: true,
+    mainBlock: true,
+    cooldown: true
+  }).extend({
+    warmup: z.array(warmup),
+    mainBlock: z.array(mainBlock),
+    cooldown: z.array(cooldown)
+  });
+  return FastWeekSchema.omit({ sessions: true }).extend({
+    sessions: z.array(session)
+  });
+}
