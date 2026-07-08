@@ -136,6 +136,31 @@ REGLAS DURAS:
 - nutritionTip: 1 oración específica al estímulo del día.
 - source: nombra autor/método REAL (Lattice Training, Eric Hörst, Power Company Climbing, Steve Bechtel/Climb Strong, Tom Randall, Tyler Nelson, Dave MacLeod, Catalyst Climbing, Hooper's Beta, Climbing Doctor).
 
+ESTRUCTURA OBLIGATORIA DE SESIÓN (Doc 02 §3 — reglas duras, NO se negocian):
+
+- warmup (array): SOLO ejercicios con stimulusCategory ∈ {warmup, mobility, skill}. NUNCA strength, power, power-endurance ni hangboard en warmup. Los hangboard, max hangs, campus y equivalentes van SIEMPRE en mainBlock, nunca antes ni después. Cargar dedos al máximo sin fatiga previa (§3.6).
+
+- mainBlock (array): orden interno OBLIGATORIO por stimulusCategory, de menor a mayor demanda neural. Esta secuencia es MONOTÓNICA NO DECRECIENTE:
+    1. skill              (drills técnicos, movimientos)
+    2. strength           (max hangs, dominadas con lastre pesado)
+    3. power              (campus, dinámicos, boulder máximo)
+    4. power-endurance    (4x4, boulders repetidos, hangboard repeaters)
+    5. aerobic-base       (ARC, escalada continua baja intensidad)
+    6. mobility / mental  (extensores, visualización)
+  Nunca vuelvas atrás en la secuencia — si ya pusiste un power, no agregues después un strength o skill. El aprendizaje motor y la calidad neural máxima requieren fresco (§3.1).
+
+- Los ejercicios con stimulusCategory='skill' deben estar en la PRIMERA MITAD del mainBlock (índice < ceil(length/2)). Skill tarde en la sesión = sistema nervioso fatigado = drills mal ejecutados (§3.2).
+
+- cooldown (array): SOLO ejercicios con stimulusCategory ∈ {cooldown, mobility, rest}. NUNCA strength, power, power-endurance ni hangboard en cooldown. Los dedos ya están fatigados por la sesión (§3.6).
+
+EXTENSORES OBLIGATORIOS (Doc 02 §14.2 — prevención epicondilitis):
+
+- Si el perfil incluye 'elbows' en injuries → CADA SEMANA con ≥1 sesión de tracción debe tener AL MENOS 1 exercise con stimulusCategory='mobility' específico de extensores (band pull-aparts, band extensors, wrist curl inverso). Historial de codo obliga siempre.
+
+- Sin historial de codo → si la semana tiene ≥3 sesiones con stimulusCategory ∈ {strength, power, power-endurance, aerobic-base} (todas cuentan como tracción), incluí también ≥1 mobility de extensores esa semana.
+
+- Un exercise 'mobility' de extensores puede ir en cualquier bloque (warmup, mainBlock o cooldown). Un solo ejercicio por semana alcanza.
+
 MÍNIMOS POR SESIÓN:
 - 3 ejercicios en warmup (general + específico mezclados)
 - 4 ejercicios en mainBlock (la sustancia: dedos, potencia, proyecto, resistencia, fuerza, según el día)
@@ -790,6 +815,13 @@ export async function POST(request: Request) {
   // OPENAI_PLAN_MODEL=gpt-4o en producción (override env).
   const model = process.env.OPENAI_PLAN_MODEL ?? 'gpt-4o-mini';
 
+  // Circuit breaker · audit-360 bug #2. Sirve para abortar retries antes
+  // de que la function pise el techo de 300s de Vercel. Ver el while del
+  // safety loop más abajo.
+  const startedAtMs = Date.now();
+  const MAX_DURATION_MS = 270_000; // 270s (30s de buffer sobre maxDuration=300).
+  const MS_BUDGET_FOR_RETRY = 90_000; // 90s estimados por regeneración de semanas.
+
   try {
     // 1+2. Grounding y metadata corren EN PARALELO.
     //
@@ -873,14 +905,38 @@ export async function POST(request: Request) {
     //   1. Legacy (validatePlanSafety) por 2-4 semanas hasta probar en prod.
     //   2. Brain (evaluateGeneratedPlan) — 4 validators plan-level:
     //      §1.gating, §3.x, §14.2 (blocking) + §10.6 (advisory).
-    // Ambos disparan retry al mismo loop. Hasta 3 intentos totales.
+    // Ambos disparan retry al mismo loop. Hasta 2 intentos totales.
     // Contador NO se toca en el retry; solo en éxito final (línea ~995).
-    const MAX_RETRIES = 3;
+    //
+    // Bug #2 audit-360: bajamos MAX_RETRIES de 3 a 2. Con el WEEK_PROMPT
+    // ahora explicitando §3.1/§3.2/§3.6/§14.2 en la primera pasada, la
+    // tasa de violaciones esperada cae drásticamente y 2 retries alcanzan.
+    // Además circuit breaker por tiempo antes de cada retry (ver dentro del
+    // while) evita que un retry pesado pise el maxDuration=300s de Vercel.
+    const MAX_RETRIES = 2;
     let brainEval = evaluateGeneratedPlan(toPlanForRules(plan), profileForRules);
     let safety = validatePlanSafety(plan, profile);
     let attempt = 0;
 
     while ((brainEval.blocking.length > 0 || !safety.ok) && attempt < MAX_RETRIES) {
+      // Circuit breaker · audit-360 bug #2. Si nos acercamos al maxDuration,
+      // abortamos retries y caemos al fallback #17. Mejor mostrar "ajustá el
+      // perfil" (CTA ya deployado) que devolver 504 sin explicación.
+      const elapsedMs = Date.now() - startedAtMs;
+      const remainingMs = MAX_DURATION_MS - elapsedMs;
+      if (remainingMs < MS_BUDGET_FOR_RETRY) {
+        console.log(
+          JSON.stringify({
+            kind: 'plan_retry_aborted_time_budget',
+            profileId: profile.id ?? null,
+            attemptsCompleted: attempt,
+            elapsedMs,
+            remainingMs,
+            timestamp: new Date().toISOString()
+          })
+        );
+        break;
+      }
       attempt++;
 
       // Log del pase actual (primer intento = 'first', luego 'retry-N').
@@ -947,12 +1003,12 @@ export async function POST(request: Request) {
     }
 
     if (brainEval.blocking.length > 0 || !safety.ok) {
-      // Tras MAX_RETRIES intentos, no publicamos plan inseguro.
+      // Tras MAX_RETRIES intentos O circuit breaker, no publicamos plan inseguro.
       if (!safety.ok) logSafetyViolations('retry', profile, safety.violations);
       console.log(
         JSON.stringify({
           kind: 'plan_unrecoverable_after_retries',
-          attempts: MAX_RETRIES,
+          attempts: attempt, // real (puede ser menor a MAX_RETRIES si el circuit breaker cortó).
           profileId: profile.id ?? null,
           finalBlocking: brainEval.blocking.map((v) => ({
             rule: v.rule,
