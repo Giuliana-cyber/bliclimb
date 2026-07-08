@@ -545,3 +545,55 @@ importante (RED-S) y deja al LLM solo los casos verdaderamente
 ambiguos. Decisión de Giuliana (2026-07-07): NO subir el modelo del
 classifier a gpt-4o — resolver por lógica determinística cuando llegue
 el momento.
+
+---
+
+## Deuda #7 — §1.gating fallback permisivo con `blockCategory: null` (2026-07-08)
+
+Contexto: al implementar la Opción A del §1.gating (enum dinámico de
+`blockCategory` restringido por perfil, ver
+`lib/ai/fast-plan-schema.ts::buildRestrictedFastWeekSchema`), el LLM pierde
+la vía "honesta" para meter un ejercicio prohibido — la structured output
+de OpenAI rechaza cualquier `blockCategory` que esté en el set bloqueado.
+
+Camino residual (deuda): el LLM todavía puede etiquetar un ejercicio
+prohibido con `blockCategory: null` y colarlo. En
+`lib/brain/rules/section-01-plan-gating.ts:121-122`:
+
+```ts
+const cat = ex?.blockCategory;
+if (!cat) continue; // fallback permisivo
+```
+
+Cualquier exercise con `blockCategory: null` se salta el chequeo entero,
+independientemente de si el ejercicio real cae en una categoría bloqueada
+(ej: "Dominadas con lastre 5kg" etiquetado con `null`). El fallback existe
+porque LA MAYORÍA de ejercicios legítimos son `null` (silent feet, foam
+roll, respiración), así que endurecerlo a "null → violation" rompería
+más de lo que arregla.
+
+Por qué se aceptó: el enum dinámico corta el vector honesto, que es el
+que apareció en los logs de P2 en prod (2 slips). La vía "mislabel con
+null" requiere que el LLM eluda activamente su propia instrucción, lo
+que es menos frecuente. El prompt de `route.ts::generateWeek` ahora dice
+explícitamente que el schema rechaza categorías prohibidas, reforzando
+que no elija ese camino.
+
+Cuándo revisitarla: si en los logs de prod aparecen slips donde
+`blockCategory === null` PERO el ejercicio manifiestamente cae en una
+categoría bloqueada. Marcador para grep en logs:
+`"kind":"plan_violations_summary"` combinado con inspección manual del
+exerciseName.
+
+Solución mínima si se decide cerrar el hueco:
+
+- Agregar `stimulusCategory + name` matcher: para cada exercise con
+  `blockCategory: null`, si `stimulusCategory` es 'strength' + `name`
+  matchea heurística conocida (regex sobre "pull-up", "hangboard",
+  "campus", "MaxHang", "weighted", etc), emitir violation.
+- Alternativa más cara: pipeline de segundo LLM que clasifique
+  post-hoc cada `null` — costoso en tokens y latencia.
+
+Sin decisión de producto tomada. La Opción A cierra el vector observado
+en prod; el vector `null-mislabel` sigue como deuda hasta que aparezca
+en logs.
