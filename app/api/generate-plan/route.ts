@@ -431,7 +431,8 @@ function extractResponsesText(response: unknown): string {
 async function groundFromLibrary(
   client: OpenAI,
   model: string,
-  profile: UserProfile
+  profile: UserProfile,
+  latestCheckIn: { fingerPain?: number | null } | null = null
 ): Promise<{ context: string; traceability: LibraryTraceability }> {
   const empty: LibraryTraceability = { usedFileSearch: false, sourceNames: [] };
   const vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID;
@@ -451,7 +452,7 @@ async function groundFromLibrary(
           content: `Para este escalador, extrae de la biblioteca los principios y protocolos relevantes para diseñar su plan. Cita las fuentes.
 
 Perfil:
-${profileToPrompt(profile)}`
+${profileToPrompt(profile, latestCheckIn)}`
         }
       ],
       // web_search_preview habilita búsquedas web en vivo en la
@@ -517,7 +518,8 @@ async function generateMetadata(
   client: OpenAI,
   model: string,
   profile: UserProfile,
-  groundingContext: string
+  groundingContext: string,
+  latestCheckIn: { fingerPain?: number | null } | null = null
 ): Promise<FastPlanMetadata> {
   const messages: ChatMessage[] = [{ role: 'system', content: METADATA_PROMPT }];
 
@@ -534,7 +536,7 @@ Usa estos principios cuando definas mesociclo, semanas, áreas de foco, recovery
 
   messages.push({
     role: 'user',
-    content: `Diseña la estructura meta de un plan de ${profile.planDuration} semanas para este escalador con ${profile.daysPerWeek} sesiones por semana.\n\nPerfil:\n${profileToPrompt(profile)}`
+    content: `Diseña la estructura meta de un plan de ${profile.planDuration} semanas para este escalador con ${profile.daysPerWeek} sesiones por semana.\n\nPerfil:\n${profileToPrompt(profile, latestCheckIn)}`
   });
 
   const completion = await client.chat.completions.parse({
@@ -557,7 +559,8 @@ async function generateWeek(
   weekMeta: FastPlanMetadata['weekThemes'][number],
   retryCorrection: string | null = null,
   groundingContext = '',
-  blockedCategories: readonly string[] = []
+  blockedCategories: readonly string[] = [],
+  latestCheckIn: { fingerPain?: number | null } | null = null
 ): Promise<FastWeek> {
   const equipment = profile.equipment?.length ? profile.equipment : ['home'];
   const equipmentLines = equipment
@@ -600,7 +603,7 @@ Contexto de la semana:
 Debe tener EXACTAMENTE ${profile.daysPerWeek} sesiones (campo "sessions" con ${profile.daysPerWeek} elementos), una por cada día disponible.
 
 Perfil completo:
-${profileToPrompt(profile)}${groundingContext ? `\n\nBRIEF DE BIBLIOTECA Y FUENTES (usa esto para diseñar ejercicios y protocolos reales):\n${groundingContext}` : ''}
+${profileToPrompt(profile, latestCheckIn)}${groundingContext ? `\n\nBRIEF DE BIBLIOTECA Y FUENTES (usa esto para diseñar ejercicios y protocolos reales):\n${groundingContext}` : ''}
 
 Devuelve la semana con weekNumber=${weekMeta.weekNumber}.`
     }
@@ -869,9 +872,18 @@ export async function POST(request: Request) {
     // Pero el groundingContext SÍ se inyecta en cada generateWeek de
     // abajo — donde más impacta para que los ejercicios sean específicos
     // y las fuentes sean trazables.
+    // Audit-360 · rediseño lesión (07/07/2026): se computa acá arriba porque
+    // profileToPrompt (dentro de grounding, metadata, y week) lo necesita para
+    // derivar el "Dolor actual" que ve el LLM. Sin esto el prompt mandaba
+    // "codo 0/10" al LLM aun con injuries=['elbows'] declarado.
+    const latestCheckInForRules =
+      body.latestCheckIn && typeof body.latestCheckIn === 'object'
+        ? (body.latestCheckIn as { fingerPain?: number })
+        : null;
+
     const [grounding, metadata] = await Promise.all([
-      groundFromLibrary(client, model, profile),
-      generateMetadata(client, model, profile, '')
+      groundFromLibrary(client, model, profile, latestCheckInForRules),
+      generateMetadata(client, model, profile, '', latestCheckInForRules)
     ]);
     const { context: groundingContext, traceability } = grounding;
 
@@ -905,10 +917,8 @@ export async function POST(request: Request) {
     //   - Dolor de dedos: max(latestCheckIn.fingerPain, injuries.fingers ? 5 : 0)
     //   - Codo/hombro: solo injuries (check-in no captura estos).
     // Compat: si no hay check-in ni lesión, fallback a legacy currentXPain.
-    const latestCheckInForRules =
-      body.latestCheckIn && typeof body.latestCheckIn === 'object'
-        ? (body.latestCheckIn as { fingerPain?: number })
-        : null;
+    // `latestCheckInForRules` se declaró más arriba (antes del Promise.all)
+    // porque profileToPrompt también lo consume.
     const profileForRules: ProfileForRules = {
       age: profile.age ?? '',
       climbingTime: profile.climbingTime ?? '',
@@ -942,7 +952,8 @@ export async function POST(request: Request) {
           theme,
           null,
           groundingContext,
-          blockedCategoriesForPrompt
+          blockedCategoriesForPrompt,
+          latestCheckInForRules
         )
       )
     );
@@ -1044,7 +1055,8 @@ export async function POST(request: Request) {
               theme,
               correction,
               groundingContext,
-              blockedCategoriesForPrompt
+              blockedCategoriesForPrompt,
+              latestCheckInForRules
             );
           }
           return fastWeeks.find((w) => w.weekNumber === theme.weekNumber)!;

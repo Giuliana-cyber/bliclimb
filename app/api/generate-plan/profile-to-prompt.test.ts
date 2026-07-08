@@ -106,3 +106,81 @@ describe('profileToPrompt — Opción A (H-03): desglose de días al motor', () 
     expect(prompt).not.toContain('Desglose:');
   });
 });
+
+// Audit-360 · rediseño lesión (07/07/2026): el "Dolor actual" que ve el LLM
+// se deriva por las mismas reglas que §1.3 del brain (lesión = 5/10 en zona,
+// check-in.fingerPain como override de dedos). Sin esta derivación, el LLM
+// veía "codo 0/10" y "Lesiones: elbows" simultáneamente — señal contradictoria.
+describe('profileToPrompt — dolor derivado por lesión y check-in (rediseño lesión)', () => {
+  it('injuries=["elbows"] sin check-in → prompt dice "codo 5/10" (no 0/10)', () => {
+    const prompt = profileToPrompt(
+      baseProfile({
+        injuries: ['elbows'],
+        currentFingerPain: 0,
+        currentShoulderPain: 0,
+        currentElbowPain: 0
+      })
+    );
+    expect(prompt).toContain('Lesiones: elbows');
+    expect(prompt).toContain('codo 5/10');
+    expect(prompt).not.toContain('codo 0/10');
+  });
+
+  it('injuries=["shoulders"] → prompt dice "hombro 5/10"', () => {
+    const prompt = profileToPrompt(
+      baseProfile({
+        injuries: ['shoulders'],
+        currentFingerPain: 0,
+        currentShoulderPain: 0,
+        currentElbowPain: 0
+      })
+    );
+    expect(prompt).toContain('hombro 5/10');
+  });
+
+  it('injuries=["fingers"] con check-in fingerPain=3 → prompt dice "dedos 5/10" (lesión gana)', () => {
+    const prompt = profileToPrompt(
+      baseProfile({
+        injuries: ['fingers'],
+        currentFingerPain: 0
+      }),
+      { fingerPain: 3 }
+    );
+    expect(prompt).toContain('dedos 5/10');
+  });
+
+  it('sin lesión + check-in fingerPain=4 → prompt dice "dedos 4/10"', () => {
+    const prompt = profileToPrompt(
+      baseProfile({
+        injuries: ['none'],
+        currentFingerPain: 0
+      }),
+      { fingerPain: 4 }
+    );
+    expect(prompt).toContain('dedos 4/10');
+    expect(prompt).toContain('codo 0/10');
+    expect(prompt).toContain('hombro 0/10');
+  });
+
+  it('sin lesión + sin check-in + legacy currentXPain > 0 → fallback legacy', () => {
+    // Compat: users pre-rediseño con dolor guardado en el perfil.
+    const prompt = profileToPrompt(
+      baseProfile({
+        injuries: ['none'],
+        currentFingerPain: 2,
+        currentElbowPain: 3,
+        currentShoulderPain: 1
+      })
+    );
+    expect(prompt).toContain('dedos 2/10');
+    expect(prompt).toContain('codo 3/10');
+    expect(prompt).toContain('hombro 1/10');
+  });
+
+  it('caller viejo que no pasa latestCheckIn → default null, no rompe', () => {
+    const prompt = profileToPrompt(
+      baseProfile({ injuries: ['elbows'] })
+    );
+    expect(prompt).toContain('codo 5/10');
+  });
+});

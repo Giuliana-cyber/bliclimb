@@ -12,8 +12,27 @@
 // ya no aparecen en el prompt.
 
 import type { UserProfile } from '@/lib/profile';
+import {
+  deriveElbowPain,
+  deriveFingerPain,
+  deriveShoulderPain
+} from '@/lib/brain/derive-pain-signals';
 
-export function profileToPrompt(profile: UserProfile) {
+// Audit-360 · rediseño lesión (07/07/2026): el "Dolor actual" que ve el
+// LLM se deriva por las mismas reglas que §1.3 del brain (ver route.ts::
+// profileForRules). Sin esto el LLM veía "codo 0/10" y "Lesiones: elbows"
+// simultáneamente — señal contradictoria. `latestCheckIn` es opcional (los
+// callers viejos pueden no pasarlo; en ese caso solo se derivan las señales
+// de lesión + fallback legacy currentXPain).
+type LatestCheckInMin = { fingerPain?: number | null } | null;
+
+export function profileToPrompt(
+  profile: UserProfile,
+  latestCheckIn: LatestCheckInMin = null
+) {
+  const derivedFingerPain = deriveFingerPain(profile.injuries, latestCheckIn, profile);
+  const derivedShoulderPain = deriveShoulderPain(profile.injuries, profile);
+  const derivedElbowPain = deriveElbowPain(profile.injuries, profile);
   const lines: string[] = [];
   lines.push(`Coach: ${profile.character === 'senda' ? 'Senda' : 'Bill'}`);
   if (profile.name) lines.push(`Nombre: ${profile.name}`);
@@ -91,7 +110,7 @@ export function profileToPrompt(profile: UserProfile) {
   if (profile.injuries?.length) lines.push(`Lesiones: ${profile.injuries.join(', ')}`);
   if (profile.injuryNotes) lines.push(`Notas lesión: ${profile.injuryNotes}`);
   lines.push(
-    `Dolor actual — dedos ${profile.currentFingerPain}/10, hombro ${profile.currentShoulderPain}/10, codo ${profile.currentElbowPain}/10`
+    `Dolor actual — dedos ${derivedFingerPain}/10, hombro ${derivedShoulderPain}/10, codo ${derivedElbowPain}/10`
   );
   if (profile.sleep) lines.push(`Sueño: ${profile.sleep}`);
   lines.push(`Duración plan: ${profile.planDuration} semanas`);
