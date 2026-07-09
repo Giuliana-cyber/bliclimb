@@ -75,9 +75,42 @@ Resuelve las tres consecuencias de un tiro. Y hace estructuralmente imposible el
 
 **La migración 0014 no cierra Fase 5.** Cerrarla ahora sería declarar terminada una fase construida sobre la premisa de que el cerebro está conectado. No lo está.
 
-**Decisión pendiente de Giuliana:** si este trabajo entra a Fase 5 o abre una fase propia. Argumento para que entre: el §1.gating no funciona sin él, y el gating rompe planes en producción hoy.
+**DECISIÓN (2026-07-08):** conectar el catálogo **entra a Fase 5**, no abre fase propia. Razón: el §1.gating rompe planes en producción hoy y no tiene dientes sin esto; Nivel 2 (pulir UI) sobre un motor que inventa ejercicios es maquillar un hueco estructural. Fase 5 no cierra hasta que el catálogo alimente el motor.
 
-**Riesgo a dimensionar antes de arrancar:** el conteo de ejercicios disponibles por perfil tras aplicar §1.2/§1.3. Un principiante con lesión y poco equipo podría quedar con muy pocas opciones. La decisión de "plan adaptado, no bloqueado" mitiga esto (un plan suave necesita menos ejercicios), pero hay que verificarlo con un conteo real contra `exercises_eligible`, no asumirlo.
+---
+
+**El workstream del catálogo — dimensionado con datos reales (conteos de Supabase, 2026-07-08):**
+
+*Precondición descartada:* el catálogo NO necesita crecer. Conteos de elegibles por perfil tras §1.2/§1.3: (a) sin lesión = 92, (b) codo = 67, (c) hombro = 53. Todos muy por encima del umbral de ~20. El problema es de canonicalización, no de profundidad.
+
+*Hallazgo:* tres campos del catálogo son texto libre, no enums. Es la deuda de canonicalización de Fase 1 (PR 0011 previsto, nunca llegó — deudas #1-#4 de este archivo). Se cierra ahora.
+
+| Campo | Distintos reales | Naturaleza | Fix |
+|---|---|---|---|
+| `nivel` | 17 | 4 buckets limpios cubren ~70%; resto colapsa fácil | Barato: ~1h dev + 15min curación |
+| `categoria` | 69 | ~15 buckets grandes + cola de duplicados semánticos ("Fuerza dedos" en 9 variantes) | Medio: ~2h dev + 3-4h curación con Bill/Senda |
+| `equipo` | 99 | Prosa libre, pero **mapea a los 9 tokens del onboarding** | Acotado: ~6h total |
+
+*Vocabulario de equipo = los 9 del onboarding, ni más ni menos.* El onboarding captura `equipment: string[]` con 9 valores (`gym, hangboard, campus, weights, rock, home, bands, pullup_bar, trx`). Canonicalizar el catálogo a MENOS tokens tira información que el perfil ya distingue (un user con hangboard-sin-campus perdería ejercicios). Los 99 strings de prosa se **mapean** a subsets de esos 9, no agregan vocabulario. "Regleta + Force Gauge" → `[hangboard, weights]`.
+
+*Mapping `BlockedCategory` → catálogo:* no existe en código — es el corazón del trabajo. 8 valores fijos (`hangboard, hangboard-intense, campus, full-crimp, hit, pullups-weighted, max-tests, finger-training-any`). Se implementa como **tabla de mapeo con CHECK constraint** (Forma B) o **columna `text[]` con constraint via trigger** (Forma A). Preferencia: la que garantice las 8 categorías canónicas en la DB, no solo en TS — es una regla de safety. Decisión menor, del dev con Giuliana.
+
+**Pasos del workstream (orden):**
+
+1. Canonicalizar `nivel` → enum, con backfill (~1h + 15min)
+2. Canonicalizar `categoria` → vocabulario canónico ~15-20 clases, mapping de los 69 (~2h + 3-4h curación)
+3. Canonicalizar `equipo` → mapear 99 strings a los 9 tokens del onboarding (~6h)
+4. Mapping `BlockedCategory` → catálogo, con constraint estructural + curación de los 483 (~4-8h curación)
+5. Enum del motor: `FastExerciseSchema.name` → `z.enum(idsPermitidos)` filtrado por perfil + reglas (~1 día)
+6. Persistir `exerciseId` en `Exercise` + `mainBlock[]` (~0.5 día)
+7. Pantalla de sesión lee `howTo`/`cues`/`commonMistakes` de la tabla vía join (~0.5 día)
+8. Tests + validación end-to-end: gating, injury, equipment filters (~1 día)
+
+**Estimado honesto:** ~5-6 días dev + ~12-18h curación con Bill/Senda. La curación no acelera con más devs — es trabajo de contenido, de Giuliana.
+
+*Posible corte de alcance (decisión de contenido):* si al curar con Bill/Senda hay ejercicios con equipo exótico que el usuario objetivo nunca usará, cortarlos del catálogo baja la curación de `equipo`. ¿Le sirven al principiante al que apunta la app?
+
+*Al cerrar:* actualizar deudas #1-#4 de `canonicalization-debt.md` marcándolas como cerradas, para trazar el cierre y que no se pierda.
 
 ---
 
