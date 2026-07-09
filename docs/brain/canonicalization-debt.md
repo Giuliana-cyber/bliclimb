@@ -687,3 +687,68 @@ Solución mínima si se decide cerrar el hueco:
 Sin decisión de producto tomada. La Opción A cierra el vector observado
 en prod; el vector `null-mislabel` sigue como deuda hasta que aparezca
 en logs.
+
+---
+
+## Deuda #8 — Reglas / conceptos / notas / tests colacados como filas del catálogo (2026-07-09)
+
+**Contexto:** al canonicalizar `nivel` (migración 0015, Paso 1 del
+workstream del catálogo), se identificó que FIL-004 ("Bloqueo crimp y
+hangboard en menores") es una regla de gating, no un ejercicio:
+`Tipo = 'Filtro / etiqueta'`, `tipo_registro = 'regla'`, todos los campos
+de ejecución en `N/A`. Duplicaba en la tabla la lógica que ya vive en
+`lib/brain/rules/section-01-profile-filters.ts` §1.1. Se borró en 0015.
+
+Al enumerar las no-ejercicio restantes (script offline contra el CSV,
+2026-07-09), el problema resultó estructural, no aislado.
+
+**Números exactos:** el catálogo tiene **483 rows** totales, de los
+cuales **314 son `tipo_registro='ejercicio'`** y **169 son no-ejercicio**:
+
+| tipo_registro | n | Naturaleza |
+|---|---|---|
+| `test` | 83 | Evaluaciones (MIFS, Critical Force, EAT-26, LEAF-Q, Wall test, cuestionarios…). No son ejercicios de un plan, pero varios podrían tener valor en `/checkin` o en una feature de auto-test. |
+| `regla` | 45 | Documentación de reglas de gating y programación (DP-R*, HB-R*, HB-S*, FIL-*, PER-*, REP-*). **Duplican lógica que ya vive en `lib/brain/rules/`.** Perfil para DELETE. |
+| `concepto` | 22 | Mix: contenido pedagógico de agarres (TA-C001..C008, "Half crimp"), mensajes de safety (DP-W001..W006), documentación de recuperación/nutrición (RE-005..009), decisiones de producto (ADO-001). Ninguno es ejercicio; varios contienen contenido migrable a `lib/brain/messages/` o a UI de referencia. |
+| `nota` | 19 | Todas son "Faltante: X". Placeholders de curación abierta. **Cero contenido útil**, son TODOs. Perfil para DELETE. |
+
+Clasificación tentativa por decisión: **~64 rows son ruido puro** (19 notas + 45 reglas que duplican código), **~105 tienen algún valor** (concepto migrable + tests re-usables en futuro), aunque **ninguno es un ejercicio de un plan**.
+
+**Impacto en 0015 (aplicada 2026-07-09):** el UPDATE de `nivel_canonico`
+y los UPDATE de tags en la versión inicial aplicaron a las 482 rows
+(post-DELETE FIL-004), incluyendo las 169 no-ejercicio. El resultado en
+prod fue reglas/notas/tests con `nivel_canonico='principiante'` y el
+tag `menor` en 5 rows todas non-ejercicio (DP-R005, DP-S002, EV-RH-003,
+HB-F006, HB-S006).
+
+**Corrección aplicada en dos frentes:**
+
+1. **Archivo `0015_canonicalize_nivel.sql`:** guards `AND tipo_registro =
+   'ejercicio'` en el CASE y en los dos UPDATE de tags. Correr desde
+   cero mapea solo ejercicios (para futuros environments).
+2. **Migración `0016_correct_nivel_canonico_non_ejercicio.sql`:**
+   idempotente. Pone `nivel_canonico = NULL` donde `tipo_registro !=
+   'ejercicio'`, retira tag `menor` de las 5 no-ejercicio. Corrige el
+   estado de la base ya aplicada. HB-REHAB-A2A4 (ejercicio real) conserva
+   su tag `rehab`.
+
+**Cuándo revisitar la deuda:** Paso 4 del workstream del catálogo
+(mapping `BlockedCategory` → filas). Ahí auditamos los 169 por tipo
+para decidir DELETE / migrate / retain:
+
+1. **Reglas y notas (64 rows)**: DELETE. La lógica y los TODOs ya viven
+   (o deberían vivir) en otros lugares del repo.
+2. **Conceptos migrables (~10 rows, DP-W* y algunos TA-C*)**: mover a
+   `lib/brain/messages/` con un shape canónico, luego DELETE del catálogo.
+3. **Conceptos de referencia (~12 rows, tipos de agarre, recuperación,
+   nutrición)**: decidir con Bill/Senda si conservar como catálogo de
+   referencia (con `tipo_registro='concepto'` visible al motor) o migrar
+   a documentación estática.
+4. **Tests (83 rows)**: decidir si el motor los recomienda como
+   evaluaciones periódicas (`/checkin` extendido), como onboarding
+   opcional (Wall test), o si quedan como referencia sin runtime.
+
+**Costo estimado:** 1-2h de curación con Bill/Senda en Paso 4. No urgente
+— la vista `exercises_eligible` ya los aísla del motor y 0016 los deja
+con `nivel_canonico = NULL` para que se identifiquen como "no
+clasificados por este workstream" sin confundirlos con ejercicios reales.
