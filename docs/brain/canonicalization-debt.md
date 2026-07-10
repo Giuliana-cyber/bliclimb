@@ -823,3 +823,20 @@ protocolo completo con estructura semanal propia.
 
 **Costo estimado:** 0.5-1h en Paso 5 más la curación adicional si va
 por opción 1. Registrado acá para no perderse entre pasos.
+
+**Actualización tanda 3 (2026-07-10):** CO-P004 "Bloque de base con Aero
+Cap" se agrega al radar Paso 5. Descripción tiene estructura de
+macrociclo ("Base 1 con fuerza + An Cap + Aero Cap razonable; Base 2
+Aero Cap alta prioridad; Peak bajar Aero Cap; Taper retirar Aero Cap y
+ARC"). Decisión de Giuliana: queda como resistencia-aerobica (no
+reclassificar a concepto) pero se marca acá para revisar al conectar
+el motor.
+
+Suma al listado de rows sospechosos de "protocolo-de-bloque" que el
+motor no debe meter como ejercicio de sesión única:
+- HB-P001..P004 (fuerza-dedos, 4 rows) — bloques 4-8 semanas
+- DP-P005 (fuerza-dedos) — Fingerboard competitivo de boulder
+- CO-P004 (resistencia-aerobica) — Bloque de base con Aero Cap 4-6 meses
+
+Total: 6 rows candidatos a filtrar del pool del motor en Paso 5, o
+marcar con `alcance='bloque'` si se implementa esa dimensión adicional.
