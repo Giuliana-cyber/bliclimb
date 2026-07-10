@@ -790,3 +790,36 @@ Sub-total actualizado del pool de Paso 4: los 189 no-ejercicio actuales
 (83 test + 44 regla + 43 concepto + 19 nota, post-0018 reclasificación
 de mental/táctica) + estos 16 candidatos a recategorización = ~205 filas
 a auditar. Costo estimado sube de 1-2h a 2-3h con Bill/Senda.
+
+**Radar añadido en Tanda 1 fuerza-dedos (2026-07-10):** distinción
+protocolo-de-bloque vs ejercicio-de-sesión dentro de fuerza-dedos.
+
+Los rows HB-P001..P004 son **bloques de 4-8 semanas** con 2-3 sesiones
+por semana:
+- HB-P001: "MaxHangs 8 semanas — 2 sesiones/semana"
+- HB-P002: "IntHangs / Repeaters 8 semanas"
+- HB-P003: "MaxHangs + IntHangs — 8 semanas (4+4)"
+- HB-P004: "Fingerboard competitivo 4 semanas — 3 sesiones/semana"
+- DP-P005 similarmente ("Fingerboard competitivo de boulder")
+
+El motor **no debe meter un bloque de 8 semanas como si fuera un
+ejercicio de una sesión** en un plan de 4 semanas. Riesgo real: en Paso
+5 (enum del motor), OpenAI podría elegir HB-P001 como un exercise del
+mainBlock, tratándolo como sesión única cuando en realidad es un
+protocolo completo con estructura semanal propia.
+
+**Decisiones a tomar en Paso 5:**
+
+1. **Distinguir en el catálogo:** agregar una dimensión adicional al
+   schema — quizás `alcance` con valores `sesion` / `bloque`, o un tag
+   `protocolo-de-bloque`. Al filtrar la lista para el enum del motor,
+   filtrar `alcance='sesion'` para plan generation. Los bloques quedan
+   como referencia para futuras features (macrociclos, planes de 8+
+   semanas).
+2. **Alternativa más simple:** excluir los IDs con sufijo `-P00N` del
+   pool de exercises-eligibles. Pattern-based. Menos limpio pero rápido.
+3. **Alternativa más granular:** curar row por row en Paso 4 y marcar
+   los que son bloques con una tag específica.
+
+**Costo estimado:** 0.5-1h en Paso 5 más la curación adicional si va
+por opción 1. Registrado acá para no perderse entre pasos.
