@@ -756,3 +756,37 @@ para decidir DELETE / migrate / retain:
 — la vista `exercises_eligible` ya los aísla del motor y 0016 los deja
 con `nivel_canonico = NULL` para que se identifiquen como "no
 clasificados por este workstream" sin confundirlos con ejercicios reales.
+
+**Radar añadido al enumerar `categoria` en Paso 2 (2026-07-10):** 16 rows
+con `tipo_registro='ejercicio'` que probablemente son reglas/frameworks/
+contenido colado. Todas siguen contando como ejercicio hasta que Paso 4
+audite. No las canonicalizamos ni les asignamos categoria/proposito/momento
+en las tandas — quedan con las 3 columnas NULL como marca de "revisar".
+
+Reglas colacadas sospechosas (5 rows):
+- `FIL-006` · Campus near maximum (Michailov) — categoria "Datos app: clasificación y filtros"
+- `PER-001` · Modelo Base → Peak (Barrows) — categoria "Periodización y planificación"
+- `PER-002` · Ciclo 4-3-2-1 — categoria "Periodización y planificación"
+- `PER-005` · Macrociclo de hangboard (López-Rivera) — categoria "Periodización y planificación"
+- `PER-DELOAD` · 3/1 Cycle (deload / descarga) — categoria "Periodización"
+
+Framework/contenido colacado sospechosos (11 rows):
+- Adaptación por nivel (5): ADN-001, ADN-002, ADN-003, ADN-004, ADN-005
+- Adaptación por objetivo (4): ADO-002, ADO-003, ADO-004, ADO-006
+- Adaptación tabla (1): BO-BOARD-PROG · Progresión Board 3 bloques
+- Nutrición (1): NE-PR-001 · Ajuste de carbohidratos según carga semanal
+- Recuperación (1): NE-PR-003 · Nutrición post-entrenamiento
+
+Notas del análisis para Paso 4:
+- La mayoría de los "Adaptación por X" son instrucciones para armar
+  planes, no ejercicios ejecutables con dosis. Van perfil `concepto`.
+- Los `PER-*` de periodización son frameworks/protocolos macro, no
+  ejercicios de sesión. Van perfil `concepto` o `regla`.
+- Los `NE-*` de nutrición son contenido de biblioteca. Van perfil
+  `concepto`.
+- `FIL-006` sigue el mismo patrón que FIL-004 (regla colada).
+
+Sub-total actualizado del pool de Paso 4: los 189 no-ejercicio actuales
+(83 test + 44 regla + 43 concepto + 19 nota, post-0018 reclasificación
+de mental/táctica) + estos 16 candidatos a recategorización = ~205 filas
+a auditar. Costo estimado sube de 1-2h a 2-3h con Bill/Senda.
