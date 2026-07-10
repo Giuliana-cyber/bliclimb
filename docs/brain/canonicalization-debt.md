@@ -703,20 +703,20 @@ Al enumerar las no-ejercicio restantes (script offline contra el CSV,
 2026-07-09), el problema resultó estructural, no aislado.
 
 **Números exactos:** el catálogo tiene **483 rows** totales, de los
-cuales **314 son `tipo_registro='ejercicio'`** y **169 son no-ejercicio**:
+cuales **314 son `tipo_registro='ejercicio'`** y **168 son no-ejercicio** (post-DELETE FIL-004):
 
 | tipo_registro | n | Naturaleza |
 |---|---|---|
 | `test` | 83 | Evaluaciones (MIFS, Critical Force, EAT-26, LEAF-Q, Wall test, cuestionarios…). No son ejercicios de un plan, pero varios podrían tener valor en `/checkin` o en una feature de auto-test. |
-| `regla` | 45 | Documentación de reglas de gating y programación (DP-R*, HB-R*, HB-S*, FIL-*, PER-*, REP-*). **Duplican lógica que ya vive en `lib/brain/rules/`.** Perfil para DELETE. |
+| `regla` | 44 | Documentación de reglas de gating y programación (DP-R*, HB-R*, HB-S*, PER-*, REP-*). **Duplican lógica que ya vive en `lib/brain/rules/`.** Perfil para DELETE. FIL-004 era la 45va y ya fue borrada por 0015 (regla de gating específicamente por edad). |
 | `concepto` | 22 | Mix: contenido pedagógico de agarres (TA-C001..C008, "Half crimp"), mensajes de safety (DP-W001..W006), documentación de recuperación/nutrición (RE-005..009), decisiones de producto (ADO-001). Ninguno es ejercicio; varios contienen contenido migrable a `lib/brain/messages/` o a UI de referencia. |
 | `nota` | 19 | Todas son "Faltante: X". Placeholders de curación abierta. **Cero contenido útil**, son TODOs. Perfil para DELETE. |
 
-Clasificación tentativa por decisión: **~64 rows son ruido puro** (19 notas + 45 reglas que duplican código), **~105 tienen algún valor** (concepto migrable + tests re-usables en futuro), aunque **ninguno es un ejercicio de un plan**.
+Clasificación tentativa por decisión: **~63 rows son ruido puro** (19 notas + 44 reglas que duplican código), **~105 tienen algún valor** (concepto migrable + tests re-usables en futuro), aunque **ninguno es un ejercicio de un plan**.
 
 **Impacto en 0015 (aplicada 2026-07-09):** el UPDATE de `nivel_canonico`
 y los UPDATE de tags en la versión inicial aplicaron a las 482 rows
-(post-DELETE FIL-004), incluyendo las 169 no-ejercicio. El resultado en
+(post-DELETE FIL-004), incluyendo las 168 no-ejercicio restantes. El resultado en
 prod fue reglas/notas/tests con `nivel_canonico='principiante'` y el
 tag `menor` en 5 rows todas non-ejercicio (DP-R005, DP-S002, EV-RH-003,
 HB-F006, HB-S006).
@@ -732,11 +732,15 @@ HB-F006, HB-S006).
    estado de la base ya aplicada. HB-REHAB-A2A4 (ejercicio real) conserva
    su tag `rehab`.
 
+**Estado post-0016 (verificado 2026-07-10):** 314 ejercicios reales con
+`nivel_canonico` mapeado, 168 no-ejercicio con `nivel_canonico = NULL`,
+0 rows con tag `menor` no-ejercicio, HB-REHAB-A2A4 intacto (todos + rehab).
+
 **Cuándo revisitar la deuda:** Paso 4 del workstream del catálogo
-(mapping `BlockedCategory` → filas). Ahí auditamos los 169 por tipo
+(mapping `BlockedCategory` → filas). Ahí auditamos los 168 por tipo
 para decidir DELETE / migrate / retain:
 
-1. **Reglas y notas (64 rows)**: DELETE. La lógica y los TODOs ya viven
+1. **Reglas y notas (63 rows)**: DELETE. La lógica y los TODOs ya viven
    (o deberían vivir) en otros lugares del repo.
 2. **Conceptos migrables (~10 rows, DP-W* y algunos TA-C*)**: mover a
    `lib/brain/messages/` con un shape canónico, luego DELETE del catálogo.
