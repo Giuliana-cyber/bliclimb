@@ -204,6 +204,46 @@ un plan generado no contiene RH-* ni HB-REHAB-* ni PR-003.
 
 ---
 
+## Categoría C · Gating por prerrequisito de capacidad medible
+
+Reglas del Doc 02 que gatean un ejercicio contra un umbral cuantitativo de
+capacidad del usuario, no contra edad/experiencia/lesión. Requieren un
+campo nuevo en `ProfileForRules` que hoy no existe.
+
+### C.1 · §2.4 · gating por reps de dominada (Deuda #12)
+
+**Regla del Doc 02:** *"Condición: ejercicio FT-006 o equivalente. Acción:
+desbloquear sólo si usuario completa ≥15 dominadas estrictas por serie."*
+
+**Gap doble:**
+1. Ninguna función en `lib/brain/rules/` compara "reps de dominada" contra
+   15 ni bloquea FT-006 (grep confirmó cero matches).
+2. `ProfileForRules` en `lib/brain/types.ts` no captura reps de dominada.
+   Aunque quisiéramos implementar §2.4 mañana, la señal no está disponible
+   en runtime.
+
+**Filas del catálogo afectadas:**
+- **FT-006** — reclasificada a ejercicio en `0026`, tag
+  `riesgo-lesion:pullups-weighted` aplicado. **Barrera única actual:
+  `nivel_canonico='avanzado'` — barrera débil (depende del LLM).**
+- **FTP-004** — concepto editorial que documenta el prerrequisito de 15
+  dominadas.
+
+**Criterio de cierre:**
+1. Onboarding capta `maxPullupReps` (nueva pregunta).
+2. Migración de schema `public.profiles` agrega columna
+   `max_pullup_reps int`.
+3. `ProfileForRules` incluye el campo.
+4. `check_2_4` (nuevo módulo) emite `block-categories` con la categoría
+   apropiada cuando `maxPullupReps < 15`.
+5. **Verificación:** perfil con `maxPullupReps=10`, plan generado no
+   contiene FT-006.
+
+Es un check pequeño y aislado — no depende de Paso 6 (`exerciseId`), solo
+de un campo nuevo de perfil. Puede implementarse antes o en paralelo.
+
+---
+
 ## Resumen ejecutivo
 
 | Ítem | Filas afectadas | Gap | Cierra con |
@@ -213,11 +253,13 @@ un plan generado no contiene RH-* ni HB-REHAB-* ni PR-003.
 | A.3 | REP-002 | §3.3/§3.4 no capturan freq semanal | `check_3_freq_dedos` (depende Paso 6 exerciseId) |
 | B.1 | PO-DEADSTOP, PO-POWERPU | Falta `power-max` en enum | Ampliar `BlockedCategory` + taggear |
 | B.2 | 11 rows rehab/prevencion | `proposito` no filtrado | Filtro duro en pool del motor |
+| C.1 | FT-006, FTP-004 | §2.4 sin código + falta campo maxPullupReps | Nuevo campo de perfil + `check_2_4` |
 
 **Total filas del catálogo bajo checklist:** 5 conservadas por gap end-to-end
 (A.1-A.3) + 2 sin categoría del enum (B.1) + 11 con proposito no filtrado (B.2)
-= **18 rows en observación**. Cerrar los 5 gaps del checklist las libera todas
-para reevaluación / borrado en migraciones posteriores.
++ 2 sin prerrequisito de reps implementado (C.1) = **20 rows en observación**.
+Cerrar los 6 huecos del checklist las libera todas para reevaluación / borrado
+en migraciones posteriores.
 
 **Paso 5 no está completo hasta que cada ítem esté verificado cerrado.**
 Cada cierre se acompaña de:

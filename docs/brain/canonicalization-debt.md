@@ -1045,3 +1045,46 @@ retorna cero coincidencias. **No hay filtro por `proposito` en ningún lado del 
 Giuliana definió la regla operativa: "los ejercicios `proposito='rehab'` solo se ofrecen a perfiles con lesión declarada, nunca a sanos". Se implementa como filtro estricto en Paso 5.
 
 **Interim (post-0025):** los rows quedan sin tag riesgo-lesion (bien) pero pueden ser propuestos por el LLM aunque no correspondan. Deuda conocida.
+
+## Deuda #12 — §2.4 (gating por prerrequisito de reps) sin código ni campo de perfil (2026-07-11)
+
+**Contexto:** al cerrar el cabo suelto de FT-006 en el Paso 4 (migración `0026`), aparece un tipo de regla nueva del Doc 02 que ninguna de las Deudas #9-#11 cubre: gating por **prerrequisito de capacidad medible** contra un valor umbral.
+
+**Regla del Doc 02:** §2.4 dice literalmente *"Condición: ejercicio FT-006 o equivalente. Acción: desbloquear sólo si usuario completa ≥15 dominadas estrictas por serie."*
+
+**Grep en `lib/brain/rules/` (verificado 2026-07-11):**
+```
+FT-006          → 0 matches en rules/
+one-arm / lock-off → matches solo en types.ts:68 y section-05 como TEXTO
+                    de mensaje ("reducir volumen de dominadas/lock-offs"),
+                    NO como regla operativa que bloquee FT-006
+15 dominadas    → 0 matches
+§2.4 / regla 2.4 → 0 matches
+```
+
+**Gap doble:**
+
+1. **No hay check emisor.** Ninguna función en `lib/brain/rules/` compara "reps de dominada" contra 15 ni bloquea FT-006.
+
+2. **No hay campo en `ProfileForRules`.** El tipo `ProfileForRules` en `lib/brain/types.ts` no captura "reps máximas de dominada estricta" del usuario. Aunque quisiéramos implementar §2.4 mañana, la señal no está disponible en runtime. Requiere:
+   - Nueva pregunta en el onboarding (o el checkin) que capture reps de dominada.
+   - Campo `maxPullupReps: number | null` en `ProfileForRules`.
+   - Regla `check_2_4` que compare `profile.maxPullupReps` con el umbral 15 y emita `block-categories` con una nueva categoría (candidata: extensión de `pullups-weighted` semánticamente cubre; alternativa: nueva categoría `pullups-prerequisite` para separar).
+
+**Filas del catálogo afectadas:**
+- **FT-006** — "Bloqueo con una mano (one-arm lock-off)" — reclasificada a ejercicio en `0026`, tag `riesgo-lesion:pullups-weighted` aplicado. **La única barrera actual que impide que FT-006 llegue a un principiante es `nivel_canonico='avanzado'`.**
+- **FTP-004** — "Bloqueo con una mano — criterio de entrada" — conservada como concepto editorial en Grupo C del Paso 4. Documenta el prerrequisito de 15 dominadas.
+
+**Interim (post-0026):** `nivel_canonico='avanzado'` es la barrera única mientras §2.4 no exista en código. Es una barrera **débil** — depende de que el LLM respete el filtro por nivel, no de un check determinístico. Un LLM que ignore el nivel puede proponer FT-006 a un principiante y no hay red posterior que lo atrape.
+
+**Cuándo cerrar:** Paso 5 o inmediatamente después. Es un check pequeño y aislado — no depende de Paso 6 (`exerciseId`), sino de un campo nuevo de perfil. Puede implementarse antes que Paso 6.
+
+**Criterio de cierre:**
+1. Onboarding capta `maxPullupReps` (nueva pregunta) — 0 si no puede hacer ninguna.
+2. Migración de schema `public.profiles` agrega columna `max_pullup_reps int`.
+3. `ProfileForRules` incluye el campo.
+4. `check_2_4` (nuevo módulo o sección) emite `block-categories` con la categoría que corresponda cuando `maxPullupReps < 15`.
+5. Verificación: perfil con `maxPullupReps=10`, plan generado no contiene FT-006.
+6. Al confirmar cerrado, se re-audita: FT-006 pasa de "protegida solo por nivel" a "protegida end-to-end". No requiere borrado adicional; solo actualiza este documento.
+
+**Deudas anidadas que este cierre desbloquea:** también cierra el "prerequisito ≥15 dominadas" para FTP-004 y para cualquier ejercicio futuro que Doc 02 gate por reps de dominada.
