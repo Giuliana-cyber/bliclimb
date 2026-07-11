@@ -884,3 +884,164 @@ motor no debe meter como ejercicio de sesión única:
 
 Total: 6 rows candidatos a filtrar del pool del motor en Paso 5, o
 marcar con `alcance='bloque'` si se implementa esa dimensión adicional.
+
+## Deuda #9 — Fracciones del BrainContext descartadas antes de llegar al motor (2026-07-10)
+
+**Contexto:** al hacer el audit end-to-end del Grupo A del Paso 4 del
+workstream del catálogo, se detectó que `evaluateProfile()` acumula 4
+tipos de output en `BlockingContext` (blockedCategories, blockedZones,
+blockedExercises, gripRestrictions + trainingPriorities +
+intensityAdjustments) pero **solo uno** llega a la generación real.
+
+**Detectado con:**
+`grep -rn "gripRestrictions\|trainingPriorities\|intensityAdjustments\|blockedExercises\.exactIds\|blockedExercises\.prefixes" --include="*.ts"`
+fuera de `lib/brain/{types,validator,rules,orchestrator}` no matchea nada.
+Único consumo del `brainContext` en `app/api/generate-plan/route.ts:941`:
+```
+const blockedCategoriesForPrompt = Array.from(brainContext.blockedCategories);
+```
+
+Los demás sets se computan, se persisten en el ctx, y se descartan.
+
+**Los 3 gaps concretos:**
+
+1. **§1.3 `blockedZones` no se traduce a IDs.**
+   `check_1_3` (`lib/brain/rules/section-01-profile-filters.ts:102-124`) emite
+   `block-zone` con `zone ∈ {fingers-pulleys, elbow, shoulder}` cuando el
+   dolor actual ≥ 3. `section-02-exercise-gating.ts:77-137` solo traduce
+   `BlockedCategory`, no `BlockedZone` — el `translateCategoriesToGating`
+   ignora el input de zones. Resultado: dolor de dedos (por ejemplo) no
+   filtra ningún ejercicio en el prompt, no aparece en el matcher, no
+   dispara PlanRuleModule. Solo queda como `derivationMessages` para el UI,
+   pero no impacta la generación. **Reglas del catálogo afectadas:**
+   DP-R004, HB-S005 (mantenidas como referencia hasta que se cierre).
+
+2. **§5.2 `gripRestrictions` no se inyectan al prompt.**
+   `check_5_2` (`lib/brain/rules/section-05-health-derivation.ts:37-46`)
+   añade `'no-small-crimps-below-15mm'` cuando `injuries.includes('fingers')`.
+   El set queda en `ctx.gripRestrictions` pero **no** se pasa a
+   `generateWeek()` en `app/api/generate-plan/route.ts:948-957`. El
+   parámetro solo incluye `blockedCategoriesForPrompt`. Resultado: la
+   regla de regletas 11-15 mm no llega al LLM. **Reglas del catálogo
+   afectadas:** HB-S004, DP-S001 (mantenidas como referencia).
+
+3. **§5.3 `trainingPriorities` + §5.4 `intensityAdjustments` no se
+   inyectan al prompt.** Mismo mecanismo: `check_5_3` emite
+   `'extensors-before-traction'` y `'reduce-traction-volume'`, `check_5_4`
+   emite `'reduce-below-baseline'`. Ninguno llega a `generateWeek()`. §5.3
+   tiene mitigación parcial vía §14.2 (que sí se ejecuta y tiene el
+   post-processor `ensureExtensorWork`), por lo que DP-S004 queda con
+   cobertura real end-to-end. §5.4 (sueño malo) no tiene mitigación
+   downstream: se computa y se descarta.
+
+4. **`blockedExercises` (exactIds + prefixes) computados por section-02 no
+   se consumen en ningún lado.**
+   `translateCategoriesToGating` (`section-02-exercise-gating.ts:77-137`)
+   produce un matcher con IDs concretos (`HB-` prefix, `CB-` prefix, HIT
+   IDs, TEST_MAXIMO_IDS, PULLUPS_WEIGHTED_IDS) que se copia a
+   `ctx.blockedExercises` en `validator.ts:98-100`. Fuera del validator y
+   los rules, **nadie lo lee**. La red posterior `section01PlanGating`
+   (`lib/brain/rules/section-01-plan-gating.ts:91-140`) reevalúa el perfil
+   y compara `exercise.blockCategory` (enum) contra
+   `ctx.blockedCategories` (enum). No usa el matcher de IDs. Resultado: si
+   el LLM inventa un nombre de ejercicio que corresponde a un ID bloqueado
+   (por ejemplo un "Suspensión máxima en 25mm" que es FD-006) pero lo
+   etiqueta con `blockCategory='strength'` en vez de `'max-tests'`, la red
+   no lo atrapa por ID.
+
+**Cuándo cerrar:** Paso 5 del workstream del catálogo (motor enum +
+join con `public.exercises`). Ahí se pueden hacer las 4 cosas en un solo
+PR:
+- Extender `translateCategoriesToGating` para aceptar
+  `ReadonlySet<BlockedZone>` y traducir a IDs por zona (join con
+  `categoria_canonica ∈ {hombros-escapulas, munecas-antebrazos,
+  fuerza-dedos}` según zona).
+- Extender `generateWeek()` para recibir el `BrainContext` completo (no
+  solo `blockedCategoriesForPrompt`) e inyectar las restricciones y
+  adjustments como bullets adicionales en el `prohibitedBlock`.
+- Extender `section01PlanGating` (o crear un nuevo `section-02-plan-gating`)
+  para chequear `exercise.exerciseId` contra `ctx.blockedExercises` una
+  vez que el schema tenga `exerciseId` (Paso 6).
+
+**Interim:** las reglas del catálogo cuya lógica cae en un gap se
+CONSERVAN como referencia. Al abordar Paso 5/6, se re-audita: si la regla
+pasa a estar cubierta end-to-end, se borra entonces. Este comportamiento
+lo definió Giuliana explícitamente en el Paso 4: "borrar una fila cuya
+lógica no llega a ejecutarse sería borrar constancia de una regla que en
+la práctica no funciona".
+
+### Checklist de aceptación del Paso 5 — filas conservadas por gap
+
+Las 5 filas del catálogo que sobrevivieron el 0024 porque su check
+existe en código pero no llega al ejercicio. Cerrar los gaps de Deuda #9
+gaps 1-4 debe volverlas redundantes; al cerrar cada gap se re-audita la
+fila y se decide si borrar en un DELETE posterior.
+
+| Fila | Check emisor | Gap concreto | Cierra con |
+|---|---|---|---|
+| **DP-R004** · "No entrenar hangboard si hay lesión actual" | §1.3 `check_1_3` @ `lib/brain/rules/section-01-profile-filters.ts:102-124` emite `block-zone: fingers-pulleys` con pain≥3 | `translateCategoriesToGating` @ `section-02-exercise-gating.ts:77-137` acepta `BlockedCategory` pero no `BlockedZone` — el zone se descarta al salir del validator | Extender section-02 para consumir `ctx.blockedZones` y traducirlas a IDs (join con `categoria_canonica ∈ {fuerza-dedos}` para zona `fingers-pulleys`). Gap 1 de Deuda #9. |
+| **HB-S005** · "Bloqueo tests máximos con dolor o lesión reciente" | §1.3 mismo mecanismo (pain≥3 → block-zone) | Mismo gap zone→ID que DP-R004 | Igual que DP-R004 |
+| **HB-S004** · "Bloqueo regletas 11-15 mm" | §5.2 `check_5_2` @ `lib/brain/rules/section-05-health-derivation.ts:37-46` emite `add-grip-restriction: no-small-crimps-below-15mm` con `injuries.includes('fingers')` | `ctx.gripRestrictions` no se pasa a `generateWeek()`. `route.ts:941` solo lee `blockedCategoriesForPrompt`; los demás sets del `brainContext` se descartan | Extender `generateWeek()` en `app/api/generate-plan/route.ts:948-957` para recibir el `BrainContext` completo y añadir bullets de `gripRestrictions` al `prohibitedBlock`. Gap 2 de Deuda #9. |
+| **DP-S001** · "Riesgo lesión de poleas — bloquear carga con dolor o lesión previa" | Doble emisor: §1.3 (pain≥3 → block-zone dedos) + §5.2 (injuries.includes('fingers') → grip restriction) | Doble gap: zone→ID (gap 1) y grip→prompt (gap 2) | Cierran los dos gaps arriba |
+| **REP-002** · "Recuperación según intensidad — máx 2-3 sesiones de dedos por semana con 48h de espacio" | No hay check emisor arquitectónico — §3.3 (`check_3_3`) cubre "no 3 duros consecutivos" y §3.4 (`check_3_4`) cubre recuperación entre dos sesiones consecutivas del mismo stimulus, pero ninguno cap el total semanal de sesiones de dedos ni el espaciado específico | Requiere un check nuevo `check_3_freq_dedos` que cuente sesiones cuyo mainBlock incluye exercise con `stimulusCategory='strength'` **Y** `categoria_canonica='fuerza-dedos'` por semana, con cap 3 y gap mínimo 48h entre ellas. Necesita `categoria_canonica` accesible al validator (Paso 6: persist `exerciseId` per-exercise en el plan generado). |
+
+Además, aunque no bloqueó ninguna fila del Paso 4:
+
+- **Gap 3 de Deuda #9** — §5.3 (`extensors-before-traction` + `reduce-traction-volume`) y §5.4 (`reduce-below-baseline`) no llegan al prompt. §5.3 tiene mitigación colateral por §14.2 (que sí corre), por lo que ninguna fila del catálogo fallaba por §5.3 sola. **§5.4 (sueño <5h) no tiene mitigación downstream**: el verdict se computa y se descarta silenciosamente. No hay row del catálogo que lo documente en el subset de 44 tipo_registro='regla', pero cerrarlo es parte del mismo PR que gap 2.
+- **Gap 4 de Deuda #9** — `blockedExercises` (exactIds/prefixes) computados por section-02 no se consumen. La red posterior `section01PlanGating` chequea `exercise.blockCategory` enum contra `ctx.blockedCategories` enum. Se cierra cuando el schema del plan tenga `exerciseId` (Paso 6) y un nuevo `section-02-plan-gating` chequee ID contra matcher.
+
+**Regla la constancia sobre el motor:** al cerrar cada gap, se re-corre
+`grep` sobre las 5 filas conservadas y las que quedan wired end-to-end
+pasan a un DELETE posterior. Esto mantiene la propiedad de que "cada
+regla del catálogo o vive en código o marca un gap explícito", nunca
+"vive parcialmente en un limbo".
+
+### Nuevas deudas descubiertas al hacer Paso 4 (b) mapping BlockedCategory → catálogo (2026-07-10)
+
+Al revisar los 78 sin-tag de las 5 categorías bloqueables uno por uno para el
+marcado de `riesgo-lesion:*` (migración `0025`), aparecieron dos huecos que
+no están cubiertos por ninguna BlockedCategory del enum actual y que Paso 5
+debe cerrar antes de que el gating con dientes esté completo.
+
+#### Deuda #10 — Potencia máxima con contact strength sin BlockedCategory (2026-07-10)
+
+**Contexto:** al taggear los 78 sin-tag en 0025 aparecieron 2 rows con
+intensidad Máxima y riesgo Alto de contacto explosivo que ninguna categoría
+del enum `BlockedCategory` (`lib/brain/types.ts:16-24`) cubre:
+
+- **PO-DEADSTOP** · "Dead Stop (precisión dinámica)" · `categoria_canonica='potencia'`, `nivel_canonico='avanzado'`. Descripción menciona "detenerse INMEDIATAMENTE sin 'chocar' contra ella" — carga explosiva máxima en dedos + codo + hombro.
+- **PO-POWERPU** · "Power Pull-up (dominada explosiva)" · `categoria_canonica='potencia'`, `nivel_canonico='avanzado'`. "Ejecutar una dominada explosiva intentando que el pecho toque la barra ... cada rep debe ser máxima velocidad de subida" — tracción explosiva máxima.
+
+**Verificación cruzada:**
+- `campus` bloquea prefijo `CB-` (`lib/brain/rules/section-02-exercise-gating.ts:101-103`). Ni PO-DEADSTOP ni PO-POWERPU empiezan con `CB-`.
+- `hit` bloquea 2 IDs literales (`FM-014`, `PF-FM-005` — `section-02:35`). Ninguno matchea.
+- `pullups-weighted` bloquea 2 IDs literales (`FT-002`, `FTE-002` — `section-02:61-64`). Ninguno matchea. Nota semántica: en 0025 el tag `riesgo-lesion:pullups-weighted` se extendió sobre 9 rows via UPDATE de catálogo, pero el motor NO consume ese tag hoy (Deuda #9 gap 4: `blockedExercises` matcher no se lee). La categoría enum sigue con 2 IDs hardcoded.
+
+**Consecuencia operativa:** un menor de 16 (age=u16), un usuario con <2 años (climbingTime <2 años), o un lesionado de dedos (pain≥3 / injuries.includes('fingers')) **no queda bloqueado de PO-DEADSTOP ni PO-POWERPU**. La única red que los aleja de un principiante es `nivel_canonico='avanzado'` — el LLM no los propone por nivel, no por categoría de seguridad.
+
+**Cuándo cerrar:** Paso 5 del workstream del catálogo, mismo PR que amplíe el enum. Opciones de nombre para la categoría nueva:
+- `power-max` — cubre potencia explosiva con contact strength máximo. Semánticamente limpio.
+- `explosive-contact-strength` — más descriptivo, más largo.
+- Reutilizar `hit` extendido a "todo entrenamiento de alta intensidad neural repetido máximo": semánticamente confuso (HIT canónico = Hypergravity Isolation Training específico), no recomendado.
+
+**Interim (post-0025):** ambos rows quedan `sin tag riesgo-lesion:*` en el catálogo. Documentados acá como huecos conscientes.
+
+#### Deuda #11 — `proposito='rehab'` no filtrado en el motor (2026-07-10)
+
+**Contexto:** los rows con `proposito='rehab'` (asignados en `0022_paso_2_cierre.sql:216-220`) son ejercicios de retorno post-lesión con protocolos específicos. La Deuda #8 y el análisis del Paso 4 asumen que están "segregados por dimensión propósito" y por tanto no llegan al pool de entrenamiento del LLM.
+
+**Verificación:**
+```
+grep -rEn "proposito" lib/ app/ | grep -v test | grep -v node_modules
+```
+retorna cero coincidencias. **No hay filtro por `proposito` en ningún lado del código del motor.** El LLM recibe el pool completo (todo `tipo_registro='ejercicio'`) sin discriminar por `proposito`.
+
+**Consecuencia operativa:** RH-004, RH-005, RH-001, RH-P001, RH-P002, HB-REHAB-A2A4, HB-ISO-RECOV, HB-DENS, HB-PROT, PR-003, TC-FOFF (11 rows con `proposito='rehab'` o `proposito='prevencion'`) pueden llegar al prompt como opciones de programación normal, incluso a perfiles sanos sin historial de lesión declarado.
+
+**Cuándo cerrar:** Paso 5. Dos opciones:
+- **Filtro duro por proposito**: excluir `proposito ∈ {rehab}` del pool a menos que el perfil tenga `injuries` no vacío o `pain≥3`.
+- **Regla condicional** en el prompt: "sólo ofrecer rehab a perfiles con lesión declarada". Menos hermética (depende de que el LLM respete), más flexible.
+
+Giuliana definió la regla operativa: "los ejercicios `proposito='rehab'` solo se ofrecen a perfiles con lesión declarada, nunca a sanos". Se implementa como filtro estricto en Paso 5.
+
+**Interim (post-0025):** los rows quedan sin tag riesgo-lesion (bien) pero pueden ser propuestos por el LLM aunque no correspondan. Deuda conocida.

@@ -4,7 +4,7 @@
 
 **Audiencia:** cualquier sesión de desarrollo que arranque sin contexto previo. Léelo antes de proponer trabajo.
 
-**Última actualización:** 2026-07-11 · Paso 3 del workstream del catálogo cerrado. Toda la canonicalización de datos completa (Pasos 1-3). Próximo: Paso 4 (política de los 72 conceptos + mapping BlockedCategory → catálogo).
+**Última actualización:** 2026-07-11 · Paso 4 del workstream del catálogo sustancialmente cerrado (limpieza de reglas duplicadas + mapping BlockedCategory → catálogo). Cabo suelto: FT-006 (0026 pendiente — reclasificar a ejercicio + registrar §2.4 como deuda de motor). Próximo: Paso 5 (motor enum + join con catálogo). Ver `docs/brain/paso5-checklist-aceptacion.md` para los 5 huecos que Paso 5 debe cerrar end-to-end.
 
 ---
 
@@ -100,8 +100,13 @@ Resuelve las tres consecuencias de un tiro. Y hace estructuralmente imposible el
 1. ✅ Canonicalizar `nivel` → enum (6 buckets), con backfill. **CERRADO 2026-07-09** (migraciones `0015`+`0016`).
 2. ✅ Canonicalizar `categoria` → vocabulario canónico 15 buckets + dimensiones `proposito` (3) + `momento` (3). **CERRADO 2026-07-10** (migraciones `0017`-`0022` en 4 tandas de curación editorial). Reclasificados 46 rows a concepto con tags trazables. 264 de 264 ejercicios canonicalizados (100%). Radar Paso 5 poblado con 19 rows tag `programa-bloque`.
 3. ✅ Canonicalizar `equipo` → `equipo_canonico text[]` mapeado a los 9 tokens del onboarding. **CERRADO 2026-07-11** (migración `0023`). 264 de 264 ejercicios en 25 combinaciones únicas. Índice GIN para queries del motor. Convenciones: opcional excluido, accesibilidad solo anchors, peso corporal → `[home]`.
-4. **Próximo · Paso 4** — Ejecutar la política de los 72 conceptos (spec en `politica-paso4.md` pendiente de recibir) + mapping `BlockedCategory` → catálogo con constraint estructural. **Regla crítica**: cuando toque BORRAR reglas duplicadas por código, presentar lista con `file:line` de evidencia de cada duplicación en `lib/brain/rules/` antes de aplicar.
-5. Enum del motor: `FastExerciseSchema.name` → `z.enum(idsPermitidos)` filtrado por perfil + reglas (~1 día). Filtrar rows con tag `programa-bloque` del pool. **A partir de acá empieza código en runtime** — vuelve la verificación cruda estricta.
+4. ✅ **Paso 4 sustancialmente cerrado** — 2026-07-11. Dos entregables aplicados:
+   - **`0024_paso_4_delete_reglas_duplicadas.sql`**: DELETE de 20 filas `tipo_registro='regla'` verificadas WIRED end-to-end en `lib/brain/rules/*.ts` con evidencia file:line por cada una. Guardias de conteo antes/después. Verificado.
+   - **`0025_paso_4_tags_riesgo_lesion.sql`**: mapping `BlockedCategory` → catálogo aplicado como tags `riesgo-lesion:<subtipo>`. **25 rows** con `hangboard-intense`, **9 rows** con `pullups-weighted` (extendido semánticamente a "tracción cargada por biomecánica" — lock-offs, one-arm, Frenchies, uneven, dominadas con lastre), **1 row** con `hit` (FM-014). Los otros 4 subtipos del enum (`full-crimp`, `finger-training-any`, `campus`, `hangboard`, `max-tests`) se identifican por columna canónica (`categoria_canonica`, `equipo_canonico`) o por `tipo_registro`, sin tag propio. Total 35 rows taggeados; 78 sin-tag confirmados seguros por revisión row-by-row con Giuliana.
+   - **Cabo suelto**: FT-006 (one-arm lock-off) — es un ejercicio mal taggeado como regla en el CSV. Doc 02 §2.4 (regla que exige ≥15 dominadas antes de desbloquear) NO está implementada en `lib/brain/rules/` (grep confirmó cero matches). Migración `0026` pendiente: UPDATE de tipo_registro + canonicalización de 4 dimensiones + tag `riesgo-lesion:pullups-weighted`. §2.4 se registra como Deuda #12 (regla de gating por prerrequisito de reps, requiere campo nuevo en `ProfileForRules`).
+   - **Deudas nuevas descubiertas** (registradas en `canonicalization-debt.md`): #10 potencia-max sin BlockedCategory (PO-DEADSTOP, PO-POWERPU), #11 `proposito='rehab'` no filtrado (RH-004, RH-005, RH-P002 y 8 más). Ambas son huecos que Paso 5 debe cerrar.
+   - **Checklist consolidado de aceptación Paso 5**: `docs/brain/paso5-checklist-aceptacion.md`. 5 huecos (A.1 zone→ID, A.2 grip→prompt, A.3 §3.freq-dedos, B.1 power-max, B.2 rehab filter). Paso 5 no está completo hasta que cada uno esté verificado cerrado con re-grep + migración de limpieza.
+5. **Próximo · Paso 5** — Enum del motor: `FastExerciseSchema.name` → `z.enum(idsPermitidos)` filtrado por perfil + reglas (~1 día). Filtrar rows con tag `programa-bloque` y `proposito='rehab'` del pool. Cerrar los 5 huecos del checklist arriba en el mismo PR (o en PRs consecutivos con verificación entre cada uno). **A partir de acá empieza código en runtime** — vuelve la verificación cruda estricta.
 6. Persistir `exerciseId` en `Exercise` + `mainBlock[]` (~0.5 día).
 7. Pantalla de sesión lee `howTo`/`cues`/`commonMistakes` de la tabla vía join (~0.5 día).
 8. Tests + validación end-to-end: gating, injury, equipment filters (~1 día).
