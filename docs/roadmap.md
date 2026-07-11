@@ -4,7 +4,7 @@
 
 **Audiencia:** cualquier sesión de desarrollo que arranque sin contexto previo. Léelo antes de proponer trabajo.
 
-**Última actualización:** 2026-07-08 (madrugada — añadido hallazgo del catálogo desconectado)
+**Última actualización:** 2026-07-10 · Paso 2 del workstream del catálogo cerrado (canonicalización de `nivel` + `categoría` completa; próximo: Paso 3 `equipo`)
 
 ---
 
@@ -85,11 +85,11 @@ Resuelve las tres consecuencias de un tiro. Y hace estructuralmente imposible el
 
 *Hallazgo:* tres campos del catálogo son texto libre, no enums. Es la deuda de canonicalización de Fase 1 (PR 0011 previsto, nunca llegó — deudas #1-#4 de este archivo). Se cierra ahora.
 
-| Campo | Distintos reales | Naturaleza | Fix |
+| Campo | Distintos reales | Naturaleza | Estado |
 |---|---|---|---|
-| `nivel` | 17 | 4 buckets limpios cubren ~70%; resto colapsa fácil | Barato: ~1h dev + 15min curación |
-| `categoria` | 69 | ~15 buckets grandes + cola de duplicados semánticos ("Fuerza dedos" en 9 variantes) | Medio: ~2h dev + 3-4h curación con Bill/Senda |
-| `equipo` | 99 | Prosa libre, pero **mapea a los 9 tokens del onboarding** | Acotado: ~6h total |
+| `nivel` | 17 (eligible) / 34 (CSV) | 4 buckets limpios cubren ~70%; resto colapsa fácil | ✅ **CERRADO 2026-07-09** · migraciones `0015` (backfill 6 buckets: principiante/principiante-intermedio/intermedio/intermedio-avanzado/avanzado/todos) + `0016` (corrección non-ejercicio). Tags de trazabilidad `menor` (5 rows) + `rehab` (1 row). |
+| `categoria` | 69 (ejercicios eligible) / 71 (todos ejercicios) | ~15 buckets grandes + cola de duplicados semánticos + tensión estructural (mezcla estímulo + zona + propósito) | ✅ **CERRADO 2026-07-10** · migraciones `0017`-`0022` en 4 tandas de curación row-by-row. Split ortogonal en 3 dimensiones: `categoria_canonica` (15 buckets) + `proposito` (entrenamiento/prevencion/rehab) + `momento` (calentamiento/principal/enfriamiento). Reclasificados 25+21 rows a concepto con tags (`conversacional`, `criterios`, `programa-bloque`, `concepto-dominio`, `regla-catalogo`, `nutricion`, `monitoreo`). **264 de 264 ejercicios canonicalizados (100%)**. |
+| `equipo` | 99 | Prosa libre, pero **mapea a los 9 tokens del onboarding** | **Próximo (Paso 3).** Acotado: ~6h total. |
 
 *Vocabulario de equipo = los 9 del onboarding, ni más ni menos.* El onboarding captura `equipment: string[]` con 9 valores (`gym, hangboard, campus, weights, rock, home, bands, pullup_bar, trx`). Canonicalizar el catálogo a MENOS tokens tira información que el perfil ya distingue (un user con hangboard-sin-campus perdería ejercicios). Los 99 strings de prosa se **mapean** a subsets de esos 9, no agregan vocabulario. "Regleta + Force Gauge" → `[hangboard, weights]`.
 
@@ -97,14 +97,14 @@ Resuelve las tres consecuencias de un tiro. Y hace estructuralmente imposible el
 
 **Pasos del workstream (orden):**
 
-1. Canonicalizar `nivel` → enum, con backfill (~1h + 15min)
-2. Canonicalizar `categoria` → vocabulario canónico ~15-20 clases, mapping de los 69 (~2h + 3-4h curación)
-3. Canonicalizar `equipo` → mapear 99 strings a los 9 tokens del onboarding (~6h)
-4. Mapping `BlockedCategory` → catálogo, con constraint estructural + curación de los 483 (~4-8h curación)
-5. Enum del motor: `FastExerciseSchema.name` → `z.enum(idsPermitidos)` filtrado por perfil + reglas (~1 día)
-6. Persistir `exerciseId` en `Exercise` + `mainBlock[]` (~0.5 día)
-7. Pantalla de sesión lee `howTo`/`cues`/`commonMistakes` de la tabla vía join (~0.5 día)
-8. Tests + validación end-to-end: gating, injury, equipment filters (~1 día)
+1. ✅ Canonicalizar `nivel` → enum (6 buckets), con backfill. **CERRADO 2026-07-09** (migraciones `0015`+`0016`).
+2. ✅ Canonicalizar `categoria` → vocabulario canónico 15 buckets + dimensiones `proposito` (3) + `momento` (3). **CERRADO 2026-07-10** (migraciones `0017`-`0022` en 4 tandas de curación editorial). Reclasificados 46 rows a concepto con tags trazables. 264 de 264 ejercicios canonicalizados (100%). Radar Paso 5 poblado con 19 rows tag `programa-bloque`.
+3. Canonicalizar `equipo` → mapear 99 strings a los 9 tokens del onboarding (~6h). **Próximo.**
+4. Mapping `BlockedCategory` → catálogo, con constraint estructural + curación de los 483 (~4-8h curación).
+5. Enum del motor: `FastExerciseSchema.name` → `z.enum(idsPermitidos)` filtrado por perfil + reglas (~1 día). Filtrar rows con tag `programa-bloque` del pool.
+6. Persistir `exerciseId` en `Exercise` + `mainBlock[]` (~0.5 día).
+7. Pantalla de sesión lee `howTo`/`cues`/`commonMistakes` de la tabla vía join (~0.5 día).
+8. Tests + validación end-to-end: gating, injury, equipment filters (~1 día).
 
 **Estimado honesto:** ~5-6 días dev + ~12-18h curación con Bill/Senda. La curación no acelera con más devs — es trabajo de contenido, de Giuliana.
 

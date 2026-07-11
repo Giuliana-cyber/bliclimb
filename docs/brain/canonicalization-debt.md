@@ -25,17 +25,61 @@ seguimiento.
 Las 6 columnas donde el trade-off text/enum es más marcado, con muestreo
 empírico del CSV v3:
 
-| Columna | Distintos | Ejemplos representativos |
-|---|---:|---|
-| `nivel` | ~50 | `"Principiante"`, `"Intermedio en adelante"`, `"Todos"`, `"Avanzado, ideal para escalador de sportclimbing"` |
-| `intensidad` | ~82 | `"Alta"`, `"Media-Alta"`, `"Alta si se usa regleta pequeña o carga alta"` |
-| `frecuencia` | ~60 | `"2x/sem"`, `"2-3x semana"`, `"Diaria"`, `"1x cada 2 semanas en fase pico"` |
-| `riesgo` | ~40 | `"Bajo"`, `"Medio/alto"`, `"Bajo-Medio"`, `"Alto en principiante, medio en avanzado"` |
-| `estado` | ~32 | `"activo"`, `"Pendiente deduplicación"`, `"Pendiente revisión"`, `"Pendiente limpieza"` |
-| `tipo_escalador` | ~35 | `"General"`, `"Boulder"`, `"Sport / Deportiva"`, `"Boulder y sport"` |
+| Columna | Distintos | Ejemplos representativos | Estado |
+|---|---:|---|---|
+| `nivel` | 34 real | `"Principiante"`, `"Intermedio en adelante"`, `"Todos"`, `"Avanzado / Elite"` | ✅ **CERRADA 2026-07-09** · migraciones `0015`+`0016` · 6 buckets canónicos (`principiante`, `principiante-intermedio`, `intermedio`, `intermedio-avanzado`, `avanzado`, `todos`) en columna `nivel_canonico` con CHECK constraint. Tags de trazabilidad `menor` (5 rows) + `rehab` (1 row: HB-REHAB-A2A4). FIL-004 borrada como regla colada. |
+| `categoria` | 71 real (ejercicios) | `"Fuerza dedos"` en 9 variantes, `"Prevención hombros"`, `"Movilidad/fuerza"`, `"Recuperación / prehab"` | ✅ **CERRADA 2026-07-10** · migraciones `0017`-`0022` en 4 tandas editoriales · **Split ortogonal en 3 dimensiones** por decisión de contenido: `categoria_canonica` (15 buckets), `proposito` (3), `momento` (3). Vocabulario final: fuerza-dedos, fuerza-traccion, fuerza-empuje, fuerza-tren-inferior, potencia, campus, resistencia-aerobica, resistencia-anaerobica, tecnica, boulder, movilidad, core, hombros-escapulas, munecas-antebrazos, piel. **264 de 264 ejercicios canonicalizados (100%)**. Reclasificados 46 rows a concepto durante el workstream. |
+| `intensidad` | ~82 | `"Alta"`, `"Media-Alta"`, `"Alta si se usa regleta pequeña o carga alta"` | Pendiente |
+| `frecuencia` | ~60 | `"2x/sem"`, `"2-3x semana"`, `"Diaria"`, `"1x cada 2 semanas en fase pico"` | Pendiente |
+| `riesgo` | ~40 | `"Bajo"`, `"Medio/alto"`, `"Bajo-Medio"`, `"Alto en principiante, medio en avanzado"` | Pendiente |
+| `estado` | ~32 | `"activo"`, `"Pendiente deduplicación"`, `"Pendiente revisión"`, `"Pendiente limpieza"` | Pendiente |
+| `tipo_escalador` | ~35 | `"General"`, `"Boulder"`, `"Sport / Deportiva"`, `"Boulder y sport"` | Pendiente |
 
 `publicable_app` NO está en esta lista — ya definimos 5 valores canónicos y
 la vista `exercises_eligible` los filtra. Es contrato duro, no deuda.
+
+## Workstream del catálogo · Paso 2 cerrado (2026-07-10)
+
+Las 2 columnas cerradas arriba son el resultado del Paso 2 del workstream
+del catálogo (ver `docs/roadmap.md`). Detalles clave:
+
+**Curación editorial en 4 tandas** — método de trabajo emergente durante
+el workstream: yo pre-clasificaba con propuesta completa (categoría +
+propósito + momento + flags), Giuliana revisaba y solo corregía las
+excepciones. Escalable con calidad: 264 ejercicios curados en 4 sesiones
+con criterio de dominio de escalada de Giuliana como capa final.
+
+**Vocabulario emergente vs vocabulario inicial** — el vocabulario final
+tiene 15 buckets de categoría, no los 13 originales. Los buckets
+`fuerza-empuje` (bench/shoulder press/push-ups) y `fuerza-tren-inferior`
+(deadlift/split squat/step-up) se agregaron en el cierre (0022) al aparecer
+rows que no encajaban en el vocabulario original y no era honesto forzarlos.
+
+**Split ortogonal en 3 dimensiones** — la tensión estructural detectada al
+enumerar `categoria` en Paso 2 (rows tipo `"Prevención hombros"` mezclando
+zona + propósito + estímulo) se resolvió separando el estímulo (categoría)
+de la intención (propósito: entrenamiento/prevencion/rehab) y del momento
+en la sesión (calentamiento/principal/enfriamiento). Cada dimensión con
+CHECK constraint y default apropiado.
+
+**Sistema de tags trazables** para rows reclasificadas a concepto durante
+el workstream (72 rows post-Paso 2, +29 vs inicio):
+- `conversacional` (22): rutinas de respiración, tips tácticos, mental
+- `criterios` (1): checklist de elegibilidad (DP-P001)
+- `programa-bloque` (19): protocolos multi-semana / macrociclos (radar Paso 5)
+- `concepto-dominio` (3): definiciones de tipo de agarre
+- `regla-catalogo` (2): FIL-004 (borrada), FIL-006 (reclasificada)
+- `nutricion` (2): contenido de nutrición
+- `monitoreo` (2): sesiones con registro de FC/duración
+
+**Radar Paso 5 poblado** — 19 rows con tag `programa-bloque` que el motor
+NO debe meter como ejercicio de sesión en un plan (frameworks, protocolos
+de N semanas, macrociclos). Filtrar del pool en el enum del motor.
+
+**Deuda #8** (reglas/conceptos/notas colacadas como filas del catálogo, ver
+más abajo) parcialmente pagada durante el workstream — 46 rows reclasificados
+de ejercicio a concepto con tags trazables. Quedan las non-ejercicio del
+pool original (test, regla, concepto, nota) para audit definitivo en Paso 4.
 
 ## Fixes ya aplicados por el seeder
 
