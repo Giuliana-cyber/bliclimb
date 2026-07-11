@@ -4,7 +4,7 @@
 
 **Audiencia:** cualquier sesión de desarrollo que arranque sin contexto previo. Léelo antes de proponer trabajo.
 
-**Última actualización:** 2026-07-10 · Paso 2 del workstream del catálogo cerrado (canonicalización de `nivel` + `categoría` completa; próximo: Paso 3 `equipo`)
+**Última actualización:** 2026-07-11 · Paso 3 del workstream del catálogo cerrado. Toda la canonicalización de datos completa (Pasos 1-3). Próximo: Paso 4 (política de los 72 conceptos + mapping BlockedCategory → catálogo).
 
 ---
 
@@ -89,7 +89,7 @@ Resuelve las tres consecuencias de un tiro. Y hace estructuralmente imposible el
 |---|---|---|---|
 | `nivel` | 17 (eligible) / 34 (CSV) | 4 buckets limpios cubren ~70%; resto colapsa fácil | ✅ **CERRADO 2026-07-09** · migraciones `0015` (backfill 6 buckets: principiante/principiante-intermedio/intermedio/intermedio-avanzado/avanzado/todos) + `0016` (corrección non-ejercicio). Tags de trazabilidad `menor` (5 rows) + `rehab` (1 row). |
 | `categoria` | 69 (ejercicios eligible) / 71 (todos ejercicios) | ~15 buckets grandes + cola de duplicados semánticos + tensión estructural (mezcla estímulo + zona + propósito) | ✅ **CERRADO 2026-07-10** · migraciones `0017`-`0022` en 4 tandas de curación row-by-row. Split ortogonal en 3 dimensiones: `categoria_canonica` (15 buckets) + `proposito` (entrenamiento/prevencion/rehab) + `momento` (calentamiento/principal/enfriamiento). Reclasificados 25+21 rows a concepto con tags (`conversacional`, `criterios`, `programa-bloque`, `concepto-dominio`, `regla-catalogo`, `nutricion`, `monitoreo`). **264 de 264 ejercicios canonicalizados (100%)**. |
-| `equipo` | 99 | Prosa libre, pero **mapea a los 9 tokens del onboarding** | **Próximo (Paso 3).** Acotado: ~6h total. |
+| `equipo` | 142 (distintos en 264 ejercicios) | Prosa libre, mapea a los 9 tokens del onboarding | ✅ **CERRADO 2026-07-11** · migración `0023` · columna `equipo_canonico text[]` con CHECK que valida subset de los 9 tokens. **264 de 264 ejercicios canonicalizados (100%)**, distribuidos en 25 combinaciones únicas de tokens. Convenciones aplicadas: (i) "opcional" NO se incluye — solo lo requerido; (ii) regla de accesibilidad `pullup_bar > hangboard > campus` solo dentro del grupo anchor (no cross-dimensión); (iii) peso corporal sin equipo → `[home]` (nunca array vacío). Índice GIN para queries del motor. |
 
 *Vocabulario de equipo = los 9 del onboarding, ni más ni menos.* El onboarding captura `equipment: string[]` con 9 valores (`gym, hangboard, campus, weights, rock, home, bands, pullup_bar, trx`). Canonicalizar el catálogo a MENOS tokens tira información que el perfil ya distingue (un user con hangboard-sin-campus perdería ejercicios). Los 99 strings de prosa se **mapean** a subsets de esos 9, no agregan vocabulario. "Regleta + Force Gauge" → `[hangboard, weights]`.
 
@@ -99,9 +99,9 @@ Resuelve las tres consecuencias de un tiro. Y hace estructuralmente imposible el
 
 1. ✅ Canonicalizar `nivel` → enum (6 buckets), con backfill. **CERRADO 2026-07-09** (migraciones `0015`+`0016`).
 2. ✅ Canonicalizar `categoria` → vocabulario canónico 15 buckets + dimensiones `proposito` (3) + `momento` (3). **CERRADO 2026-07-10** (migraciones `0017`-`0022` en 4 tandas de curación editorial). Reclasificados 46 rows a concepto con tags trazables. 264 de 264 ejercicios canonicalizados (100%). Radar Paso 5 poblado con 19 rows tag `programa-bloque`.
-3. Canonicalizar `equipo` → mapear 99 strings a los 9 tokens del onboarding (~6h). **Próximo.**
-4. Mapping `BlockedCategory` → catálogo, con constraint estructural + curación de los 483 (~4-8h curación).
-5. Enum del motor: `FastExerciseSchema.name` → `z.enum(idsPermitidos)` filtrado por perfil + reglas (~1 día). Filtrar rows con tag `programa-bloque` del pool.
+3. ✅ Canonicalizar `equipo` → `equipo_canonico text[]` mapeado a los 9 tokens del onboarding. **CERRADO 2026-07-11** (migración `0023`). 264 de 264 ejercicios en 25 combinaciones únicas. Índice GIN para queries del motor. Convenciones: opcional excluido, accesibilidad solo anchors, peso corporal → `[home]`.
+4. **Próximo · Paso 4** — Ejecutar la política de los 72 conceptos (spec en `politica-paso4.md` pendiente de recibir) + mapping `BlockedCategory` → catálogo con constraint estructural. **Regla crítica**: cuando toque BORRAR reglas duplicadas por código, presentar lista con `file:line` de evidencia de cada duplicación en `lib/brain/rules/` antes de aplicar.
+5. Enum del motor: `FastExerciseSchema.name` → `z.enum(idsPermitidos)` filtrado por perfil + reglas (~1 día). Filtrar rows con tag `programa-bloque` del pool. **A partir de acá empieza código en runtime** — vuelve la verificación cruda estricta.
 6. Persistir `exerciseId` en `Exercise` + `mainBlock[]` (~0.5 día).
 7. Pantalla de sesión lee `howTo`/`cues`/`commonMistakes` de la tabla vía join (~0.5 día).
 8. Tests + validación end-to-end: gating, injury, equipment filters (~1 día).
