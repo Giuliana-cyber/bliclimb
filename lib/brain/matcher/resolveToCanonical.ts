@@ -72,22 +72,73 @@ function computeProfileTope(profile: MatcherInput['profile']): number {
 // emparentadas comparten el mismo estímulo neuromuscular general.
 
 const CATEGORY_SIBLINGS: Record<SuggestedCategory, SuggestedCategory[]> = {
-  'fuerza-dedos': ['fuerza-traccion', 'boulder'],
-  'fuerza-traccion': ['fuerza-dedos', 'boulder'],
+  // fuerza-traccion incluye resistencia-anaerobica porque power-endurance de
+  // tracción (4x4, laps sostenidos, PE circuits) vive ahí en el catálogo, no
+  // en fuerza-traccion. Sin este link, un Bill que pide "fuerza-traccion +
+  // power-endurance" cae en un match L1 con fuerza-traccion + strength
+  // (mismatch de estímulo). Bug reportado por Giuliana el 2026-07-13.
+  'fuerza-dedos': ['fuerza-traccion', 'boulder', 'resistencia-anaerobica'],
+  'fuerza-traccion': ['fuerza-dedos', 'boulder', 'resistencia-anaerobica'],
   'fuerza-empuje': ['core', 'fuerza-tren-inferior'],
   'fuerza-tren-inferior': ['fuerza-empuje', 'core'],
   potencia: ['campus', 'boulder', 'fuerza-traccion'],
   campus: ['potencia', 'boulder', 'fuerza-dedos'],
   'resistencia-aerobica': ['resistencia-anaerobica', 'boulder'],
-  'resistencia-anaerobica': ['resistencia-aerobica', 'potencia'],
+  'resistencia-anaerobica': ['resistencia-aerobica', 'potencia', 'boulder'],
   tecnica: ['boulder', 'movilidad'],
-  boulder: ['tecnica', 'fuerza-dedos', 'potencia'],
+  boulder: ['tecnica', 'fuerza-dedos', 'potencia', 'resistencia-anaerobica'],
   movilidad: ['hombros-escapulas', 'munecas-antebrazos', 'core'],
   core: ['fuerza-empuje', 'movilidad'],
   'hombros-escapulas': ['movilidad', 'munecas-antebrazos'],
   'munecas-antebrazos': ['movilidad', 'hombros-escapulas'],
   piel: ['movilidad']
 };
+
+// -------------------- Stimulus check (compatibilidad) --------------------
+//
+// El schema del plan (StimulusCategorySchema) tiene 10 valores. El backfill
+// del catálogo (stimulus_derivado) tiene solo 6 entrenables: strength, power,
+// power-endurance, aerobic-base, skill, mobility. Los otros 4 valores del
+// schema (warmup, cooldown, mental, rest) son META del rol de la sesión,
+// no un estímulo entrenable — no tienen equivalente en el catálogo.
+//
+// Cuando Bill emite un stimulus meta, el matcher no puede filtrar por él:
+// no hay filas del catálogo con stimulus_derivado='warmup'. Lo tratamos
+// como "cualquier stimulus_derivado sirve" (típicamente mobility para
+// warmup/cooldown).
+//
+// Cuando Bill emite un stimulus entrenable, el matcher DEBE respetarlo en
+// L1/L2 — sino entrega un ejercicio del estímulo equivocado y rompe la
+// periodización (bug detectado 2026-07-13: FT-1ARMNEG matcheó proposal
+// power-endurance porque L1 solo miraba categoría).
+
+const TRAINABLE_STIMULI: ReadonlySet<StimulusCategory> = new Set<StimulusCategory>([
+  'strength',
+  'power',
+  'power-endurance',
+  'aerobic-base',
+  'skill',
+  'mobility'
+]);
+
+/**
+ * Devuelve true si el stimulus de la propuesta es entrenable — o sea si
+ * corresponde exigir stimulus_derivado exacto en el filtro L1/L2. Los
+ * stimulus meta (warmup/cooldown/mental/rest) no se filtran.
+ */
+function requiresStimulusMatch(stimulus: StimulusCategory): boolean {
+  return TRAINABLE_STIMULI.has(stimulus);
+}
+
+/**
+ * Compatibilidad de una fila con el stimulus solicitado. Los stimulus meta
+ * pasan siempre (el matcher deja al ranking + momento la selección). Los
+ * entrenables exigen match exacto.
+ */
+function passesStimulus(row: CatalogRow, proposal: MatcherInput['proposal']): boolean {
+  if (!requiresStimulusMatch(proposal.stimulusCategory)) return true;
+  return row.stimulus_derivado === proposal.stimulusCategory;
+}
 
 // -------------------- Filtros de gate (los 6 huecos del checklist) --------------------
 
@@ -326,35 +377,49 @@ function compareCandidates(
 // -------------------- Filtros específicos por nivel --------------------
 
 /**
- * L1 — match exacto de categoría. Nivel dentro del tope. Todos los gate.
+ * L1 — match exacto de categoría + stimulus (si es entrenable). Nivel
+ * dentro del tope. Todos los gate.
+ *
+ * El filtro por stimulus se agregó el 2026-07-13 tras detectar que un
+ * proposal de "power-endurance" en fuerza-traccion aterrizaba en
+ * FT-1ARMNEG (fuerza-traccion + strength). Sin match de stimulus, L1
+ * podía entregar cualquier fila de la categoría solicitada aunque
+ * rompiera la periodización del plan.
  */
 function filterL1(pool: CatalogRow[], input: MatcherInput, profileTope: number): CatalogRow[] {
   return pool.filter((row) => {
     if (!passesGateAndEquipment(row, input, input.proposal.momento)) return false;
     if (row.categoria_canonica !== input.proposal.suggestedCategory) return false;
+    if (!passesStimulus(row, input.proposal)) return false;
     const dist = nivelDistance(row.nivel_canonico, profileTope);
     return dist !== null;
   });
 }
 
 /**
- * L2 — misma categoría, nivel adyacente inferior (o más bajo). Todos los gate.
- * Idempotente respecto de L1 (si L1 tenía algo, L2 lo tiene también). Se
- * llama sólo cuando L1 devuelve vacío.
+ * L2 — misma categoría + stimulus compatible, nivel adyacente inferior (o
+ * más bajo). Todos los gate. Se llama sólo cuando L1 devuelve vacío.
  */
 function filterL2(pool: CatalogRow[], input: MatcherInput, profileTope: number): CatalogRow[] {
   return pool.filter((row) => {
     if (!passesGateAndEquipment(row, input, input.proposal.momento)) return false;
     if (row.categoria_canonica !== input.proposal.suggestedCategory) return false;
+    if (!passesStimulus(row, input.proposal)) return false;
     const dist = nivelDistance(row.nivel_canonico, profileTope);
     if (dist === null) return false;
-    // L2 acepta cualquier nivel dentro del tope, incluidos los más bajos.
     return true;
   });
 }
 
 /**
  * L3 — categorías emparentadas por stimulus. Todos los gate.
+ *
+ * L3 relaja la categoría a los siblings del CATEGORY_SIBLINGS, pero
+ * mantiene el mismo filtro de stimulus que L1/L2 (si Bill pidió un
+ * entrenable, el resultado debe tener ese stimulus_derivado). Esto es
+ * lo que fuerza a "fuerza-traccion + power-endurance" → resistencia-
+ * anaerobica + power-endurance en vez de FT-1ARMNEG + strength.
+ * (Bug 2026-07-13).
  */
 function filterL3(pool: CatalogRow[], input: MatcherInput, profileTope: number): CatalogRow[] {
   const siblings = CATEGORY_SIBLINGS[input.proposal.suggestedCategory] ?? [];
@@ -362,6 +427,7 @@ function filterL3(pool: CatalogRow[], input: MatcherInput, profileTope: number):
   return pool.filter((row) => {
     if (!passesGateAndEquipment(row, input, input.proposal.momento)) return false;
     if (!row.categoria_canonica || !allowed.has(row.categoria_canonica)) return false;
+    if (!passesStimulus(row, input.proposal)) return false;
     const dist = nivelDistance(row.nivel_canonico, profileTope);
     return dist !== null;
   });
@@ -441,8 +507,11 @@ function buildHintForLLM(input: MatcherInput): string {
 export const _internals = {
   NIVEL_ORDER,
   CATEGORY_SIBLINGS,
+  TRAINABLE_STIMULI,
   computeProfileTope,
   nivelDistance,
+  requiresStimulusMatch,
+  passesStimulus,
   passesA1,
   passesA2,
   passesB1,

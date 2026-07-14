@@ -560,7 +560,11 @@ describe('B.2 · Deuda #11 proposito=rehab · excluir salvo lesión declarada', 
     const restrictedPool = [POOL.find((r) => r.id === 'RH-004')!];
     const result = resolveToCanonical(
       makeInput({
-        proposal: { name: 'Recovery', suggestedCategory: 'fuerza-dedos', stimulusCategory: 'strength', momento: 'principal' },
+        // stimulusCategory='mobility' porque RH-004 es rehab con
+        // stimulus_derivado='mobility'. Post-fix 2026-07-13: L1/L2 exigen
+        // stimulus match si es entrenable — un LLM sensato pediría mobility
+        // para un ejercicio de recuperación, no strength.
+        proposal: { name: 'Recovery', suggestedCategory: 'fuerza-dedos', stimulusCategory: 'mobility', momento: 'principal' },
         profile: makeProfile({ injuries: ['fingers'] }),
         // gripRestriction desactivada acá deliberadamente para aislar B.2
         brainContext: makeBrainContext()
@@ -637,6 +641,125 @@ describe('C.1 · Deuda #12 prerequisito:15-pullups · conservador con maxPullupR
     expect(result.kind).toBe('resolved');
     if (result.kind === 'resolved') {
       expect(result.row.id).toBe('FT-006');
+    }
+  });
+});
+
+// ============================================================================
+// Regresión reportada 2026-07-13: proposal con stimulus entrenable pedía un
+// stimulus que la categoría no tenía, y el matcher entregaba L1 con el otro
+// stimulus. Ejemplo real: proposal fuerza-traccion + power-endurance →
+// matcher entregaba FT-1ARMNEG (fuerza-traccion + strength). Fix: L1/L2
+// exigen stimulus_derivado exacto si es entrenable; falta de match cae a L3
+// (categoría emparentada por stimulus).
+// ============================================================================
+
+describe('Regresión · stimulus entrenable exige match exacto en L1/L2', () => {
+  it('proposal fuerza-traccion + power-endurance NO entrega FT-1ARMNEG (strength)', () => {
+    const pool = [
+      makeRow({
+        id: 'FT-1ARMNEG',
+        nombre: 'One-arm Chin-up Negatives',
+        categoria_canonica: 'fuerza-traccion',
+        nivel_canonico: 'avanzado',
+        stimulus_derivado: 'strength',
+        equipo_canonico: ['pullup_bar']
+      }),
+      makeRow({
+        id: 'PE-1ON1',
+        nombre: '1-on-1-off Active',
+        categoria_canonica: 'resistencia-anaerobica',
+        nivel_canonico: 'intermedio-avanzado',
+        stimulus_derivado: 'power-endurance',
+        equipo_canonico: ['gym']
+      })
+    ];
+    const result = resolveToCanonical(
+      makeInput({
+        proposal: {
+          name: 'Circuito de bloques de resistencia',
+          suggestedCategory: 'fuerza-traccion',
+          stimulusCategory: 'power-endurance',
+          momento: 'principal'
+        }
+      }),
+      pool
+    );
+    expect(result.kind).toBe('resolved');
+    if (result.kind === 'resolved') {
+      // No debe entregar FT-1ARMNEG (strength). Debe caer a L3
+      // (resistencia-anaerobica es sibling de fuerza-traccion) y entregar
+      // PE-1ON1 que sí es power-endurance.
+      expect(result.row.id).not.toBe('FT-1ARMNEG');
+      expect(result.row.stimulus_derivado).toBe('power-endurance');
+      expect(result.level).toBe('L3');
+    }
+  });
+
+  it('proposal fuerza-traccion + strength SÍ entrega FT-1ARMNEG (match legítimo)', () => {
+    // Sanity: sin el mismatch, FT-1ARMNEG es un match perfecto. El fix no
+    // rompe casos legítimos.
+    const pool = [
+      makeRow({
+        id: 'FT-1ARMNEG',
+        nombre: 'One-arm Chin-up Negatives',
+        categoria_canonica: 'fuerza-traccion',
+        nivel_canonico: 'avanzado',
+        stimulus_derivado: 'strength',
+        equipo_canonico: ['pullup_bar']
+      })
+    ];
+    const result = resolveToCanonical(
+      makeInput({
+        proposal: {
+          name: 'One-arm negatives',
+          suggestedCategory: 'fuerza-traccion',
+          stimulusCategory: 'strength',
+          momento: 'principal'
+        }
+      }),
+      pool
+    );
+    expect(result.kind).toBe('resolved');
+    if (result.kind === 'resolved') {
+      expect(result.row.id).toBe('FT-1ARMNEG');
+      expect(result.level).toBe('L1');
+    }
+  });
+
+  it('proposal stimulus meta (warmup) NO exige stimulus match — entrega cualquier fila válida por categoría', () => {
+    // Bill emite stimulus='warmup' para un ejercicio del bloque warmup. El
+    // catálogo no tiene stimulus_derivado='warmup' (solo los 6 entrenables).
+    // El matcher no debe rechazar por stimulus mismatch — entrega el
+    // ejercicio de mobility/skill que mejor calce.
+    const pool = [
+      makeRow({
+        id: 'MO-WARMUP',
+        nombre: 'Movilidad de calentamiento',
+        categoria_canonica: 'movilidad',
+        momento: 'calentamiento',
+        nivel_canonico: 'todos',
+        stimulus_derivado: 'mobility',
+        equipo_canonico: ['home']
+      })
+    ];
+    const result = resolveToCanonical(
+      makeInput({
+        proposal: {
+          name: 'Warmup general',
+          suggestedCategory: 'movilidad',
+          stimulusCategory: 'warmup',
+          momento: 'calentamiento'
+        }
+      }),
+      pool
+    );
+    expect(result.kind).toBe('resolved');
+    if (result.kind === 'resolved') {
+      expect(result.row.id).toBe('MO-WARMUP');
+      // Sí es "mismatch" técnico (mobility vs warmup) pero el
+      // stimulusMismatch counter del route.ts lo excluye porque warmup no
+      // es entrenable — se cuenta como comportamiento correcto.
     }
   });
 });

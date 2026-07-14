@@ -228,18 +228,19 @@ Estos tres arrays son LA DIFERENCIA entre un plan útil y uno que solo lista nom
 
 Para CADA EJERCICIO también:
 - riskLevel (enum obligatorio): "bajo" (movilidad, técnica sin carga), "medio" (fuerza submáx, dominadas normales) o "alto" (max hangs, campus, dinámicos, ejercicios con lastre pesado).
-- stimulusCategory (enum obligatorio) — categoría dominante DEL EJERCICIO individual (mismo enum de 10 que la sesión):
-    "warmup" para movilidad articular, activación (jumping jacks, band pull-aparts),
-    "skill" para drills técnicos (silent feet, twist locks, quiet feet),
-    "strength" para fuerza máxima de dedos y tracción (hangboard max hangs, dominadas con lastre pesado, front lever),
-    "power" para explosividad (campus, dinámicos, boulder máximo),
-    "power-endurance" para circuitos con recuperación incompleta (4x4, boulders repetidos, hangboard repeaters),
-    "aerobic-base" para ARC / Aero Cap (escalada continua baja intensidad, traverse largo),
-    "mobility" para estiramiento activo, PNF, extensor loading (band extensors),
-    "mental" para visualización, rutina pre-escalada, respiración,
-    "cooldown" para vuelta a la calma (foam rolling, estiramiento pasivo),
-    "rest" para pausa activa entre bloques (caminar, hidratar).
-Sé preciso — un Hangboard MaxHangs es "strength", no "warmup" ni "power". Un drill de silent feet es "skill", no "mobility". Bandas de extensores es "mobility" (o "warmup" si es de activación previa), no "strength".
+- stimulusCategory (enum obligatorio) — categoría dominante DEL EJERCICIO individual (mismo enum de 10 que la sesión).
+
+  IMPORTANTE: para ejercicios individuales elegí SOLO uno de los 6 valores ENTRENABLES. Los 4 valores restantes (warmup, cooldown, mental, rest) describen el ROL de la SESIÓN COMPLETA, no un estímulo neuromuscular — no los uses en ejercicios individuales aunque el ejercicio caiga en el bloque warmup/cooldown de la sesión (esa ubicación ya la determina el array donde lo pongas).
+
+  Los 6 valores entrenables para stimulusCategory de EJERCICIO:
+    "skill" — drills técnicos, aprendizaje motor (silent feet, twist locks, quiet feet, drills de precisión).
+    "strength" — fuerza máxima (hangboard max hangs, dominadas con lastre pesado, front lever, block pulls).
+    "power" — explosividad neural máxima (campus, dinámicos, boulder máximo, contact strength).
+    "power-endurance" — circuitos con recuperación incompleta (4x4, boulders repetidos, hangboard repeaters densos, laps sostenidos).
+    "aerobic-base" — ARC / Aero Cap / capilarización (escalada continua baja intensidad, traverse largo, repeaters muy suaves).
+    "mobility" — movilidad activa, PNF, extensor loading, activación articular. También los ejercicios del bloque warmup (band pull-aparts, jumping jacks, movilidad de columna) y del bloque cooldown (foam rolling, estiramiento pasivo) van con stimulusCategory="mobility" — el hecho de que sean de activación o de calma NO los convierte en un estímulo aparte.
+
+  Sé preciso — un Hangboard MaxHangs es "strength", no "warmup" ni "power". Un drill de silent feet es "skill", no "mobility". Un band pull-apart en el warmup es "mobility" (no "warmup" — warmup es el bloque, mobility el estímulo). Un foam roll en el cooldown es "mobility" (no "cooldown"). Circuito 4x4 es "power-endurance", no "aerobic-base". Todo boulder límite es "power", no "strength".
 - blockCategory (enum obligatorio, o null si no aplica) — categoría GATEABLE del ejercicio. Etiqueta HONESTAMENTE cuál de estas categorías corresponde al ejercicio; el middleware cruza esta etiqueta contra las prohibiciones del perfil del atleta. Categorías:
     "hangboard" — cualquier ejercicio en tabla/hangboard/fingerboard (max hangs, dead hangs, repeaters, tension boards con dedos, mini-edge protocols).
     "hangboard-intense" — SOLO si el hangboard es específicamente intenso: MaxHangs con lastre, IntHangs, protocolo de repeaters de alta densidad. En caso de duda entre hangboard y hangboard-intense, elegí "hangboard".
@@ -480,14 +481,29 @@ async function resolveWeekExercises(
         // si el matcher entrega una fila cuyo stimulus_derivado no coincide
         // con el que Bill emitió, el schema del plan mantiene la etiqueta
         // del LLM pero el ejercicio real es de otro estímulo. Es interacción
-        // silenciosa con §3.4/§3.9. Contamos y muestreamos para logs.
+        // silenciosa con §3.4/§3.9.
+        //
+        // IMPORTANTE (fix 2026-07-13): los stimulus meta del schema del plan
+        // (warmup, cooldown, mental, rest) NO tienen equivalente en el
+        // catálogo (stimulus_derivado solo cubre los 6 entrenables). Bill
+        // emite warmup para exercises de warmup — el matcher entrega
+        // mobility (u otro entrenable) y eso es correcto por diseño, no
+        // mismatch. Los excluimos del contador para evitar falso positivo.
         const rowStim = result.row.stimulus_derivado;
-        if (rowStim && rowStim !== fast.stimulusCategory) {
+        const proposedStim = fast.stimulusCategory;
+        const proposedIsTrainable =
+          proposedStim === 'strength' ||
+          proposedStim === 'power' ||
+          proposedStim === 'power-endurance' ||
+          proposedStim === 'aerobic-base' ||
+          proposedStim === 'skill' ||
+          proposedStim === 'mobility';
+        if (proposedIsTrainable && rowStim && rowStim !== proposedStim) {
           summary.stimulusMismatches++;
           if (summary.stimulusMismatchSample.length < 10) {
             summary.stimulusMismatchSample.push({
               exercise: fast.name,
-              proposedStimulus: fast.stimulusCategory,
+              proposedStimulus: proposedStim,
               matchedStimulus: rowStim,
               canonicalId: result.row.id,
               level: result.level
