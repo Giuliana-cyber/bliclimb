@@ -366,6 +366,22 @@ interface MatcherResolutionSummary {
     canonicalName?: string;
     hint?: string;
   }>;
+  /**
+   * Cuando el matcher entrega una fila cuyo `stimulus_derivado` NO coincide
+   * con el `stimulusCategory` que Bill emitió, es un cambio de estímulo
+   * inducido por el fallback. Importante para diagnosticar interacciones
+   * con §3.1/§3.4/§3.9 — si Bill pidió strength y el matcher entregó una
+   * fila de power-endurance, el schema del plan todavía dice "strength"
+   * pero el usuario ejecuta PE.
+   */
+  stimulusMismatches: number;
+  stimulusMismatchSample: Array<{
+    exercise: string;
+    proposedStimulus: string;
+    matchedStimulus: string;
+    canonicalId: string;
+    level: string;
+  }>;
 }
 
 function makeMatcherProfile(
@@ -460,6 +476,24 @@ async function resolveWeekExercises(
       );
       if (result.kind === 'resolved') {
         summary.byLevel[result.level] = (summary.byLevel[result.level] ?? 0) + 1;
+        // Diagnóstico de mismatch de stimulus (2026-07-13 · pedido Giuliana):
+        // si el matcher entrega una fila cuyo stimulus_derivado no coincide
+        // con el que Bill emitió, el schema del plan mantiene la etiqueta
+        // del LLM pero el ejercicio real es de otro estímulo. Es interacción
+        // silenciosa con §3.4/§3.9. Contamos y muestreamos para logs.
+        const rowStim = result.row.stimulus_derivado;
+        if (rowStim && rowStim !== fast.stimulusCategory) {
+          summary.stimulusMismatches++;
+          if (summary.stimulusMismatchSample.length < 10) {
+            summary.stimulusMismatchSample.push({
+              exercise: fast.name,
+              proposedStimulus: fast.stimulusCategory,
+              matchedStimulus: rowStim,
+              canonicalId: result.row.id,
+              level: result.level
+            });
+          }
+        }
         if (summary.sampleTrace.length < 5) {
           summary.sampleTrace.push({
             proposal: fast.name,
@@ -503,7 +537,9 @@ function makeMatcherSummary(): MatcherResolutionSummary {
     byLevel: { L1: 0, L2: 0, L3: 0, L5: 0 },
     rejected: 0,
     rejectedHints: [],
-    sampleTrace: []
+    sampleTrace: [],
+    stimulusMismatches: 0,
+    stimulusMismatchSample: []
   };
 }
 
@@ -521,6 +557,18 @@ function matcherLogSummary(
   matcherPool: CatalogRow[],
   summary: MatcherResolutionSummary
 ) {
+  // Top-N hints únicos de rechazo con conteo (2026-07-13 · pedido Giuliana).
+  // Sin dedupe manual el mismo hint aparece N veces por retry — pedimos los
+  // hints, no las apariciones individuales. Top 5 alcanza para diagnóstico.
+  const hintCounts = new Map<string, number>();
+  for (const h of summary.rejectedHints) {
+    hintCounts.set(h, (hintCounts.get(h) ?? 0) + 1);
+  }
+  const topHints = Array.from(hintCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([hint, count]) => ({ hint, count }));
+
   return {
     poolLoaded: matcherPool.length,
     totalCalls: summary.totalCalls,
@@ -529,7 +577,17 @@ function matcherLogSummary(
     // Ratio explícito para monitoreo. Si sube sistemáticamente sobre 0.05
     // (5%) el catálogo tiene huecos para algún perfil frecuente.
     rejectRatio:
-      summary.totalCalls > 0 ? summary.rejected / summary.totalCalls : 0
+      summary.totalCalls > 0 ? summary.rejected / summary.totalCalls : 0,
+    // Top-5 hints únicos que el LLM debería reproponer para evitar. Diagnóstico
+    // primario: si el mismo hint aparece 10+ veces, el catálogo tiene un
+    // hueco real para ese perfil.
+    rejectedHintsTop: topHints,
+    // Interacción matcher × validator: si el matcher cambia el stimulus,
+    // hay riesgo de que §3.1/§3.4/§3.9 se dispare por el ejercicio real
+    // aunque el schema del plan diga otro estímulo. Este contador expone
+    // la interacción.
+    stimulusMismatches: summary.stimulusMismatches,
+    stimulusMismatchSample: summary.stimulusMismatchSample
   };
 }
 
@@ -1379,6 +1437,7 @@ export async function POST(request: Request) {
             location: v.location
           })),
           legacyViolations: safety.ok ? [] : safety.violations.map((v) => ({ rule: v.rule, reason: v.reason })),
+          planWeeks: fastWeeks.length,
           matcher: matcherLogSummary(matcherPool, matcherSummary),
           timestamp: new Date().toISOString()
         })
@@ -1396,6 +1455,7 @@ export async function POST(request: Request) {
             ...countViolationsByRule(brainEval.blocking),
             ...countViolationsByRule(safety.ok ? [] : safety.violations)
           },
+          planWeeks: fastWeeks.length,
           matcher: matcherLogSummary(matcherPool, matcherSummary),
           timestamp: new Date().toISOString()
         })
@@ -1473,6 +1533,7 @@ export async function POST(request: Request) {
         attempts: attempt,
         outcome: 'success',
         rulesFinal: {}, // vacío por definición si llegamos acá.
+        planWeeks: fastWeeks.length,
         matcher: matcherLogSummary(matcherPool, matcherSummary),
         timestamp: new Date().toISOString()
       })
