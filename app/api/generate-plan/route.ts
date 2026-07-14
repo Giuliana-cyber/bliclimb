@@ -44,6 +44,13 @@ import { profileToPrompt } from './profile-to-prompt';
 // Opción 6 audit-360 (fix bug #2): post-procesador determinístico +
 // helper de conteo para el log agregado plan_violations_summary.
 import { postProcessWeek, countViolationsByRule } from '@/lib/ai/plan-post-process';
+import { resolveToCanonical } from '@/lib/brain/matcher/resolveToCanonical';
+import {
+  supabasePoolLoader,
+  inMemoryPoolLoader
+} from '@/lib/brain/matcher/pool-loader';
+import type { CatalogRow, MatcherInput } from '@/lib/brain/matcher/types';
+import { createAdminClient } from '@/lib/supabase/admin';
 // Audit-360 · rediseño lesión (07/07/2026): fuente única de dolor para §1.3.
 import {
   deriveElbowPain,
@@ -214,11 +221,29 @@ Sé preciso — un Hangboard MaxHangs es "strength", no "warmup" ni "power". Un 
     "campus" — cualquier ejercicio en campus board (ladders, lock-offs, doubles, todas las variantes).
     "full-crimp" — ejercicios que EXIGEN posición de full crimp (arqueo completo con pulgar sobre el índice). Regletas <15mm con arqueo obligatorio caen acá. Si el ejercicio admite half crimp u open, NO es "full-crimp".
     "hit" — ejercicios del protocolo HIT (High Intensity Training para dedos, específicamente FM-014 y variantes).
-    "pullups-weighted" — dominadas con lastre externo pesado (>0kg extra) o 1RM de dominada.
+    "pullups-weighted" — dominadas con lastre externo pesado (>0kg extra) o 1RM de dominada. También cubre lock-offs, one-arm negatives y Frenchies (tracción cargada por biomecánica).
     "max-tests" — cualquier test de máximos: MIFS, Critical Force, dead hang hasta fallo, isometric pull-up force, RFD tests.
     "finger-training-any" — otros ejercicios de carga directa de dedos que no caen en las anteriores (ej: tension pinch, pinch blocks, no-hang lifts).
+    "power-max" — potencia máxima con contact strength: dead-stops, dinámicos máximos, power pull-ups explosivos. Alta carga explosiva en dedos/codo/hombro.
     null — si el ejercicio NO cae en ninguna categoría gateable (silent feet drill, foam roll, ARC de escalada continua, warmup articular, respiración, yoga). La MAYORÍA de ejercicios de un plan serán null; solo etiqueta con enum si el ejercicio encaja claramente en una categoría.
-Etiquetá honestamente aunque el ejercicio esté en la lista de PROHIBIDOS del perfil — el middleware necesita saber para regenerar.`;
+Etiquetá honestamente aunque el ejercicio esté en la lista de PROHIBIDOS del perfil — el middleware necesita saber para regenerar.
+- suggestedCategory (enum obligatorio, SIN null) — categoría CANÓNICA del catálogo curado. Elegí UNA de los 15 buckets. Este campo es lo que usa el matcher post-hoc para mapear tu ejercicio a una fila real del catálogo curado con howTo/cues/mistakes reales. Buckets:
+    "fuerza-dedos" — hangboard, MaxHangs, IntHangs, repeaters, finger curls, block pulls, cualquier carga aislada de flexores de dedos.
+    "fuerza-traccion" — dominadas normales, con lastre, remos, lock-offs, one-arm negatives, Frenchies, front lever, dominadas asimétricas.
+    "fuerza-empuje" — press de banca, press militar, push-ups. Antagonistas del trap de tirón.
+    "fuerza-tren-inferior" — sentadillas, peso muerto, split squats, step-ups. Base general.
+    "potencia" — dinámicos, dead-stop, power pull-up, hip drive, clap dinos, paddle dyno, movimientos explosivos con contacto.
+    "campus" — cualquier ejercicio en campus board (ladders, doubles, lock-offs, drop-downs).
+    "resistencia-aerobica" — ARC, Aero Cap, escalada continua, boulder largo, capilarización, 10 on/10 off.
+    "resistencia-anaerobica" — 4x4, laps sostenidos, PE circuits, pause drills, resistencia con recuperación incompleta.
+    "tecnica" — silent feet, twist locks, quiet feet, precisión, drills de coordinación.
+    "boulder" — boulder de estilo, exploración, spray wall, board climbing, sesiones libres.
+    "movilidad" — estiramientos, foam roll, PNF, movilidad articular sin foco anatómico específico.
+    "core" — plancha, hollow body, dragon flag, dead bug, anti-rotación.
+    "hombros-escapulas" — pull-aparts, activación escapular, prevención de hombro, movilidad glenohumeral.
+    "munecas-antebrazos" — extensores, wrist curls, band pull-aparts para epicondilitis, movilidad de muñeca.
+    "piel" — cuidado, rutinas de piel para escaladores. Baja carga.
+Regla: elegí el bucket que MEJOR describa el ejercicio. Si es hangboard con dedos → fuerza-dedos. Si es dominada → fuerza-traccion. Si es dyno → potencia. Si es campus → campus. Precisión: un finger curl es "fuerza-dedos" aunque parezca "movilidad".`;
 
 const SCHEMA_FIELD_NAMES = new Set([
   'safetyNotes',
@@ -282,6 +307,162 @@ function toExercise(fast: FastExercise): Exercise {
     sourceConcept: null,
     alternative: fast.alternative,
     equipment: fast.equipment
+  };
+}
+
+// -------------------- Paso 5 · Matcher híbrido (resolveToCanonical) --------------------
+//
+// Aplica el matcher post-hoc sobre cada exercise del plan generado. El
+// matcher es la ÚNICA vía al catálogo curado — todo ejercicio que llega
+// al usuario pasa por acá.
+//
+// Estrategia:
+//   1. Cargamos el pool UNA vez por request (in-memory cache) para no
+//      pagar N*RTT contra Supabase por plan.
+//   2. Para cada exercise generado por el LLM, llamamos resolveToCanonical
+//      con la propuesta y el BrainContext.
+//   3. Si resuelve → sustituimos name/description/howTo/cues/mistakes por
+//      los del catálogo, preservando sets/reps/rest del LLM (esos son
+//      criterio de programación, no del catálogo).
+//   4. Si rechaza → mantenemos el ejercicio del LLM y logueamos.
+//      El siguiente ciclo de retry le da al LLM el hint para reproponer.
+
+interface MatcherResolutionSummary {
+  totalCalls: number;
+  byLevel: Record<string, number>;
+  rejected: number;
+  rejectedHints: string[];
+  sampleTrace: Array<{
+    proposal: string;
+    suggestedCategory: string;
+    result: 'resolved' | 'rejected';
+    level?: string;
+    canonicalId?: string;
+    canonicalName?: string;
+    hint?: string;
+  }>;
+}
+
+function makeMatcherProfile(
+  profile: UserProfile,
+  profileForRules: ProfileForRules
+): MatcherInput['profile'] {
+  return {
+    ...profileForRules,
+    equipment: profile.equipment ?? [],
+    maxPullupReps:
+      (profile as unknown as { maxPullupReps?: number | null }).maxPullupReps ?? null
+  };
+}
+
+function bucketToMomento(
+  bucket: 'warmup' | 'mainBlock' | 'cooldown'
+): 'calentamiento' | 'principal' | 'enfriamiento' {
+  if (bucket === 'warmup') return 'calentamiento';
+  if (bucket === 'cooldown') return 'enfriamiento';
+  return 'principal';
+}
+
+function mergeExerciseWithCanonical(
+  fast: FastExercise,
+  row: CatalogRow
+): FastExercise {
+  // Sustituimos name/description/howTo/cues/commonMistakes por los del catálogo
+  // curado. Preservamos sets/reps/rest/intensity/notes del LLM (criterio de
+  // programación individualizado) y stimulusCategory/blockCategory/riskLevel
+  // (etiquetas del LLM que ya validó el schema).
+  const catHowTo = (row.descripcion ?? '').split(/\n|\.\s/).map((s) => s.trim()).filter(Boolean);
+  const cues = row.cues
+    ? row.cues.split(/\n|;/).map((s) => s.trim()).filter(Boolean)
+    : fast.cues;
+  const commonMistakes = row.errores_comunes
+    ? row.errores_comunes.split(/\n|;/).map((s) => s.trim()).filter(Boolean)
+    : fast.commonMistakes;
+  return {
+    ...fast,
+    name: row.nombre,
+    description: row.descripcion ?? fast.description,
+    howTo: catHowTo.length > 0 ? catHowTo : fast.howTo,
+    cues,
+    commonMistakes,
+    equipment: row.equipo ?? fast.equipment
+  };
+}
+
+async function resolveWeekExercises(
+  week: FastWeek,
+  matcherProfile: MatcherInput['profile'],
+  brainContext: ReturnType<typeof evaluateProfile>,
+  pool: CatalogRow[],
+  summary: MatcherResolutionSummary
+): Promise<FastWeek> {
+  const resolveBucket = <T extends FastExercise>(
+    exercises: T[],
+    bucket: 'warmup' | 'mainBlock' | 'cooldown'
+  ): T[] => {
+    const momento = bucketToMomento(bucket);
+    return exercises.map((fast) => {
+      summary.totalCalls++;
+      const result = resolveToCanonical(
+        {
+          proposal: {
+            name: fast.name,
+            suggestedCategory: fast.suggestedCategory,
+            stimulusCategory: fast.stimulusCategory,
+            momento,
+            description: fast.description
+          },
+          profile: matcherProfile,
+          brainContext
+        },
+        pool
+      );
+      if (result.kind === 'resolved') {
+        summary.byLevel[result.level] = (summary.byLevel[result.level] ?? 0) + 1;
+        if (summary.sampleTrace.length < 5) {
+          summary.sampleTrace.push({
+            proposal: fast.name,
+            suggestedCategory: fast.suggestedCategory,
+            result: 'resolved',
+            level: result.level,
+            canonicalId: result.row.id,
+            canonicalName: result.row.nombre
+          });
+        }
+        return mergeExerciseWithCanonical(fast, result.row) as T;
+      }
+      summary.rejected++;
+      summary.rejectedHints.push(result.hintForLLM);
+      if (summary.sampleTrace.length < 5) {
+        summary.sampleTrace.push({
+          proposal: fast.name,
+          suggestedCategory: fast.suggestedCategory,
+          result: 'rejected',
+          hint: result.hintForLLM
+        });
+      }
+      return fast; // preserva el original hasta que retry mejore la propuesta
+    });
+  };
+
+  return {
+    ...week,
+    sessions: week.sessions.map((session) => ({
+      ...session,
+      warmup: resolveBucket(session.warmup, 'warmup'),
+      mainBlock: resolveBucket(session.mainBlock, 'mainBlock'),
+      cooldown: resolveBucket(session.cooldown, 'cooldown')
+    }))
+  };
+}
+
+function makeMatcherSummary(): MatcherResolutionSummary {
+  return {
+    totalCalls: 0,
+    byLevel: { L1: 0, L2: 0, L3: 0, L5: 0 },
+    rejected: 0,
+    rejectedHints: [],
+    sampleTrace: []
   };
 }
 
@@ -957,6 +1138,30 @@ export async function POST(request: Request) {
         )
       )
     );
+    // Paso 5 · Matcher híbrido — carga del pool única por request.
+    //
+    // El pool queda cacheado in-memory por toda la duración del request; el
+    // matcher hace ~200-250 llamadas y cada una filtra el mismo array.
+    let matcherPool: CatalogRow[] = [];
+    try {
+      const adminSupabase = createAdminClient();
+      matcherPool = await supabasePoolLoader(adminSupabase).loadPool();
+    } catch (poolErr) {
+      // Si el pool no carga, el motor puede seguir funcionando en modo legacy
+      // (LLM-only sin resolución al catálogo). Es un degrade explícito, no
+      // silencioso — se loguea para observabilidad.
+      console.log(
+        JSON.stringify({
+          kind: 'plan_matcher_pool_load_failed',
+          profileId: profile.id ?? null,
+          error: poolErr instanceof Error ? poolErr.message : 'unknown',
+          timestamp: new Date().toISOString()
+        })
+      );
+    }
+    const matcherProfile = makeMatcherProfile(profile, profileForRules);
+    const matcherSummary = makeMatcherSummary();
+
     // Post-procesador · Opción 6 audit-360 (fix bug #2):
     //   §3.1 reorderMainBlockBySafety + §14.2 ensureExtensorWork.
     //   §3.6 ya está garantizada por WarmupStimulusSchema/CooldownStimulusSchema
@@ -965,6 +1170,17 @@ export async function POST(request: Request) {
     fastWeeks = fastWeeks.map((w) =>
       postProcessWeek(w, { injuries: profile.injuries ?? [] })
     );
+
+    // Paso 5 · Aplicar el matcher post-hoc a cada exercise generado.
+    // Solo si el pool cargó — degrade silencioso a modo legacy si no.
+    if (matcherPool.length > 0) {
+      fastWeeks = await Promise.all(
+        fastWeeks.map((w) =>
+          resolveWeekExercises(w, matcherProfile, brainContext, matcherPool, matcherSummary)
+        )
+      );
+    }
+
     let plan = buildPlan(metadata, fastWeeks, profile, traceability);
 
     // Validación de seguridad — dos capas coexisten (deuda registrada):
@@ -1068,6 +1284,15 @@ export async function POST(request: Request) {
       fastWeeks = regenerated.map((w) =>
         postProcessWeek(w, { injuries: profile.injuries ?? [] })
       );
+      // Paso 5 · Re-aplicar el matcher tras retry — cualquier exercise nuevo
+      // debe pasar por el mismo gating antes de llegar al usuario.
+      if (matcherPool.length > 0) {
+        fastWeeks = await Promise.all(
+          fastWeeks.map((w) =>
+            resolveWeekExercises(w, matcherProfile, brainContext, matcherPool, matcherSummary)
+          )
+        );
+      }
       plan = buildPlan(metadata, fastWeeks, profile, traceability);
       brainEval = evaluateGeneratedPlan(toPlanForRules(plan), profileForRules);
       safety = validatePlanSafety(plan, profile);
@@ -1179,6 +1404,19 @@ export async function POST(request: Request) {
         attempts: attempt,
         outcome: 'success',
         rulesFinal: {}, // vacío por definición si llegamos acá.
+        matcher: {
+          poolLoaded: matcherPool.length,
+          totalCalls: matcherSummary.totalCalls,
+          byLevel: matcherSummary.byLevel,
+          rejected: matcherSummary.rejected,
+          // Ratio explícito para monitoreo — Giuliana pidió instrumentarlo.
+          // Si sube sistemáticamente sobre 0.05 (5%) → el catálogo tiene
+          // huecos para algún perfil frecuente y hay que investigar.
+          rejectRatio:
+            matcherSummary.totalCalls > 0
+              ? matcherSummary.rejected / matcherSummary.totalCalls
+              : 0
+        },
         timestamp: new Date().toISOString()
       })
     );

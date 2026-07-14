@@ -1,6 +1,17 @@
 # Checklist de aceptación · Paso 5 del workstream del catálogo
 
-**Propósito:** este documento consolida en un solo lugar los huecos que Paso 5
+**Estado 2026-07-13 (post-implementación Paso 5):** 5 de 6 huecos cerrados operativamente en el matcher (`lib/brain/matcher/resolveToCanonical.ts`). Ver reporte con evidencia cruda en `docs/brain/paso5-implementacion-reporte.md`.
+
+| Hueco | Estado post-Paso 5 | Cierre |
+|---|---|---|
+| **A.1** zone→ID | ✅ Cerrado en matcher | `passesA1` @ `resolveToCanonical.ts:88-97` |
+| **A.2** grip→prompt | ✅ Cerrado en matcher | `passesA2` @ `resolveToCanonical.ts:101-104` |
+| **A.3** §3.freq-dedos | ⏳ Pendiente Paso 6 | Requiere `exerciseId` persistido |
+| **B.1** power-max | ✅ Cerrado (enum + matcher) | Enum extendido + `passesB1` + tag aplicado |
+| **B.2** rehab filter | ✅ Cerrado en matcher | `passesB2` @ `resolveToCanonical.ts:117-125` |
+| **C.1** §2.4 pullup prereq | 🟡 Fallback conservador · pendiente producto | `passesC1` OK con `maxPullupReps=null`; falta el campo en `ProfileForRules` (decisión editorial de Giuliana sobre onboarding) |
+
+**Propósito original:** este documento consolida en un solo lugar los huecos que Paso 5
 debe cerrar para que el gating con dientes esté completo. Al aterrizar el
 motor conectado con el catálogo (enum de `FastExerciseSchema.name` filtrado
 por reglas + join con `public.exercises`), cada ítem de abajo debe
@@ -224,10 +235,18 @@ desbloquear sólo si usuario completa ≥15 dominadas estrictas por serie."*
 
 **Filas del catálogo afectadas:**
 - **FT-006** — reclasificada a ejercicio en `0026`, tag
-  `riesgo-lesion:pullups-weighted` aplicado. **Barrera única actual:
-  `nivel_canonico='avanzado'` — barrera débil (depende del LLM).**
-- **FTP-004** — concepto editorial que documenta el prerrequisito de 15
-  dominadas.
+  `riesgo-lesion:pullups-weighted` aplicado. Post-`0027` lleva también
+  tag `prerequisito:15-pullups` que el matcher consume como filtro C.1.
+  **Barrera actual sin matcher:** `nivel_canonico='avanzado'` (débil,
+  depende del LLM). **Barrera con matcher post-runtime:** filtro C.1 del
+  matcher lee el tag y excluye la fila del pool si `maxPullupReps < 15`
+  o null (fallback conservador).
+- **FTP-004** — `tipo_registro='regla'` (§2.4 escrita como fila del
+  catálogo). NO lleva tag `prerequisito:15-pullups` — el matcher filtra
+  pool `tipo_registro='ejercicio'`, taggear una regla no le sirve al
+  gating. Se conserva como constancia editorial del gap · mismo patrón
+  que las 5 reglas de Categoría A (conservadas por gap end-to-end de
+  Deuda #9).
 
 **Criterio de cierre:**
 1. Onboarding capta `maxPullupReps` (nueva pregunta).

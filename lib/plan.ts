@@ -145,6 +145,7 @@ export interface Exercise {
     | 'pullups-weighted'
     | 'max-tests'
     | 'finger-training-any'
+    | 'power-max'    // Deuda #10 · potencia máxima con contact strength
     | null;
   objective?: string | null;
   prescription?: string | null;

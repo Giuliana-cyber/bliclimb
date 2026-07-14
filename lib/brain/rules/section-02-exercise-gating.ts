@@ -63,6 +63,15 @@ const PULLUPS_WEIGHTED_IDS = [
   'FTE-002'   // 1RM de dominada con lastre (doble cobertura con test-maximo)
 ] as const;
 
+// Deuda #10 · potencia máxima con contact strength: 2 IDs.
+// Ambos llevan tag `riesgo-lesion:power-max` en el catálogo (0027).
+// El matcher de Paso 5 los filtra por tag; esta lista sirve al
+// section01PlanGating post-generación como red posterior.
+const POWER_MAX_IDS = [
+  'PO-DEADSTOP',   // Dead Stop (precisión dinámica)
+  'PO-POWERPU'     // Power Pull-up (dominada explosiva)
+] as const;
+
 // -------------------- Traducción central --------------------
 
 /**
@@ -133,6 +142,19 @@ export function translateCategoriesToGating(
     for (const id of TEST_MAXIMO_IDS) exactIds.add(id);
   }
 
+  // power-max (§1.1, §1.2 · Deuda #10) → 2 IDs específicos.
+  //
+  // Deuda #10 cerrada por 0027 (tag riesgo-lesion:power-max) + este mapping.
+  // Los dos rows PO-DEADSTOP y PO-POWERPU llevan el tag en el catálogo, y
+  // el matcher (resolveToCanonical, Paso 5) los filtra directamente por tag.
+  // Esta lista hardcoded existe para simetría con las otras categorías —
+  // si el matcher no consume la fila del catálogo (path legacy o retry
+  // interno), el section01PlanGating de plan-level la sigue atrapando por
+  // enum blockCategory + el matcher de IDs de acá.
+  if (categories.has('power-max')) {
+    for (const id of POWER_MAX_IDS) exactIds.add(id);
+  }
+
   return { matcher: { exactIds, prefixes }, gripRestrictions };
 }
 
@@ -142,5 +164,6 @@ export const _internals = {
   CAMPUS_PREFIX,
   HIT_IDS,
   TEST_MAXIMO_IDS,
-  PULLUPS_WEIGHTED_IDS
+  PULLUPS_WEIGHTED_IDS,
+  POWER_MAX_IDS
 } as const;

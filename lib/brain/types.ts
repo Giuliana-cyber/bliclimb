@@ -21,7 +21,8 @@ export type BlockedCategory =
   | 'hit'                    // FM-014 HIT y variantes (§1.1, §1.2)
   | 'pullups-weighted'       // dominadas con lastre (§1.2)
   | 'max-tests'              // tests máximos (Sec 2.5, referenciado en §1.2)
-  | 'finger-training-any';   // "carga directa de dedos" cubre-todo (§1.1)
+  | 'finger-training-any'    // "carga directa de dedos" cubre-todo (§1.1)
+  | 'power-max';             // potencia máxima con contact strength (§1.1, §1.2 · Deuda #10) — cubre PO-DEADSTOP, PO-POWERPU vía tag riesgo-lesion:power-max en catálogo
 
 // -------------------- Zonas anatómicas (para §1.3 dolor 3+) --------------------
 //

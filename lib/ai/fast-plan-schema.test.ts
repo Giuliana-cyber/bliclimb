@@ -108,6 +108,9 @@ const VALID_EXERCISE = {
   riskLevel: 'alto' as const,
   stimulusCategory: 'strength' as const,
   blockCategory: null,
+  // Paso 5 · suggestedCategory obligatorio para el matcher post-hoc.
+  // MaxHang → categoría fuerza-dedos.
+  suggestedCategory: 'fuerza-dedos' as const,
   howTo: ['agarra', 'cuelga', 'baja'],
   cues: ['sentí flexores'],
   commonMistakes: ['no perder técnica en el último segundo']
@@ -122,6 +125,7 @@ const VALID_WARMUP_EXERCISE = {
   name: 'Movilidad de hombros con banda',
   stimulusCategory: 'mobility' as const,
   blockCategory: null,
+  suggestedCategory: 'hombros-escapulas' as const,
   equipment: null,
   riskLevel: 'bajo' as const
 };
@@ -130,6 +134,7 @@ const VALID_COOLDOWN_EXERCISE = {
   name: 'Estiramiento de flexores',
   stimulusCategory: 'cooldown' as const,
   blockCategory: null,
+  suggestedCategory: 'movilidad' as const,
   equipment: null,
   riskLevel: 'bajo' as const
 };
@@ -168,6 +173,53 @@ describe('FastExerciseSchema — requiere riskLevel obligatorio (bug fix)', () =
     expect(
       FastExerciseSchema.safeParse({ ...VALID_EXERCISE, riskLevel: 'medium' }).success
     ).toBe(false);
+  });
+});
+
+describe('FastExerciseSchema — requiere suggestedCategory per-exercise (Paso 5 · matcher)', () => {
+  it('exercise SIN suggestedCategory falla — el matcher requiere el campo para operar de forma determinística', () => {
+    const { suggestedCategory: _sc, ...noSC } = VALID_EXERCISE;
+    expect(FastExerciseSchema.safeParse(noSC).success).toBe(false);
+  });
+
+  it('exercise con suggestedCategory inválido (fuera de los 15 buckets) falla', () => {
+    expect(
+      FastExerciseSchema.safeParse({
+        ...VALID_EXERCISE,
+        suggestedCategory: 'fuerza-general'    // no existe en el enum
+      }).success
+    ).toBe(false);
+  });
+
+  it('exercise con suggestedCategory=null falla — no es opcional ni nullable', () => {
+    expect(
+      FastExerciseSchema.safeParse({
+        ...VALID_EXERCISE,
+        suggestedCategory: null
+      }).success
+    ).toBe(false);
+  });
+
+  it.each([
+    'fuerza-dedos',
+    'fuerza-traccion',
+    'fuerza-empuje',
+    'fuerza-tren-inferior',
+    'potencia',
+    'campus',
+    'resistencia-aerobica',
+    'resistencia-anaerobica',
+    'tecnica',
+    'boulder',
+    'movilidad',
+    'core',
+    'hombros-escapulas',
+    'munecas-antebrazos',
+    'piel'
+  ])('los 15 buckets del enum SuggestedCategorySchema son válidos · %s', (cat) => {
+    expect(
+      FastExerciseSchema.safeParse({ ...VALID_EXERCISE, suggestedCategory: cat }).success
+    ).toBe(true);
   });
 });
 

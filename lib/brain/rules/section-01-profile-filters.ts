@@ -39,7 +39,10 @@ const RULE_1_1_CATEGORIES: BlockedCategory[] = [
   'campus',
   'full-crimp',
   'hit',
-  'finger-training-any'
+  'finger-training-any',
+  'power-max'    // Deuda #10 cerrada — potencia máxima con contact strength
+                 // no debe llegar a menores u16 (placas de crecimiento).
+                 // Cubre PO-DEADSTOP y PO-POWERPU vía tag riesgo-lesion:power-max.
 ];
 
 function check_1_1(profile: ProfileForRules): Verdict | null {
@@ -71,7 +74,10 @@ const RULE_1_2_CATEGORIES: BlockedCategory[] = [
   'campus',
   'hit',
   'pullups-weighted',
-  'max-tests'
+  'max-tests',
+  'power-max'    // Deuda #10 cerrada — potencia máxima con contact strength
+                 // requiere base sólida; principiantes con climbingTime !== 'more3'
+                 // quedan bloqueados de PO-DEADSTOP y PO-POWERPU vía tag.
 ];
 
 function check_1_2(profile: ProfileForRules): Verdict | null {

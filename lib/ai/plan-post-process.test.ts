@@ -40,6 +40,10 @@ function makeMainExercise(
     riskLevel: 'medio',
     stimulusCategory,
     blockCategory: null,
+    // Fixtures genéricos: valor default arbitrario válido del enum. Los tests
+    // que hacen aserciones sobre suggestedCategory específicas sobrescriben
+    // este valor via override.
+    suggestedCategory: 'fuerza-traccion',
     howTo: ['paso'],
     cues: ['cue'],
     commonMistakes: ['error']
@@ -63,6 +67,7 @@ function makeCooldownExercise(
     riskLevel: 'bajo',
     stimulusCategory,
     blockCategory: null,
+    suggestedCategory: 'movilidad',
     howTo: ['paso'],
     cues: ['cue'],
     commonMistakes: ['error']
@@ -85,6 +90,7 @@ function makeWarmupExercise(
     riskLevel: 'bajo',
     stimulusCategory,
     blockCategory: null,
+    suggestedCategory: 'movilidad',
     howTo: ['paso'],
     cues: ['cue'],
     commonMistakes: ['error']

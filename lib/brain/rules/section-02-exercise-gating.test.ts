@@ -88,6 +88,16 @@ describe('section-02 — spec de Parte B (test-maximo, dominadas-con-lastre) har
       expect(matcher.exactIds.has(id)).toBe(true);
     }
   });
+
+  it("categoría 'power-max' bloquea PO-DEADSTOP + PO-POWERPU (Deuda #10)", () => {
+    const { matcher, gripRestrictions } = translateCategoriesToGating(categories('power-max'));
+    expect(matcher.exactIds.size).toBe(2);
+    expect(matcher.exactIds.has('PO-DEADSTOP')).toBe(true);
+    expect(matcher.exactIds.has('PO-POWERPU')).toBe(true);
+    // power-max no agrega prefijos ni grip restrictions.
+    expect(matcher.prefixes.size).toBe(0);
+    expect(gripRestrictions.size).toBe(0);
+  });
 });
 
 describe('section-02 — vacío / composición', () => {
@@ -109,25 +119,30 @@ describe('section-02 — vacío / composición', () => {
     expect(matcher.exactIds.size).toBe(18);
   });
 
-  it('menor de 16 típico (§1.1 → 5 categorías) bloquea HB- + CB- + FM-014 + PF-FM-005 + no-full-crimp', () => {
+  it('menor de 16 típico (§1.1 → 6 categorías post-Deuda #10) bloquea HB- + CB- + FM-014 + PF-FM-005 + no-full-crimp + PO-DEADSTOP + PO-POWERPU', () => {
     const { matcher, gripRestrictions } = translateCategoriesToGating(
-      categories('hangboard', 'campus', 'full-crimp', 'hit', 'finger-training-any')
+      categories('hangboard', 'campus', 'full-crimp', 'hit', 'finger-training-any', 'power-max')
     );
     expect(matcher.prefixes.has('HB-')).toBe(true);
     expect(matcher.prefixes.has('CB-')).toBe(true);
     expect(matcher.exactIds.has('FM-014')).toBe(true);
     expect(matcher.exactIds.has('PF-FM-005')).toBe(true);
     expect(gripRestrictions.has('no-full-crimp')).toBe(true);
+    // power-max (Deuda #10) añade 2 IDs específicos
+    expect(matcher.exactIds.has('PO-DEADSTOP')).toBe(true);
+    expect(matcher.exactIds.has('PO-POWERPU')).toBe(true);
   });
 
-  it('novato <2 años típico (§1.2 → 5 categorías) bloquea HB- + CB- + FM-014 + PF-FM-005 + 2 pullups-weighted + 15 test-maximo (con dedupe)', () => {
+  it('novato <2 años típico (§1.2 → 6 categorías post-Deuda #10) bloquea HB- + CB- + FM-014 + PF-FM-005 + 2 pullups-weighted + 15 test-maximo + 2 power-max (con dedupe)', () => {
     const { matcher } = translateCategoriesToGating(
-      categories('hangboard-intense', 'campus', 'hit', 'pullups-weighted', 'max-tests')
+      categories('hangboard-intense', 'campus', 'hit', 'pullups-weighted', 'max-tests', 'power-max')
     );
     expect(matcher.prefixes.has('HB-')).toBe(true);
     expect(matcher.prefixes.has('CB-')).toBe(true);
-    // 2 hit + 2 pullups-weighted + 15 test-maximo con FTE-002 duplicado = 18
-    expect(matcher.exactIds.size).toBe(18);
+    // 2 hit + 2 pullups-weighted + 15 test-maximo con FTE-002 duplicado + 2 power-max = 20
+    expect(matcher.exactIds.size).toBe(20);
+    expect(matcher.exactIds.has('PO-DEADSTOP')).toBe(true);
+    expect(matcher.exactIds.has('PO-POWERPU')).toBe(true);
   });
 });
 

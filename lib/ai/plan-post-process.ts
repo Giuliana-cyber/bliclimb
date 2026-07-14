@@ -111,6 +111,9 @@ export const DEFAULT_EXTENSOR_EXERCISE: CooldownExercise = {
   riskLevel: 'bajo',
   stimulusCategory: 'mobility',
   blockCategory: null,
+  // Es prevención de codo mediante trabajo de extensores del antebrazo —
+  // la categoría canónica más precisa del catálogo es `munecas-antebrazos`.
+  suggestedCategory: 'munecas-antebrazos',
   howTo: [
     'Toma una banda elástica con ambas manos frente a ti, brazos extendidos a la altura del pecho, palmas hacia abajo.',
     'Separa las manos hacia afuera manteniendo los brazos rectos, apretando las escápulas al final del movimiento.',

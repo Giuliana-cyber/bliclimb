@@ -81,9 +81,41 @@ export const BlockCategorySchema = z.enum([
   'hit',
   'pullups-weighted',
   'max-tests',
-  'finger-training-any'
+  'finger-training-any',
+  'power-max'    // Deuda #10 · potencia máxima con contact strength (PO-DEADSTOP, PO-POWERPU)
 ]);
 export type BlockCategory = z.infer<typeof BlockCategorySchema>;
+
+/**
+ * Categoría canónica del catálogo (Paso 5 · matcher).
+ *
+ * Los 15 buckets de `public.exercises.categoria_canonica` que emergieron
+ * del workstream del catálogo (tandas 0019-0022). Bill (LLM) DEBE emitir
+ * uno cuando propone un ejercicio, y el matcher (`resolveToCanonical`)
+ * usa este campo como criterio primario de match contra el catálogo curado.
+ *
+ * Sin este campo, el matcher tendría que adivinar la categoría desde el
+ * `name` libre — frágil y no determinístico. El schema Zod lo hace
+ * obligatorio en generación para eliminar esa ambigüedad de raíz.
+ */
+export const SuggestedCategorySchema = z.enum([
+  'fuerza-dedos',
+  'fuerza-traccion',
+  'fuerza-empuje',
+  'fuerza-tren-inferior',
+  'potencia',
+  'campus',
+  'resistencia-aerobica',
+  'resistencia-anaerobica',
+  'tecnica',
+  'boulder',
+  'movilidad',
+  'core',
+  'hombros-escapulas',
+  'munecas-antebrazos',
+  'piel'
+]);
+export type SuggestedCategory = z.infer<typeof SuggestedCategorySchema>;
 
 // -------------------- Schemas (con los enums) --------------------
 
@@ -111,6 +143,17 @@ export const FastExerciseSchema = z.object({
   // `null` si el ejercicio no cae en ninguna categoría gateable
   // (silent feet drill, foam roll, respiración = null).
   blockCategory: BlockCategorySchema.nullable(),
+  // Paso 5 · matcher — categoría canónica sugerida por Bill para el resolver.
+  // OBLIGATORIA (no null). El matcher (`resolveToCanonical`) usa este campo
+  // como criterio primario para mapear la propuesta del LLM a una fila real
+  // de `public.exercises`. Bill emite libremente su razonamiento en `name`,
+  // pero debe traducirlo a uno de los 15 buckets canónicos para que el
+  // matcher pueda operar de forma determinística.
+  //
+  // Sin este campo, el matcher tiene que adivinar desde name/description
+  // (string matching frágil). Con este campo el filtro por categoría es
+  // enum → enum, determinístico y auditable.
+  suggestedCategory: SuggestedCategorySchema,
   // Instrucciones técnicas reales — el modelo DEBE rellenarlos. Si vienen
   // vacíos la UI muestra vacío (no rompe). El prompt en WEEK_PROMPT pide
   // 3-5 pasos para howTo, 2-3 para cues, 1-2 para commonMistakes.

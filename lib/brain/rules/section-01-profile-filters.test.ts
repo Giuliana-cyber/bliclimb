@@ -18,14 +18,14 @@ function cleanProfile(overrides: Partial<ProfileForRules> = {}): ProfileForRules
 }
 
 describe('section-01 — 1.1 Menores de 16', () => {
-  it("age === 'u16' dispara 1.1 con las 5 categorías canónicas", () => {
+  it("age === 'u16' dispara 1.1 con las 6 categorías canónicas (5 originales + power-max post-Deuda #10)", () => {
     const verdicts = section01ProfileFilters.check(cleanProfile({ age: 'u16' }));
     const v = verdicts.find((v) => v.rule === '1.1');
     expect(v).toBeDefined();
     expect(v!.kind).toBe('block-categories');
     if (v!.kind === 'block-categories') {
       expect(v!.categories.sort()).toEqual(
-        ['hangboard', 'campus', 'full-crimp', 'hit', 'finger-training-any'].sort()
+        ['hangboard', 'campus', 'full-crimp', 'hit', 'finger-training-any', 'power-max'].sort()
       );
     }
     expect(v!.userMessage).toBe(SECTION_01_MESSAGES.minorsAge.text);
@@ -58,7 +58,7 @@ describe('section-01 — 1.2 Menos de 2 años de práctica', () => {
       expect(v!.kind).toBe('block-categories');
       if (v!.kind === 'block-categories') {
         expect(v!.categories.sort()).toEqual(
-          ['hangboard-intense', 'campus', 'hit', 'pullups-weighted', 'max-tests'].sort()
+          ['hangboard-intense', 'campus', 'hit', 'pullups-weighted', 'max-tests', 'power-max'].sort()
         );
       }
       expect(v!.userMessage).toBe(SECTION_01_MESSAGES.practiceYears.text);

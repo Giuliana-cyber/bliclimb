@@ -4,7 +4,7 @@
 
 **Audiencia:** cualquier sesión de desarrollo que arranque sin contexto previo. Léelo antes de proponer trabajo.
 
-**Última actualización:** 2026-07-11 · Paso 4 del workstream del catálogo cerrado del todo con la aplicación de `0026_paso_4_reclasificar_ft006.sql` (FT-006: mis-tag regla→ejercicio + canonicalización 5 dimensiones + tag `riesgo-lesion:pullups-weighted`). Deuda #12 registrada: §2.4 (gating por ≥15 dominadas) sin código + requiere campo nuevo `maxPullupReps` en `ProfileForRules`. Próximo: Paso 5 (motor enum + join con catálogo) contra `docs/brain/paso5-checklist-aceptacion.md` (6 huecos a cerrar end-to-end).
+**Última actualización:** 2026-07-13 · Paso 5 del workstream del catálogo sustancialmente cerrado — matcher híbrido implementado, 5/6 huecos del checklist cerrados en el matcher (A.1 zone, A.2 grip, B.1 power-max, B.2 rehab, C.1 §2.4 con fallback conservador). Migraciones 0027+0028 aplicadas por Giuliana; 611/611 tests verdes; performance despreciable (~21ms por plan de 12 semanas). A.3 §3.freq-dedos queda para Paso 6 (requiere `exerciseId` persistido). Próximo: Paso 6 (persistir exerciseId) → Paso 7 (UI lee howTo/cues del catálogo) → Paso 8 (E2E + 0014).
 
 ---
 
@@ -106,10 +106,21 @@ Resuelve las tres consecuencias de un tiro. Y hace estructuralmente imposible el
    - **Cabo suelto resuelto** (2026-07-11): `0026_paso_4_reclasificar_ft006.sql` reclasifica FT-006 de `tipo_registro='regla'` (mis-tag) a `ejercicio` con las 5 dimensiones canónicas (`categoria_canonica='fuerza-traccion'`, `nivel_canonico='avanzado'` — barrera única mientras §2.4 no exista, `proposito='entrenamiento'`, `momento='principal'`, `equipo_canonico=['pullup_bar']`) + tag `riesgo-lesion:pullups-weighted`. Confirmado via grep que Doc 02 §2.4 (regla de gating por ≥15 dominadas) NO está en `lib/brain/rules/`. §2.4 se registra como Deuda #12 (requiere campo nuevo `maxPullupReps` en `ProfileForRules` + módulo `check_2_4`) y se suma como ítem C.1 al checklist de aceptación del Paso 5.
    - **Deudas nuevas descubiertas** (registradas en `canonicalization-debt.md`): #10 potencia-max sin BlockedCategory (PO-DEADSTOP, PO-POWERPU), #11 `proposito='rehab'` no filtrado (RH-004, RH-005, RH-P002 y 8 más). Ambas son huecos que Paso 5 debe cerrar.
    - **Checklist consolidado de aceptación Paso 5**: `docs/brain/paso5-checklist-aceptacion.md`. 5 huecos (A.1 zone→ID, A.2 grip→prompt, A.3 §3.freq-dedos, B.1 power-max, B.2 rehab filter). Paso 5 no está completo hasta que cada uno esté verificado cerrado con re-grep + migración de limpieza.
-5. **Próximo · Paso 5** — Enum del motor: `FastExerciseSchema.name` → `z.enum(idsPermitidos)` filtrado por perfil + reglas (~1 día). Filtrar rows con tag `programa-bloque` y `proposito='rehab'` del pool. Cerrar los 5 huecos del checklist arriba en el mismo PR (o en PRs consecutivos con verificación entre cada uno). **A partir de acá empieza código en runtime** — vuelve la verificación cruda estricta.
-6. Persistir `exerciseId` en `Exercise` + `mainBlock[]` (~0.5 día).
+5. ✅ **Paso 5 sustancialmente cerrado** — 2026-07-13. Arquitectura híbrida: matcher post-hoc (Bill propone libre, el matcher mapea al catálogo curado).
+   - **`0027_paso_5_tags_matcher.sql`**: 3 tags nuevos aplicados (`carga:regleta-pequena` ×9, `prerequisito:15-pullups` ×1 solo FT-006, `riesgo-lesion:power-max` ×2). Total 12 tags sobre 12 filas distintas.
+   - **`0028_paso_5_stimulus_derivado.sql`**: columna computada backfilled a 265/265 ejercicios. Distribución: mobility=79, strength=74, skill=58, power=30, aerobic-base=14, power-endurance=10.
+   - **Extensión enum `power-max`** en 5 archivos TS (types.ts, section-01-profile-filters.ts, section-02-exercise-gating.ts, fast-plan-schema.ts, plan.ts). `RULE_1_1_CATEGORIES` y `RULE_1_2_CATEGORIES` extendidos. `POWER_MAX_IDS` en section-02 con PO-DEADSTOP + PO-POWERPU para la red posterior.
+   - **`suggestedCategory` obligatorio** en `FastExerciseSchema` con enum de 15 buckets. Prompt de `route.ts` extendido con documentación de cada bucket.
+   - **`lib/brain/matcher/`**: nuevo módulo con `resolveToCanonical.ts` (matcher core L1→L2→L3→L5 sin L4), `pool-loader.ts` (adapters Supabase + in-memory), `types.ts` (CatalogRow, MatcherInput/Result).
+   - **Integración en `route.ts`**: pool loader único por request + `resolveWeekExercises` post-processor + re-aplicación en retry loop + log de matcher summary con `rejectRatio`.
+   - **44 tests nuevos** (24 del matcher × 4 niveles + 2 perf + 18 de `suggestedCategory`). Suite total: **611/611 verdes**. Typecheck limpio.
+   - **Performance**: 12 semanas × 360 llamadas = 21ms totales, avg 0.058ms/call, p95 0.136ms.
+   - **5 huecos cerrados operativamente en el matcher** (A.1 zone→ID, A.2 grip→prompt, B.1 power-max, B.2 rehab filter, C.1 §2.4 fallback conservador). A.3 §3.freq-dedos queda para Paso 6 (requiere `exerciseId` persistido).
+   - **Pendiente producto**: campo `maxPullupReps` en `ProfileForRules` para cerrar C.1 end-to-end. Decisión editorial de Giuliana sobre dónde va la pregunta en el onboarding (ver Deuda #12 en `canonicalization-debt.md`).
+   - **Reporte con evidencia cruda**: `docs/brain/paso5-implementacion-reporte.md`. Muestreo de 5 resolvers reales incluido (adulto sano, adulto lesión dedos, menor u16 → L3 fallback, sin datos reps → C.1 conservador, adulto avanzado dead-stop).
+6. **Próximo · Paso 6** — Persistir `exerciseId` en `Exercise` + `mainBlock[]` (~0.5 día). Habilita cierre de A.3 (§3.freq-dedos) + join UI con catálogo.
 7. Pantalla de sesión lee `howTo`/`cues`/`commonMistakes` de la tabla vía join (~0.5 día).
-8. Tests + validación end-to-end: gating, injury, equipment filters (~1 día).
+8. Tests + validación end-to-end: gating, injury, equipment filters (~1 día). Desbloquea 0014.
 
 **Estimado honesto:** ~5-6 días dev + ~12-18h curación con Bill/Senda. La curación no acelera con más devs — es trabajo de contenido, de Giuliana.
 

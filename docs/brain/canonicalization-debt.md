@@ -1072,12 +1072,26 @@ one-arm / lock-off → matches solo en types.ts:68 y section-05 como TEXTO
    - Regla `check_2_4` que compare `profile.maxPullupReps` con el umbral 15 y emita `block-categories` con una nueva categoría (candidata: extensión de `pullups-weighted` semánticamente cubre; alternativa: nueva categoría `pullups-prerequisite` para separar).
 
 **Filas del catálogo afectadas:**
-- **FT-006** — "Bloqueo con una mano (one-arm lock-off)" — reclasificada a ejercicio en `0026`, tag `riesgo-lesion:pullups-weighted` aplicado. **La única barrera actual que impide que FT-006 llegue a un principiante es `nivel_canonico='avanzado'`.**
-- **FTP-004** — "Bloqueo con una mano — criterio de entrada" — conservada como concepto editorial en Grupo C del Paso 4. Documenta el prerrequisito de 15 dominadas.
+- **FT-006** — "Bloqueo con una mano (one-arm lock-off)" — reclasificada a ejercicio en `0026`, tag `riesgo-lesion:pullups-weighted` aplicado. Post-`0027` **lleva también tag `prerequisito:15-pullups`** que el matcher del Paso 5 consume para excluirla del pool cuando `profile.maxPullupReps < 15` o es null (fallback conservador C.1 del checklist). Barrera actual = `nivel_canonico='avanzado'` (débil, depende del LLM) + gate del matcher por tag (fuerte, determinístico) una vez que el matcher esté en runtime.
+- **FTP-004** — "Bloqueo con una mano — criterio de entrada" — es `tipo_registro='regla'` (**no `concepto`** como se documentó por error antes del 2026-07-13). Es §2.4 escrita como fila del catálogo (*"Sólo iniciar bloqueo a una mano con ≥15 dominadas por serie…"*). **NO lleva tag `prerequisito:15-pullups`** porque el matcher filtra pool `tipo_registro='ejercicio'` — taggear una regla no le sirve al gating. Se conserva como **constancia editorial en catálogo del gap** — mismo patrón que las 5 reglas conservadas por gap end-to-end en Paso 4 (DP-R004, HB-S005, HB-S004, DP-S001, REP-002 · Deuda #9). Al cerrarse §2.4 con `maxPullupReps` + `check_2_4`, se re-audita: si FTP-004 queda cubierta end-to-end vía el nuevo módulo, pasa a un DELETE posterior.
 
 **Interim (post-0026):** `nivel_canonico='avanzado'` es la barrera única mientras §2.4 no exista en código. Es una barrera **débil** — depende de que el LLM respete el filtro por nivel, no de un check determinístico. Un LLM que ignore el nivel puede proponer FT-006 a un principiante y no hay red posterior que lo atrape.
 
+**Interim (post-0027 aplicada + matcher en runtime):** el filtro C.1 del matcher lee el tag `prerequisito:15-pullups` sobre FT-006 y la excluye del pool si `maxPullupReps < 15` o null. Barrera se vuelve **determinística en el matcher** aunque §2.4 siga sin check dedicado en `lib/brain/rules/`. Sigue siendo interim porque:
+1. El campo `maxPullupReps` no existe todavía en `ProfileForRules` → el filtro cae al fallback conservador (excluye igual con valor null).
+2. La red posterior `section01PlanGating` sigue sin cubrir el caso — solo el matcher lo cierra.
+3. Si el matcher tiene un bug y la fila se cuela, no hay segunda red que la atrape.
+
 **Cuándo cerrar:** Paso 5 o inmediatamente después. Es un check pequeño y aislado — no depende de Paso 6 (`exerciseId`), sino de un campo nuevo de perfil. Puede implementarse antes que Paso 6.
+
+**Estado post-Paso 5 · matcher (2026-07-13):** el filtro C.1 del matcher (`passesC1` en `lib/brain/matcher/resolveToCanonical.ts:131-135`) ya opera con **fallback conservador** — `profile.maxPullupReps == null` excluye a FT-006 del pool en todos los niveles del fallback (L1/L2/L3). Es la barrera correcta para el interim: mejor bloquear el one-arm lock-off por defecto que dárselo a alguien que no completa 15 dominadas. Aprobado por Giuliana el 2026-07-13.
+
+**Pendiente de decisión de producto (Giuliana):** dónde va la pregunta "¿cuántas dominadas estrictas hacés en una serie?" en el onboarding. Alternativas identificadas:
+- Nueva pregunta explícita en el onboarding inicial (más data captura de entrada, más fricción de setup).
+- Pregunta condicional en el primer checkin que aparece solo si el usuario expresa objetivos de tracción/fuerza (menos fricción, ventana de datos más chica).
+- Autocaptura en el primer plan generado que pide al usuario reportar reps post-sesión (data-driven pero más tardía).
+
+La lógica del check `check_2_4` es trivial una vez que el campo existe (~20 LOC). El bloqueo real es editorial: dónde y cómo se pregunta. Decisión pendiente de Giuliana.
 
 **Criterio de cierre:**
 1. Onboarding capta `maxPullupReps` (nueva pregunta) — 0 si no puede hacer ninguna.

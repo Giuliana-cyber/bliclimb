@@ -39,14 +39,16 @@ describe('evaluateProfile — integración con section-02 (traducción categorí
     expect(ctx.gripRestrictions.has('no-full-crimp')).toBe(true);
   });
 
-  it("climbingTime 'start' (<2 años) → HB- + CB- + FM-014 + PF-FM-005 + 2 pullups-weighted + 15 test-maximo (deduped)", () => {
+  it("climbingTime 'start' (<2 años) → HB- + CB- + FM-014 + PF-FM-005 + 2 pullups-weighted + 15 test-maximo + 2 power-max (deduped)", () => {
     const ctx = evaluateProfile(cleanProfile({ climbingTime: 'start' }), {
       log: new NullLogSink()
     });
     expect(ctx.blockedExercises.prefixes.has('HB-')).toBe(true);
     expect(ctx.blockedExercises.prefixes.has('CB-')).toBe(true);
-    // 2 (hit) + 2 (pullups-weighted) + 15 (max-tests) - 1 (FTE-002 dedupe) = 18
-    expect(ctx.blockedExercises.exactIds.size).toBe(18);
+    // 2 (hit) + 2 (pullups-weighted) + 15 (max-tests) - 1 (FTE-002 dedupe) + 2 (power-max post-Deuda #10) = 20
+    expect(ctx.blockedExercises.exactIds.size).toBe(20);
+    expect(ctx.blockedExercises.exactIds.has('PO-DEADSTOP')).toBe(true);
+    expect(ctx.blockedExercises.exactIds.has('PO-POWERPU')).toBe(true);
     // gripRestriction NO se activa en §1.2 (no incluye full-crimp)
     expect(ctx.gripRestrictions.size).toBe(0);
   });
@@ -123,8 +125,8 @@ describe('evaluateProfile — integración con section-05 (derivación de salud)
       }),
       { log: new NullLogSink() }
     );
-    // §1.1 (5 categorías) + section-02 traduce
-    expect(ctx.blockedCategories.size).toBe(5);
+    // §1.1 (6 categorías post-Deuda #10 con power-max) + section-02 traduce
+    expect(ctx.blockedCategories.size).toBe(6);
     expect(ctx.blockedExercises.prefixes.has('HB-')).toBe(true);
     // §5.2 + section-01 §1.1 ambas contribuyen a gripRestrictions
     expect(ctx.gripRestrictions.has('no-full-crimp')).toBe(true); // de §1.1
@@ -168,10 +170,10 @@ describe('evaluateProfile — logging de kinds nuevos de sub-fase 3', () => {
 });
 
 describe('evaluateProfile — acumulación de bloqueos', () => {
-  it('u16 → categories contiene las 5 de §1.1', () => {
+  it('u16 → categories contiene las 6 de §1.1 (5 originales + power-max post-Deuda #10)', () => {
     const ctx = evaluateProfile(cleanProfile({ age: 'u16' }), { log: new NullLogSink() });
     expect(Array.from(ctx.blockedCategories).sort()).toEqual(
-      ['hangboard', 'campus', 'full-crimp', 'hit', 'finger-training-any'].sort()
+      ['hangboard', 'campus', 'full-crimp', 'hit', 'finger-training-any', 'power-max'].sort()
     );
     expect(ctx.ruleHits).toContainEqual({ rule: '1.1', kind: 'block-categories' });
   });
@@ -192,8 +194,8 @@ describe('evaluateProfile — acumulación de bloqueos', () => {
       cleanProfile({ age: 'u16', currentFingerPain: 4 }),
       { log: new NullLogSink() }
     );
-    // Verdict 1.1 acumula categorías
-    expect(ctx.blockedCategories.size).toBe(5);
+    // Verdict 1.1 acumula categorías (6 post-Deuda #10 con power-max)
+    expect(ctx.blockedCategories.size).toBe(6);
     // Verdict 1.3 acumula zona
     expect(ctx.blockedZones.has('fingers-pulleys')).toBe(true);
     // 2 mensajes de derivación (1 de §1.1, 1 de §1.3)
@@ -222,7 +224,7 @@ describe('evaluateProfile — logging', () => {
     expect(log_1_1.profileId).toBe('test-profile-uuid');
     expect(log_1_1.kind).toBe('block-categories');
     expect(log_1_1.categories?.sort()).toEqual(
-      ['hangboard', 'campus', 'full-crimp', 'hit', 'finger-training-any'].sort()
+      ['hangboard', 'campus', 'full-crimp', 'hit', 'finger-training-any', 'power-max'].sort()
     );
     expect(log_1_1.zone).toBeUndefined();
     expect(log_1_1.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
