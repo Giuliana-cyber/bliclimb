@@ -23,28 +23,50 @@ import type {
 // -------------------- Helpers de fixtures --------------------
 
 function makeRow(overrides: Partial<CatalogRow> & { id: string }): CatalogRow {
+  // Fixture del schema REAL de public.exercises (0010 + canónicas 0015-0028).
+  // NO agregar columnas que no existan en la tabla. El test de contrato
+  // pool-loader.contract.test.ts falla si esta interfaz drifta del schema.
   return {
     id: overrides.id,
     nombre: overrides.nombre ?? overrides.id,
-    descripcion: overrides.descripcion ?? null,
+    tipo: overrides.tipo ?? 'ejercicio',
+    categoria: overrides.categoria ?? 'Fuerza dedos',
+    equipo: overrides.equipo ?? 'Peso corporal',
+    descripcion: overrides.descripcion ?? 'descripción sintética',
+    riesgo: overrides.riesgo ?? 'medio',
+    estado: overrides.estado ?? 'activo',
+    publicable_app: overrides.publicable_app ?? 'Sí',
+    fuente_primaria: overrides.fuente_primaria ?? 'test-fixture',
+    tipo_registro: overrides.tipo_registro ?? 'ejercicio',
+    tags: overrides.tags ?? [],
+    // Campos nullable del schema base.
+    subcategoria: overrides.subcategoria ?? null,
+    objetivo: overrides.objetivo ?? null,
+    nivel: overrides.nivel ?? null,
+    tipo_escalador: overrides.tipo_escalador ?? null,
+    series: overrides.series ?? null,
+    reps: overrides.reps ?? null,
+    tiempo: overrides.tiempo ?? null,
+    tut: overrides.tut ?? null,
+    descanso: overrides.descanso ?? null,
+    intensidad: overrides.intensidad ?? null,
+    frecuencia: overrides.frecuencia ?? null,
+    progresion: overrides.progresion ?? null,
+    regresion: overrides.regresion ?? null,
+    errores_comunes: overrides.errores_comunes ?? null,
+    precauciones: overrides.precauciones ?? null,
+    senales_detener: overrides.senales_detener ?? null,
+    fuente_secundaria: overrides.fuente_secundaria ?? null,
+    url_fuente: overrides.url_fuente ?? null,
+    validacion_profesional: overrides.validacion_profesional ?? null,
+    notas: overrides.notas ?? null,
+    // Canónicas de 0015-0028.
     nivel_canonico: overrides.nivel_canonico ?? 'intermedio',
     categoria_canonica: overrides.categoria_canonica ?? 'fuerza-dedos',
     proposito: overrides.proposito ?? 'entrenamiento',
     momento: overrides.momento ?? 'principal',
     equipo_canonico: overrides.equipo_canonico ?? ['home'],
-    stimulus_derivado: overrides.stimulus_derivado ?? 'strength',
-    tags: overrides.tags ?? [],
-    intensidad: overrides.intensidad ?? null,
-    riesgo: overrides.riesgo ?? null,
-    series: overrides.series ?? null,
-    reps: overrides.reps ?? null,
-    tiempo: overrides.tiempo ?? null,
-    descanso: overrides.descanso ?? null,
-    cues: overrides.cues ?? null,
-    errores_comunes: overrides.errores_comunes ?? null,
-    precauciones: overrides.precauciones ?? null,
-    senales_detener: overrides.senales_detener ?? null,
-    equipo: overrides.equipo ?? null
+    stimulus_derivado: overrides.stimulus_derivado ?? 'strength'
   };
 }
 

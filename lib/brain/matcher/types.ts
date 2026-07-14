@@ -24,28 +24,59 @@ import type {
 // filtrar y rankear. Se carga con SELECT explícito para no traer
 // descripciones enormes que no vamos a usar.
 
+/**
+ * Row del pool. Refleja EXACTAMENTE las columnas de `public.exercises` según
+ * `supabase/migrations/0010_exercises_schema.sql` + canónicas de 0015-0028.
+ *
+ * NO inventar columnas. Si el matcher necesita datos que no existen en la
+ * tabla, hay que agregarlos en migración explícita ANTES de referenciarlos
+ * acá. El test de contrato (`pool-loader.contract.test.ts`) falla al build
+ * si esta interfaz pide algo que no está en el schema.
+ */
 export interface CatalogRow {
+  // Identidad (columnas NOT NULL del schema).
   id: string;
   nombre: string;
-  descripcion: string | null;
+  tipo: string;
+  categoria: string;
+  equipo: string;
+  descripcion: string;
+  riesgo: string;
+  estado: string;
+  publicable_app: string;
+  fuente_primaria: string;
+  tipo_registro: string;
+  tags: string[];
+
+  // Contenido curado nullable (columnas del schema base 0010).
+  subcategoria: string | null;
+  objetivo: string | null;
+  nivel: string | null;
+  tipo_escalador: string | null;
+  series: string | null;
+  reps: string | null;
+  tiempo: string | null;
+  tut: string | null;
+  descanso: string | null;
+  intensidad: string | null;
+  frecuencia: string | null;
+  progresion: string | null;
+  regresion: string | null;
+  errores_comunes: string | null;
+  precauciones: string | null;
+  senales_detener: string | null;
+  fuente_secundaria: string | null;
+  url_fuente: string | null;
+  validacion_profesional: string | null;
+  notas: string | null;
+
+  // Canónicas agregadas por migraciones 0015-0028.
   nivel_canonico: string | null;
   categoria_canonica: string | null;
   proposito: string | null;
   momento: string | null;
   equipo_canonico: string[] | null;
   stimulus_derivado: string | null;
-  tags: string[];
-  intensidad: string | null;
-  riesgo: string | null;
-  series: string | null;
-  reps: string | null;
-  tiempo: string | null;
-  descanso: string | null;
-  cues: string | null;
-  errores_comunes: string | null;
-  precauciones: string | null;
-  senales_detener: string | null;
-  equipo: string | null;
 }
 
 // -------------------- Input al matcher --------------------

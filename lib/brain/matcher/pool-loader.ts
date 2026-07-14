@@ -21,36 +21,65 @@ import type { CatalogRow, PoolLoader } from './types';
  * Costo real esperado: <30ms para 265 rows con el índice compuesto GIN
  * detrás de los tags. Testear en performance test post-migración.
  */
+/**
+ * Columnas del SELECT — alineadas EXACTAMENTE con el schema de
+ * `supabase/migrations/0010_exercises_schema.sql` + canónicas 0015-0028.
+ *
+ * Exportado para el test de contrato `pool-loader.contract.test.ts` que
+ * usa esta lista literal como fuente única de verdad al comparar contra
+ * `information_schema.columns`. Si esta lista incluye una columna que no
+ * existe en la tabla, el test falla al build.
+ */
+export const CATALOG_ROW_COLUMNS = [
+  // NOT NULL del schema base 0010.
+  'id',
+  'nombre',
+  'tipo',
+  'categoria',
+  'equipo',
+  'descripcion',
+  'riesgo',
+  'estado',
+  'publicable_app',
+  'fuente_primaria',
+  'tipo_registro',
+  'tags',
+  // nullable del schema base 0010.
+  'subcategoria',
+  'objetivo',
+  'nivel',
+  'tipo_escalador',
+  'series',
+  'reps',
+  'tiempo',
+  'tut',
+  'descanso',
+  'intensidad',
+  'frecuencia',
+  'progresion',
+  'regresion',
+  'errores_comunes',
+  'precauciones',
+  'senales_detener',
+  'fuente_secundaria',
+  'url_fuente',
+  'validacion_profesional',
+  'notas',
+  // canónicas agregadas por 0015-0028.
+  'nivel_canonico',
+  'categoria_canonica',
+  'proposito',
+  'momento',
+  'equipo_canonico',
+  'stimulus_derivado'
+] as const;
+
 export function supabasePoolLoader(supabase: SupabaseClient): PoolLoader {
   return {
     async loadPool() {
       const { data, error } = await supabase
         .from('exercises')
-        .select(
-          [
-            'id',
-            'nombre',
-            'descripcion',
-            'nivel_canonico',
-            'categoria_canonica',
-            'proposito',
-            'momento',
-            'equipo_canonico',
-            'stimulus_derivado',
-            'tags',
-            'intensidad',
-            'riesgo',
-            'series',
-            'reps',
-            'tiempo',
-            'descanso',
-            'cues',
-            'errores_comunes',
-            'precauciones',
-            'senales_detener',
-            'equipo'
-          ].join(', ')
-        )
+        .select(CATALOG_ROW_COLUMNS.join(', '))
         .eq('tipo_registro', 'ejercicio')
         .not('categoria_canonica', 'is', null);
       if (error) {

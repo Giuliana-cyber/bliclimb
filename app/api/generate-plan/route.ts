@@ -367,23 +367,39 @@ function mergeExerciseWithCanonical(
   fast: FastExercise,
   row: CatalogRow
 ): FastExercise {
-  // Sustituimos name/description/howTo/cues/commonMistakes por los del catálogo
-  // curado. Preservamos sets/reps/rest/intensity/notes del LLM (criterio de
-  // programación individualizado) y stimulusCategory/blockCategory/riskLevel
-  // (etiquetas del LLM que ya validó el schema).
-  const catHowTo = (row.descripcion ?? '').split(/\n|\.\s/).map((s) => s.trim()).filter(Boolean);
-  const cues = row.cues
-    ? row.cues.split(/\n|;/).map((s) => s.trim()).filter(Boolean)
-    : fast.cues;
+  // Mapeo de contenido curado del catálogo real → schema del plan.
+  // Esquema real (0010): descripcion, errores_comunes, precauciones,
+  // senales_detener, progresion, regresion, series, reps, tiempo, descanso,
+  // intensidad, frecuencia. NO existe `cues` en la tabla.
+  //
+  // Estrategia:
+  //  - name        ← row.nombre
+  //  - description ← row.descripcion  (fuente única, la tabla la exige NOT NULL)
+  //  - howTo       ← row.descripcion partida por oración/salto (la tabla no
+  //                  guarda pasos discretos; el LLM los enumeraba a mano).
+  //                  Al aterrizar Paso 7, la UI decide si mostrar description
+  //                  como bloque único o parseado en pasos.
+  //  - cues        ← preservados del LLM (NO existen en el catálogo)
+  //  - commonMistakes ← row.errores_comunes partido por línea/`;`
+  //  - equipment   ← row.equipo (string humano legible; el gating usa
+  //                  equipo_canonico separado)
+  //  - sets/reps/rest/intensity/notes ← preservados del LLM (criterio de
+  //                  programación individualizado — el catálogo tiene defaults
+  //                  editoriales genéricos que el motor puede sobreescribir).
+  const catHowTo = (row.descripcion ?? '')
+    .split(/\n|(?<=\.)\s/)
+    .map((s) => s.trim())
+    .filter(Boolean);
   const commonMistakes = row.errores_comunes
     ? row.errores_comunes.split(/\n|;/).map((s) => s.trim()).filter(Boolean)
     : fast.commonMistakes;
   return {
     ...fast,
     name: row.nombre,
-    description: row.descripcion ?? fast.description,
+    description: row.descripcion,
     howTo: catHowTo.length > 0 ? catHowTo : fast.howTo,
-    cues,
+    // cues NO existe en el catálogo — se preserva el del LLM.
+    cues: fast.cues,
     commonMistakes,
     equipment: row.equipo ?? fast.equipment
   };

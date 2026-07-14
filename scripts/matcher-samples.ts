@@ -10,136 +10,155 @@ import type {
   GripRestriction
 } from '../lib/brain/types';
 
+// Builder que rellena defaults del schema real (0010) para las columnas que
+// el matcher NO usa. Solo hay que setear lo relevante para cada fixture.
+function row(partial: Partial<CatalogRow> & { id: string }): CatalogRow {
+  return {
+    id: partial.id,
+    nombre: partial.nombre ?? partial.id,
+    tipo: partial.tipo ?? 'ejercicio',
+    categoria: partial.categoria ?? 'Fuerza dedos',
+    equipo: partial.equipo ?? 'Peso corporal',
+    descripcion: partial.descripcion ?? 'sin descripción',
+    riesgo: partial.riesgo ?? 'medio',
+    estado: partial.estado ?? 'activo',
+    publicable_app: partial.publicable_app ?? 'Sí',
+    fuente_primaria: partial.fuente_primaria ?? 'sample',
+    tipo_registro: 'ejercicio',
+    tags: partial.tags ?? [],
+    subcategoria: partial.subcategoria ?? null,
+    objetivo: partial.objetivo ?? null,
+    nivel: partial.nivel ?? null,
+    tipo_escalador: partial.tipo_escalador ?? null,
+    series: partial.series ?? null,
+    reps: partial.reps ?? null,
+    tiempo: partial.tiempo ?? null,
+    tut: partial.tut ?? null,
+    descanso: partial.descanso ?? null,
+    intensidad: partial.intensidad ?? null,
+    frecuencia: partial.frecuencia ?? null,
+    progresion: partial.progresion ?? null,
+    regresion: partial.regresion ?? null,
+    errores_comunes: partial.errores_comunes ?? null,
+    precauciones: partial.precauciones ?? null,
+    senales_detener: partial.senales_detener ?? null,
+    fuente_secundaria: partial.fuente_secundaria ?? null,
+    url_fuente: partial.url_fuente ?? null,
+    validacion_profesional: partial.validacion_profesional ?? null,
+    notas: partial.notas ?? null,
+    nivel_canonico: partial.nivel_canonico ?? 'intermedio',
+    categoria_canonica: partial.categoria_canonica ?? null,
+    proposito: partial.proposito ?? 'entrenamiento',
+    momento: partial.momento ?? 'principal',
+    equipo_canonico: partial.equipo_canonico ?? ['home'],
+    stimulus_derivado: partial.stimulus_derivado ?? null
+  };
+}
+
 // Pool reducido con filas representativas de las categorías reales del catálogo.
 const POOL: CatalogRow[] = [
-  {
+  row({
     id: 'DP-005',
     nombre: 'IntHangs / Repeaters',
     descripcion: 'Hangs intermitentes con descansos cortos; ajustar profundidad para fallar o casi fallar al final.',
     nivel_canonico: 'avanzado',
     categoria_canonica: 'fuerza-dedos',
-    proposito: 'entrenamiento',
-    momento: 'principal',
     equipo_canonico: ['hangboard'],
     stimulus_derivado: 'strength',
     tags: ['riesgo-lesion:hangboard-intense', 'carga:regleta-pequena'],
     intensidad: 'Alta',
     riesgo: 'Alto',
-    series: null, reps: null, tiempo: null, descanso: null,
-    cues: null, errores_comunes: null, precauciones: null, senales_detener: null, equipo: 'Hangboard'
-  },
-  {
+    equipo: 'Hangboard'
+  }),
+  row({
     id: 'HB-002',
     nombre: 'MaxHangs con peso añadido',
     descripcion: 'Usar una regleta fija, normalmente 18-20 mm al inicio; añadir peso para alcanzar la duración objetivo.',
     nivel_canonico: 'avanzado',
     categoria_canonica: 'fuerza-dedos',
-    proposito: 'entrenamiento',
-    momento: 'principal',
     equipo_canonico: ['hangboard', 'weights'],
     stimulus_derivado: 'strength',
     tags: ['riesgo-lesion:hangboard-intense'],
     intensidad: 'Alta / Máxima',
     riesgo: 'Alto',
-    series: null, reps: null, tiempo: null, descanso: null,
-    cues: null, errores_comunes: null, precauciones: null, senales_detener: null, equipo: 'Hangboard, lastre'
-  },
-  {
+    equipo: 'Hangboard, lastre'
+  }),
+  row({
     id: 'HB-LOW',
     nombre: 'Low Intensity Hangs (pies en suelo)',
     descripcion: 'Colgado del hangboard con los pies apoyados en el suelo. Suspensión de 10s con carga muy submáxima.',
     nivel_canonico: 'todos',
     categoria_canonica: 'fuerza-dedos',
-    proposito: 'entrenamiento',
-    momento: 'principal',
     equipo_canonico: ['hangboard'],
     stimulus_derivado: 'strength',
-    tags: [],
     intensidad: '30-50%',
     riesgo: 'Bajo',
-    series: null, reps: null, tiempo: null, descanso: null,
-    cues: null, errores_comunes: null, precauciones: null, senales_detener: null, equipo: 'Hangboard'
-  },
-  {
+    equipo: 'Hangboard'
+  }),
+  row({
     id: 'FT-001',
     nombre: 'Dominadas en barra',
     descripcion: 'Manos en pronación a ancho de hombros; subir y bajar completo, sin rebotar.',
     nivel_canonico: 'principiante',
     categoria_canonica: 'fuerza-traccion',
-    proposito: 'entrenamiento',
-    momento: 'principal',
     equipo_canonico: ['pullup_bar'],
     stimulus_derivado: 'strength',
-    tags: [],
     intensidad: 'Media',
     riesgo: 'Bajo',
-    series: null, reps: null, tiempo: null, descanso: null,
-    cues: null, errores_comunes: null, precauciones: null, senales_detener: null, equipo: 'Barra'
-  },
-  {
+    equipo: 'Barra'
+  }),
+  row({
     id: 'FT-006',
     nombre: 'Bloqueo con una mano (one-arm lock-off)',
     descripcion: 'Subir en dominada/chin-up; bloquear arriba con un brazo y soltar el otro; mantener.',
     nivel_canonico: 'avanzado',
     categoria_canonica: 'fuerza-traccion',
-    proposito: 'entrenamiento',
-    momento: 'principal',
     equipo_canonico: ['pullup_bar'],
     stimulus_derivado: 'strength',
     tags: ['riesgo-lesion:pullups-weighted', 'prerequisito:15-pullups'],
     intensidad: 'Máxima',
     riesgo: 'Alto',
-    series: null, reps: null, tiempo: null, descanso: null,
-    cues: null, errores_comunes: null, precauciones: null, senales_detener: null, equipo: 'Barra'
-  },
-  {
+    equipo: 'Barra'
+  }),
+  row({
     id: 'PO-DEADSTOP',
     nombre: 'Dead Stop (precisión dinámica)',
     descripcion: 'Generar momentum. Al llegar al momento de contactar la presa, detenerse INMEDIATAMENTE sin chocar.',
     nivel_canonico: 'avanzado',
     categoria_canonica: 'potencia',
-    proposito: 'entrenamiento',
-    momento: 'principal',
     equipo_canonico: ['gym'],
     stimulus_derivado: 'power',
     tags: ['riesgo-lesion:power-max'],
     intensidad: 'Máxima',
     riesgo: 'Alto',
-    series: null, reps: null, tiempo: null, descanso: null,
-    cues: null, errores_comunes: null, precauciones: null, senales_detener: null, equipo: 'Muro'
-  },
-  {
+    equipo: 'Muro'
+  }),
+  row({
     id: 'PO-002',
     nombre: 'Movimiento dinámico de alcance y agarre (dyno)',
     descripcion: 'Movimiento dinámico hacia una presa objetivo, buscando agarrar cerca del dead point.',
     nivel_canonico: 'avanzado',
     categoria_canonica: 'potencia',
-    proposito: 'entrenamiento',
-    momento: 'principal',
     equipo_canonico: ['gym'],
     stimulus_derivado: 'power',
-    tags: [],
     intensidad: 'Alta',
     riesgo: 'Medio',
-    series: null, reps: null, tiempo: null, descanso: null,
-    cues: null, errores_comunes: null, precauciones: null, senales_detener: null, equipo: 'Muro'
-  },
-  {
+    equipo: 'Muro'
+  }),
+  row({
     id: 'RH-004',
     nombre: 'Squeeze device / putty para retorno post-lesión polea',
     descripcion: 'Tras descanso completo, fuerza de baja resistencia con dispositivo de presión.',
     nivel_canonico: 'avanzado',
     categoria_canonica: 'fuerza-dedos',
     proposito: 'rehab',
-    momento: 'principal',
     equipo_canonico: ['home'],
     stimulus_derivado: 'mobility',
-    tags: [],
     intensidad: 'Baja',
     riesgo: 'Alto',
-    series: null, reps: null, tiempo: null, descanso: null,
-    cues: null, errores_comunes: null, precauciones: 'Sólo iniciar sin dolor.', senales_detener: null, equipo: 'Squeeze device'
-  }
+    precauciones: 'Sólo iniciar sin dolor.',
+    equipo: 'Squeeze device'
+  })
 ];
 
 function baseProfile(): MatcherInput['profile'] {
