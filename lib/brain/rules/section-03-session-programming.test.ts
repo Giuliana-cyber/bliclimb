@@ -412,7 +412,13 @@ describe('§3.9 — power-endurance requiere 6+ semanas aerobic-base previas', (
     ).toHaveLength(0);
   });
 
-  it('viola: solo 3 semanas aerobic-base antes de PE', () => {
+  it('desactivada para planes <6 semanas (decisión Giuliana 2026-07-13 · Deuda #14)', () => {
+    // Un plan de 4 semanas con solo 3 aerobic-base + PE en semana 4
+    // técnicamente cumpliría la condición semántica de §3.9, pero el check
+    // se desactivó para planes cortos porque BilClimb produce planes de
+    // 2-4 semanas (planDuration en user-profile.ts) y §3.9 fue diseñada
+    // para macrociclos largos. La protección real contra PE en principiantes
+    // es §1.2 ampliada (bloqueo estructural del stimulus).
     const weeks: PlanWeekForRules[] = [];
     for (let i = 1; i <= 3; i++) {
       weeks.push(
@@ -420,6 +426,25 @@ describe('§3.9 — power-endurance requiere 6+ semanas aerobic-base previas', (
       );
     }
     weeks.push(week(4, [session(1, { stimulusCategory: 'power-endurance' })]));
+    expect(
+      violationsFor('3.9', section03SessionProgramming.check(plan(weeks)))
+    ).toHaveLength(0);
+  });
+
+  it('viola: plan de 7 semanas con solo 3 aerobic-base antes de PE (>=6 semanas activa el check)', () => {
+    // Cuando el plan tiene 6+ semanas, §3.9 vuelve a aplicar. Este test
+    // documenta que el desactivamiento es SOLO para planes cortos, no para
+    // macrociclos largos.
+    const weeks: PlanWeekForRules[] = [];
+    for (let i = 1; i <= 3; i++) {
+      weeks.push(week(i, [session(1, { stimulusCategory: 'aerobic-base' })]));
+    }
+    // semanas 4, 5, 6 sin aerobic-base
+    for (let i = 4; i <= 6; i++) {
+      weeks.push(week(i, [session(1, { stimulusCategory: 'strength' })]));
+    }
+    // semana 7 introduce PE
+    weeks.push(week(7, [session(1, { stimulusCategory: 'power-endurance' })]));
     const vs = violationsFor(
       '3.9',
       section03SessionProgramming.check(plan(weeks))
@@ -428,7 +453,7 @@ describe('§3.9 — power-endurance requiere 6+ semanas aerobic-base previas', (
     if (vs[0].details.kind === 'anaerobic-without-aerobic-base') {
       expect(vs[0].details.aerobicBaseWeeksBefore).toBe(3);
       expect(vs[0].details.minRequired).toBe(6);
-      expect(vs[0].details.firstAnaerobicWeek).toBe(4);
+      expect(vs[0].details.firstAnaerobicWeek).toBe(7);
     }
   });
 

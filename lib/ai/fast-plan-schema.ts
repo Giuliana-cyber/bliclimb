@@ -296,6 +296,42 @@ export type FastExercise = z.infer<typeof FastExerciseSchema>;
 // ejercicio gateable permitido.
 
 /**
+ * Construye el schema restringido de `stimulusCategory` para un request.
+ *
+ * Análogo a `buildAllowedBlockCategorySchema` pero para el enum
+ * `StimulusCategorySchema`. Se usa para restringir stimulus por experiencia
+ * (ej: `power-endurance` bloqueado para escaladores con <2 años · §1.2
+ * ampliada 2026-07-13 por decisión de Giuliana).
+ *
+ * @param blockedStimuli Stimulus prohibidos para el perfil. Strings arbitrarios
+ *                       que no matcheen con `StimulusCategorySchema.options` se
+ *                       ignoran silenciosamente.
+ * @returns el enum restringido (nunca vacío — si todos estuvieran bloqueados
+ *          fallaría antes que llegar acá; ese sería un edge case que
+ *          documentamos si aparece).
+ */
+export function buildAllowedStimulusCategorySchema(blockedStimuli: readonly string[]) {
+  const blockedSet = new Set<StimulusCategory>();
+  for (const item of blockedStimuli) {
+    if ((StimulusCategorySchema.options as readonly string[]).includes(item)) {
+      blockedSet.add(item as StimulusCategory);
+    }
+  }
+  const allowed = StimulusCategorySchema.options.filter(
+    (c) => !blockedSet.has(c)
+  );
+  if (allowed.length === 0) {
+    // Edge case defensivo: si todos los stimulus están bloqueados, no hay
+    // schema posible. Devolvemos el enum completo para no romper el flujo;
+    // el retry / validator posterior se encargarían. En la práctica no debería
+    // pasar con los bloqueos actuales (§1.2 solo bloquea power-endurance de
+    // los 10 valores).
+    return StimulusCategorySchema;
+  }
+  return z.enum(allowed as [StimulusCategory, ...StimulusCategory[]]);
+}
+
+/**
  * Construye el schema restringido de `blockCategory` para un request.
  *
  * @param blocked Categorías prohibidas para el perfil (evaluateProfile output).
@@ -322,31 +358,66 @@ export function buildAllowedBlockCategorySchema(blocked: readonly string[]) {
 }
 
 /**
+ * Filtra los valores de un enum literal de stimulus contra la lista de
+ * bloqueados. Fallback defensivo: si la lista de allowed queda vacía,
+ * devuelve el enum original.
+ *
+ * Firma laxa (any): Zod v4 tipa cada `z.enum(...)` con un shape
+ * literalmente único, así que trabajar con genéricos estrictos exige
+ * gymnastics de tipos que no aportan. En runtime todos los valores del
+ * resultado son strings del enum base — downstream funciona correcto.
+ */
+function restrictStimulusEnum(
+  base: z.ZodEnum<Record<string, string>>,
+  blockedStimuli: readonly string[]
+): z.ZodTypeAny {
+  if (blockedStimuli.length === 0) return base;
+  const blockedSet = new Set(blockedStimuli);
+  const allowed = base.options.filter((c) => !blockedSet.has(String(c)));
+  if (allowed.length === 0) return base;
+  const tuple = allowed.map((v) => String(v)) as [string, ...string[]];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return z.enum(tuple as any);
+}
+
+/**
  * Construye las 3 variantes por-bloque (warmup / mainBlock / cooldown) del
  * FastExerciseSchema con `blockCategory` restringido. Sigue el mismo patrón
  * omit+extend que usa `stimulusCategory` en cada bloque (Opción 6).
+ *
+ * @param blocked  Categorías `blockCategory` prohibidas (§1.1 / §1.2).
+ * @param blockedStimuli Stimulus prohibidos (§1.2 ampliada 2026-07-13 con
+ *                       power-endurance para <2 años). Vacío por default.
  */
-export function buildRestrictedExerciseSchemas(blocked: readonly string[]) {
+export function buildRestrictedExerciseSchemas(
+  blocked: readonly string[],
+  blockedStimuli: readonly string[] = []
+) {
   const blockCategorySchema = buildAllowedBlockCategorySchema(blocked);
+  // Restricción de stimulus por experiencia (2026-07-13): si power-endurance
+  // está bloqueado, sale del enum de mainBlock (los otros dos ya no lo tenían).
+  const warmupStim = restrictStimulusEnum(WarmupStimulusSchema, blockedStimuli);
+  const mainStim = restrictStimulusEnum(MainBlockStimulusSchema, blockedStimuli);
+  const cooldownStim = restrictStimulusEnum(CooldownStimulusSchema, blockedStimuli);
   const warmup = FastExerciseSchema.omit({
     stimulusCategory: true,
     blockCategory: true
   }).extend({
-    stimulusCategory: WarmupStimulusSchema,
+    stimulusCategory: warmupStim,
     blockCategory: blockCategorySchema
   });
   const mainBlock = FastExerciseSchema.omit({
     stimulusCategory: true,
     blockCategory: true
   }).extend({
-    stimulusCategory: MainBlockStimulusSchema,
+    stimulusCategory: mainStim,
     blockCategory: blockCategorySchema
   });
   const cooldown = FastExerciseSchema.omit({
     stimulusCategory: true,
     blockCategory: true
   }).extend({
-    stimulusCategory: CooldownStimulusSchema,
+    stimulusCategory: cooldownStim,
     blockCategory: blockCategorySchema
   });
   return { warmup, mainBlock, cooldown };
@@ -357,17 +428,29 @@ export function buildRestrictedExerciseSchemas(blocked: readonly string[]) {
  * por perfil. Reemplaza `FastWeekSchema` en `zodResponseFormat` cuando el
  * perfil trae categorías prohibidas de §1.1 / §1.2.
  *
- * Si `blocked` está vacío, el schema resultante es equivalente al estático —
- * se recomienda usar `FastWeekSchema` directo en ese caso para no pagar
- * el costo del rebuild (helper que sigue).
+ * Si `blocked` y `blockedStimuli` están vacíos, el schema resultante es
+ * equivalente al estático — se recomienda usar `FastWeekSchema` directo en
+ * ese caso para no pagar el costo del rebuild (helper que sigue).
  */
-export function buildRestrictedFastWeekSchema(blocked: readonly string[]) {
-  const { warmup, mainBlock, cooldown } = buildRestrictedExerciseSchemas(blocked);
+export function buildRestrictedFastWeekSchema(
+  blocked: readonly string[],
+  blockedStimuli: readonly string[] = []
+) {
+  const { warmup, mainBlock, cooldown } = buildRestrictedExerciseSchemas(
+    blocked,
+    blockedStimuli
+  );
+  // Restringir también session.stimulusCategory — un LLM que quiera meter
+  // PE tendría que etiquetar la sesión completa como PE, y el enum de session
+  // rechazaría estructuralmente ese valor.
+  const sessionStim = restrictStimulusEnum(StimulusCategorySchema, blockedStimuli);
   const session = FastSessionSchema.omit({
     warmup: true,
     mainBlock: true,
-    cooldown: true
+    cooldown: true,
+    stimulusCategory: true
   }).extend({
+    stimulusCategory: sessionStim,
     warmup: z.array(warmup),
     mainBlock: z.array(mainBlock),
     cooldown: z.array(cooldown)

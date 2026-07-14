@@ -1122,3 +1122,47 @@ La lógica del check `check_2_4` es trivial una vez que el campo existe (~20 LOC
 **Principio guía:** el prompt y el validador tienen que pedir lo mismo. Si divergen, el LLM cumple el prompt y el validador lo rechaza igual → el plan nunca converge.
 
 **Cuándo revisitar:** si el público cambia a atletas con volumen semanal >4 sesiones y varias de PE (élite competitivo), el umbral de 3 días podría subir a 4-5 sin bloquear viabilidad. Revisar con datos reales de logs (rate de retries por §3.4).
+
+## Deuda #14 — §3.9 desactivada para planes <6 semanas + §1.2 ampliada con power-endurance (2026-07-13)
+
+**Contexto:** al debuggear plans que fallaban por §3.9 (anaerobic-without-aerobic-base) descubrimos una contradicción producto-regla:
+
+- **Producto:** BilClimb produce planes cortos de guía. `planDuration` está restringido a `{2, 3, 4}` en `lib/schemas/user-profile.ts:66` (commit `25b0401`, "matches onboarding").
+- **§3.9 (Doc 02):** power-endurance requiere ≥6 semanas de base aeróbica previas.
+- **Consecuencia matemática:** en un plan de 4 semanas, §3.9 nunca puede cumplirse aunque el atleta sea un profesional. Cualquier PE en cualquier semana viola.
+
+Antes de este fix, cada plan con PE fallaba estructuralmente: Bill seguía metiendo PE, §3.9 rechazaba, retry no absorbía.
+
+**Decisión Giuliana (Camino A con restricción por experiencia):**
+
+1. **§1.2 ampliada:** `power-endurance` se bloquea como *stimulus* para escaladores con menos de 2 años (`climbingTime !== 'more3'`), en el mismo umbral que ya bloquea hangboard-intense/campus/hit/pullups-weighted/max-tests.
+
+2. **§3.9 desactivada para planes <6 semanas:** `check_3_9` retorna `[]` si `plan.weeks.length < 6`. Los avanzados con 2+ años pueden hacer PE en planes cortos porque tienen la base fisiológica previa (fuera del plan generado por BilClimb).
+
+3. **Principio:** el gating por experiencia (§1.2) es la protección real. Mantener §3.9 activa para planes cortos haría el permiso a avanzados inútil — el check los bloquearía igual.
+
+**Implementación:**
+
+- **`lib/ai/fast-plan-schema.ts`**:
+  - Nueva `buildAllowedStimulusCategorySchema(blockedStimuli)`.
+  - `buildRestrictedExerciseSchemas(blocked, blockedStimuli)` y `buildRestrictedFastWeekSchema(blocked, blockedStimuli)` aceptan lista de stimulus prohibidos y los recortan del enum de `StimulusCategory` en `session` y en las 3 variantes de exercise (warmup/mainBlock/cooldown).
+- **`app/api/generate-plan/route.ts`**:
+  - Calcula `blockedStimuliForSchema = climbingTime !== 'more3' ? ['power-endurance'] : []`.
+  - Lo pasa a `generateWeek` en las 2 llamadas (primera generación + retry loop).
+- **`lib/brain/rules/section-03-session-programming.ts:500-503`**:
+  - `check_3_9` retorna `[]` si `ordered.length < 6`.
+  - Comentario documenta la decisión.
+
+**Verificaciones (2026-07-13):**
+
+- typecheck limpio.
+- Suite 616+ tests verdes (incluyendo 5 nuevos de `buildAllowedStimulusCategorySchema` y 2 tests de `blockedStimuli` en `buildRestrictedFastWeekSchema`).
+- Test viejo de §3.9 con plan de 4 semanas actualizado: ahora verifica que NO dispara (con explicación referencia a esta deuda).
+- Nuevo test §3.9 con plan de 7 semanas: verifica que el check sigue funcionando en macrociclos largos.
+
+**Cuándo revisitar:**
+
+- Si `planDuration` alguna vez se expande a >6 semanas, revisar si §3.9 se mantiene desactivada para el rango 2-5 o se activa selectivamente por duración exacta.
+- Si el análisis de logs muestra que ningún usuario avanzado usa PE en planes cortos, considerar bloquear PE en todo el producto y simplificar la lógica.
+
+**Deudas anidadas:** §3.9 desactivada crea la asunción implícita de que "si un avanzado quiere PE, tiene la base fisiológica fuera del sistema". No hay validación de eso. Si algún día hay checkin más detallado de historia de entrenamiento, se puede pedir "confirmá base aeróbica de ≥6 semanas antes de habilitar PE" en el onboarding avanzado.

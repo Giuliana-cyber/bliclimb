@@ -500,6 +500,26 @@ function check_3_8(plan: PlanForRules): PlanViolation[] {
 function check_3_9(plan: PlanForRules): PlanViolation[] {
   const ordered = [...plan.weeks].sort((a, b) => a.weekNumber - b.weekNumber);
 
+  // Desactivación para planes <6 semanas (decisión Giuliana 2026-07-13 ·
+  // Deuda #14).
+  //
+  // BilClimb produce planes cortos de guía (2-4 semanas · `planDuration`
+  // en `lib/schemas/user-profile.ts:66`). §3.9 fue diseñada para
+  // macrociclos serios donde el atleta puede acumular 6 semanas de base
+  // aeróbica ANTES de introducir power-endurance — un requisito
+  // matemáticamente imposible en planes de 4 semanas.
+  //
+  // La protección real contra PE en principiantes es §1.2 ampliada:
+  // bloquea `power-endurance` como stimulus a nivel de schema para
+  // usuarios con climbingTime !== 'more3' (implementado en
+  // buildRestrictedFastWeekSchema con blockedStimuli). Los avanzados con
+  // 2+ años pueden hacer PE en planes cortos porque tienen la base
+  // fisiológica previa (fuera del plan generado por BilClimb).
+  //
+  // Mantener §3.9 activa para planes cortos haría el permiso a avanzados
+  // inútil — el check los bloquearía igual. Decisión: skip para <6 sem.
+  if (ordered.length < 6) return [];
+
   let firstPEWeek = -1;
   let firstPEIdx = -1;
   for (let i = 0; i < ordered.length; i++) {

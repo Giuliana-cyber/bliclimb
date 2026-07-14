@@ -882,7 +882,8 @@ async function generateWeek(
   retryCorrection: string | null = null,
   groundingContext = '',
   blockedCategories: readonly string[] = [],
-  latestCheckIn: { fingerPain?: number | null } | null = null
+  latestCheckIn: { fingerPain?: number | null } | null = null,
+  blockedStimuli: readonly string[] = []
 ): Promise<FastWeek> {
   const equipment = profile.equipment?.length ? profile.equipment : ['home'];
   const equipmentLines = equipment
@@ -942,8 +943,8 @@ Devuelve la semana con weekNumber=${weekMeta.weekNumber}.`
   // generación (mismo mecanismo que Opción 6 usa para §3.6). Si no hay
   // bloqueos, reusamos el FastWeekSchema estático para no pagar el rebuild.
   const weekSchema =
-    blockedCategories.length > 0
-      ? buildRestrictedFastWeekSchema(blockedCategories)
+    blockedCategories.length > 0 || blockedStimuli.length > 0
+      ? buildRestrictedFastWeekSchema(blockedCategories, blockedStimuli)
       : FastWeekSchema;
 
   // Helper interno: una llamada parse + chequeo de truncación. Si se
@@ -997,8 +998,12 @@ Devuelve la semana con weekNumber=${weekMeta.weekNumber}.`
   // agrega latencia notable — solo asegura que el JSON nunca se trunque
   // en planes densos (sesiones con muchos ejercicios + notas largas).
   // Histórico: 2500 → 4000 → 8000 → 12000 según casos border reales.
+  // Cast a FastWeek: el schema restringido dinámicamente (con blockedStimuli
+  // recortado) es un subset estructural del FastWeek estático — TS no infiere
+  // esto porque el enum recortado tiene tipo distinto, pero en runtime todos
+  // los valores producidos son válidos del enum completo.
   try {
-    return await attempt(12_000, '12k');
+    return (await attempt(12_000, '12k')) as FastWeek;
   } catch (err) {
     const message = err instanceof Error ? err.message : '';
     if (!message.startsWith('TRUNCATION_')) {
@@ -1014,7 +1019,7 @@ Devuelve la semana con weekNumber=${weekMeta.weekNumber}.`
       })
     );
     try {
-      return await attempt(16_000, '16k');
+      return (await attempt(16_000, '16k')) as FastWeek;
     } catch (retryErr) {
       const retryMessage = retryErr instanceof Error ? retryErr.message : 'unknown';
       // Después del retry, presentamos un mensaje limpio al cliente.
@@ -1262,6 +1267,22 @@ export async function POST(request: Request) {
     });
     const blockedCategoriesForPrompt = Array.from(brainContext.blockedCategories);
 
+    // §1.2 ampliada (2026-07-13 · decisión Giuliana): power-endurance queda
+    // bloqueado estructuralmente en el schema para escaladores con menos de
+    // 2 años de experiencia sistemática. El mismo umbral (`climbingTime !==
+    // 'more3'`) que ya bloquea hangboard-intense, campus, hit, pullups-
+    // weighted y max-tests.
+    //
+    // Se aplica al schema de generación (buildRestrictedFastWeekSchema) para
+    // que OpenAI structured output rechace `stimulusCategory='power-endurance'`
+    // en generación → cero retries por §3.9 en principiantes. Los avanzados
+    // (climbingTime='more3') siguen habilitados; §3.9 se desactivó para
+    // planes <6 semanas en check_3_9 porque §1.2 ya los protege.
+    const blockedStimuliForSchema: string[] = [];
+    if (profile.climbingTime !== 'more3') {
+      blockedStimuliForSchema.push('power-endurance');
+    }
+
     // 3. Generar todas las semanas EN PARALELO. Cada semana recibe el
     //    groundingContext para que los ejercicios y protocolos vengan
     //    anclados en biblioteca + web (allowlist).
@@ -1275,7 +1296,8 @@ export async function POST(request: Request) {
           null,
           groundingContext,
           blockedCategoriesForPrompt,
-          latestCheckInForRules
+          latestCheckInForRules,
+          blockedStimuliForSchema
         )
       )
     );
@@ -1413,7 +1435,8 @@ export async function POST(request: Request) {
               correction,
               groundingContext,
               blockedCategoriesForPrompt,
-              latestCheckInForRules
+              latestCheckInForRules,
+              blockedStimuliForSchema
             );
           }
           return fastWeeks.find((w) => w.weekNumber === theme.weekNumber)!;

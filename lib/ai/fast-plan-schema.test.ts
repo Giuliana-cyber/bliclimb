@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildAllowedBlockCategorySchema,
+  buildAllowedStimulusCategorySchema,
   buildRestrictedExerciseSchemas,
   buildRestrictedFastWeekSchema,
   CooldownExerciseSchema,
@@ -609,6 +610,45 @@ describe('buildAllowedBlockCategorySchema — restricción dinámica', () => {
   });
 });
 
+// ============================================================================
+// buildAllowedStimulusCategorySchema — restricción por experiencia (§1.2 2026-07-13).
+//
+// El escenario: escaladores con climbingTime !== 'more3' no deben poder
+// recibir sesiones/ejercicios con stimulusCategory='power-endurance'. El
+// schema restringido rechaza estructuralmente en generación.
+// ============================================================================
+
+describe('buildAllowedStimulusCategorySchema — restricción por experiencia', () => {
+  it('sin bloqueados → acepta las 10 categorías del enum completo', () => {
+    const schema = buildAllowedStimulusCategorySchema([]);
+    for (const c of StimulusCategorySchema.options) {
+      expect(schema.safeParse(c).success).toBe(true);
+    }
+  });
+
+  it('blockedStimuli=[power-endurance] → rechaza power-endurance, acepta las demás 9', () => {
+    const schema = buildAllowedStimulusCategorySchema(['power-endurance']);
+    expect(schema.safeParse('power-endurance').success).toBe(false);
+    // Las otras 9 siguen aceptándose.
+    const otras = StimulusCategorySchema.options.filter(
+      (c) => c !== 'power-endurance'
+    );
+    for (const c of otras) {
+      expect(schema.safeParse(c).success).toBe(true);
+    }
+  });
+
+  it('blockedStimuli con string extraño (no matchea enum) → lo ignora silenciosamente', () => {
+    const schema = buildAllowedStimulusCategorySchema([
+      'foo-endurance', // typo
+      'power-endurance' // el válido bloquea
+    ]);
+    expect(schema.safeParse('power-endurance').success).toBe(false);
+    // strength sigue aceptándose (fuo-endurance ignorado).
+    expect(schema.safeParse('strength').success).toBe(true);
+  });
+});
+
 describe('buildRestrictedExerciseSchemas — cross-check por bloque', () => {
   const VALID_MAIN = {
     ...VALID_EXERCISE,
@@ -773,5 +813,75 @@ describe('buildRestrictedFastWeekSchema — integración plan-level', () => {
       ]
     };
     expect(schema.safeParse(looseWeek).success).toBe(true);
+  });
+
+  // §1.2 ampliada 2026-07-13: power-endurance bloqueado estructuralmente
+  // en el schema para escaladores con <2 años de experiencia.
+  describe('blockedStimuli · power-endurance rechazado en session y mainBlock', () => {
+    const PE_MAIN = {
+      ...VALID_EXERCISE,
+      name: 'Circuito 4x4',
+      stimulusCategory: 'power-endurance' as const,
+      blockCategory: null
+    };
+    const PE_SESSION = {
+      ...VALID_SESSION,
+      stimulusCategory: 'power-endurance' as const,
+      warmup: [VALID_WARMUP_EXERCISE],
+      mainBlock: [PE_MAIN, PE_MAIN, PE_MAIN, PE_MAIN],
+      cooldown: [VALID_COOLDOWN_EXERCISE, VALID_COOLDOWN_EXERCISE]
+    };
+    const PE_WEEK = { ...OK_WEEK, sessions: [PE_SESSION] };
+
+    it('sin blockedStimuli → semana con power-endurance pasa (comportamiento actual para avanzados)', () => {
+      const schema = buildRestrictedFastWeekSchema([], []);
+      expect(schema.safeParse(PE_WEEK).success).toBe(true);
+    });
+
+    it('blockedStimuli=[power-endurance] → semana con session.stimulus=power-endurance falla', () => {
+      const schema = buildRestrictedFastWeekSchema([], ['power-endurance']);
+      expect(schema.safeParse(PE_WEEK).success).toBe(false);
+    });
+
+    it('blockedStimuli=[power-endurance] → exercise mainBlock con power-endurance también falla', () => {
+      const schema = buildRestrictedFastWeekSchema([], ['power-endurance']);
+      // Session con stimulus válido pero un exercise interno con PE:
+      const mixedSession = {
+        ...VALID_SESSION,
+        stimulusCategory: 'strength' as const, // session-level OK
+        warmup: [VALID_WARMUP_EXERCISE],
+        mainBlock: [OK_MAIN, PE_MAIN, OK_MAIN, OK_MAIN], // exercise PE
+        cooldown: [VALID_COOLDOWN_EXERCISE, VALID_COOLDOWN_EXERCISE]
+      };
+      const mixedWeek = { ...OK_WEEK, sessions: [mixedSession] };
+      expect(schema.safeParse(mixedWeek).success).toBe(false);
+    });
+
+    it('blockedStimuli=[power-endurance] → semana con solo strength/power/skill pasa', () => {
+      const schema = buildRestrictedFastWeekSchema([], ['power-endurance']);
+      // OK_WEEK usa solo stimulus permitidos.
+      expect(schema.safeParse(OK_WEEK).success).toBe(true);
+    });
+
+    it('blockedCategories y blockedStimuli en paralelo se acumulan', () => {
+      // pullups-weighted bloqueado (blockCategory) + power-endurance bloqueado
+      // (stimulus). Semana con ambos: rechaza.
+      const schema = buildRestrictedFastWeekSchema(
+        ['pullups-weighted'],
+        ['power-endurance']
+      );
+      expect(schema.safeParse(PE_WEEK).success).toBe(false);
+      // Y una semana con blockCategory prohibido también falla.
+      const withBadBlockCat = {
+        ...OK_WEEK,
+        sessions: [
+          {
+            ...OK_SESSION,
+            mainBlock: [OK_MAIN, OK_MAIN, BAD_WEIGHTED_PULLUP, OK_MAIN]
+          }
+        ]
+      };
+      expect(schema.safeParse(withBadBlockCat).success).toBe(false);
+    });
   });
 });
