@@ -362,10 +362,10 @@ export function buildAllowedBlockCategorySchema(blocked: readonly string[]) {
  * bloqueados. Fallback defensivo: si la lista de allowed queda vacía,
  * devuelve el enum original.
  *
- * Firma laxa (any): Zod v4 tipa cada `z.enum(...)` con un shape
- * literalmente único, así que trabajar con genéricos estrictos exige
- * gymnastics de tipos que no aportan. En runtime todos los valores del
- * resultado son strings del enum base — downstream funciona correcto.
+ * Construimos el enum vía object-shape (`{a: 'a', b: 'b'}`) que es la
+ * API principal de Zod v4 — evita el cast a `any` que rompía el build
+ * de Next.js (regla `no-explicit-any` no configurada en el proyecto).
+ * En runtime cada valor del resultado es un string del enum base.
  */
 function restrictStimulusEnum(
   base: z.ZodEnum<Record<string, string>>,
@@ -375,9 +375,12 @@ function restrictStimulusEnum(
   const blockedSet = new Set(blockedStimuli);
   const allowed = base.options.filter((c) => !blockedSet.has(String(c)));
   if (allowed.length === 0) return base;
-  const tuple = allowed.map((v) => String(v)) as [string, ...string[]];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return z.enum(tuple as any);
+  const shape: Record<string, string> = {};
+  for (const value of allowed) {
+    const s = String(value);
+    shape[s] = s;
+  }
+  return z.enum(shape);
 }
 
 /**
