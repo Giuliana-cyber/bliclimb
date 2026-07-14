@@ -206,6 +206,19 @@ DISTRIBUCIÓN SEMANAL DE CARGA (Doc 02 §3.3, §3.4, §3.9 — reglas duras del 
     → strength + power + power-endurance (3 tipos) → VIOLA
   Regla operativa: al armar el mainBlock, contá cuántas categorías distintas de {strength, power, power-endurance} aparecen. Si son ≥3, quitá una y quedate con 2. Muchos exercises del mismo tipo están bien; el problema son los TIPOS combinados. Fisiología: 3 estímulos neurales altos en una misma sesión saturan al sistema nervioso central.
 
+RESTRICCIÓN POR EQUIPAMIENTO — sin muro no hay escalada:
+
+- Si el equipment del usuario NO incluye 'gym' NI 'rock', el usuario NO tiene acceso a un muro. En ese caso NO propongas ejercicios con suggestedCategory='boulder' NI suggestedCategory='tecnica' — el catálogo no tiene ejercicios seguros de esas categorías para practicar en casa (la técnica de escalada se entrena escalando, y el boulder requiere pared).
+- Para un usuario solo-casa (equipment ∈ subset de {home, hangboard, pullup_bar, bands, weights, trx}) trabajá exclusivamente con estas categorías del catálogo:
+    * fuerza-dedos (si tiene hangboard)
+    * fuerza-traccion (si tiene pullup_bar)
+    * fuerza-empuje, fuerza-tren-inferior
+    * core
+    * movilidad, hombros-escapulas, munecas-antebrazos
+    * piel (rutina de cuidado)
+  Estas van a construir base física; la parte técnica del plan queda en pausa hasta que el usuario acceda a un muro.
+- El METADATA_PROMPT genera un equipmentSummary honesto que le explica al usuario esta limitación — NO lo repitas en cada sesión, pero SÍ evitá el rechazo estructural del catálogo.
+
 EXTENSORES OBLIGATORIOS (Doc 02 §14.2 — prevención epicondilitis):
 
 - Si el perfil incluye 'elbows' en injuries → CADA SEMANA con ≥1 sesión de tracción debe tener AL MENOS 1 exercise con stimulusCategory='mobility' específico de extensores (band pull-aparts, band extensors, wrist curl inverso). Historial de codo obliga siempre.

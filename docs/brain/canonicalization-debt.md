@@ -1166,3 +1166,58 @@ Antes de este fix, cada plan con PE fallaba estructuralmente: Bill seguía metie
 - Si el análisis de logs muestra que ningún usuario avanzado usa PE en planes cortos, considerar bloquear PE en todo el producto y simplificar la lógica.
 
 **Deudas anidadas:** §3.9 desactivada crea la asunción implícita de que "si un avanzado quiere PE, tiene la base fisiológica fuera del sistema". No hay validación de eso. Si algún día hay checkin más detallado de historia de entrenamiento, se puede pedir "confirmá base aeróbica de ≥6 semanas antes de habilitar PE" en el onboarding avanzado.
+
+## Deuda #15 — Hueco de boulder/técnica para principiante sin muro (2026-07-13)
+
+**Contexto:** al diagnosticar `rejectRatio=0.226` en el smoke test del 2026-07-13, tres rechazos consecutivos del matcher revelaron un hueco estructural del catálogo:
+
+```
+"Bloque libre en casa" (boulder, skill) → sin ejercicio seguro
+"Bloque de escalada suave en el suelo" (boulder, skill) → sin ejercicio seguro
+"Escalada Suave — Técnica" (boulder, skill) → sin ejercicio seguro
+```
+
+**Verificación del catálogo (diagnóstico crudo, script en scratchpad):**
+
+- **13 filas totales con `categoria_canonica='boulder'`**. Distribución por nivel:
+  - avanzado: 4 (BO-001, BO-002, BT-PAUSE, DIS-001)
+  - intermedio-avanzado: 6 (BT-001, BT-002, BT-003, BT-P001, BT-P002, BT-P003)
+  - intermedio: 1 (TC-FOFF — rehab)
+  - principiante-intermedio: 1 (BO-003)
+  - principiante: **1** (BO-004)
+- BO-004 requiere `equipo_canonico=['gym']` (Boulder wall).
+- **Boulder principiante con `equipo_canonico ⊆ {home, hangboard, pullup_bar, bands}`: 0 filas.**
+- Técnica principiante (`categoria_canonica='tecnica'` compatible por nivel) en casa: **0 filas** también. Todos los TC-* de nivel principiante requieren gym/rock.
+
+**Marco de producto (Giuliana):**
+> "El plan sin muro es incompleto por naturaleza. Sin pared no hay escalada — es física, no un bug del catálogo. Pero algunos van a entrenar en casa igual, y BilClimb tiene que darles algo útil sin fingir que están escalando."
+
+**Solución interina aplicada (Camino C · 2026-07-13):**
+
+- `WEEK_PROMPT` extendido con sección "RESTRICCIÓN POR EQUIPAMIENTO — sin muro no hay escalada":
+  - Si `equipment` NO incluye `gym` ni `rock` → Bill NO propone `suggestedCategory='boulder'` ni `'tecnica'`.
+  - Se le indica trabajar exclusivamente con `fuerza-*`, `movilidad`, `core`, `hombros-escapulas`, `munecas-antebrazos`, `piel`.
+- `METADATA_PROMPT` extendido con copy honesto en `equipmentSummary`: cuando el usuario no tiene muro, Bill/Senda dice explícitamente que "la técnica se entrena escalando" y que el plan va a construir base física. **Copy pendiente de aprobación de Giuliana antes de commit.**
+
+**Solución de fondo (Camino A · deuda editorial pendiente):**
+
+Curar ejercicios nuevos de `categoria_canonica='tecnica'` (o crear una nueva sub-categoría `tecnica-casa` si el marco taxonómico lo pide) que SÍ se puedan hacer sin muro. Ejemplos candidatos:
+
+- **Silent feet sobre líneas en el suelo**: mover pies en un cuadrado marcado con cinta, apoyando el pie sin ruido y sin corregir. Entrena precisión propioceptiva.
+- **Visualización de rutas**: recorrer mentalmente una ruta conocida, movimiento por movimiento. Entrena memoria motora y planeamiento.
+- **Movilidad específica de escalada**: aperturas de cadera, rotación torácica, activación de hombros en posiciones típicas de trepa (drop knee, gaston). Entrena rango + control en las posiciones que el usuario va a necesitar.
+- **Board Pauses en el suelo con marcadores**: si el usuario tiene una pared cualquiera aunque no sea escalable, marcar puntos con cinta y practicar pauses de 3-5s.
+
+Ninguno reemplaza escalar de verdad. Pero son mejores que "movilidad genérica" cuando el usuario pidió técnica.
+
+**Costo estimado:** ~2-3h de curación editorial con Bill/Senda para redactar 5-10 filas. Requiere:
+1. Nombrar cada ejercicio con voz de coach.
+2. Descripción, howTo, cues, commonMistakes.
+3. Categorizar y asignar canónicas (`categoria_canonica`, `nivel_canonico`, `momento`, `equipo_canonico`, `stimulus_derivado`).
+4. Migración `00XX` para insertarlos.
+
+**Rechazado explícitamente (Camino B):**
+
+Ampliar `CATEGORY_SIBLINGS['boulder']` a incluir `movilidad` habría hecho que el matcher L3 entregue movilidad genérica cuando Bill pide boulder. Giuliana lo rechazó: "Darle movilidad genérica cuando pidió escalada es fingir que le diste lo que pidió." Es lo opuesto al principio "Bill nunca miente".
+
+**Cuándo revisitar:** cuando alguien tenga tiempo para la curación del Camino A. Prioridad media — el Camino C ya corta los rechazos, pero el plan solo-casa queda cojo en la parte técnica hasta que se cure el catálogo.
