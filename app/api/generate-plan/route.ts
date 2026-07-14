@@ -170,6 +170,31 @@ ESTRUCTURA OBLIGATORIA DE SESIÓN (Doc 02 §3 — reglas duras, NO se negocian):
 
 - cooldown (array): SOLO ejercicios con stimulusCategory ∈ {cooldown, mobility, rest}. NUNCA strength, power, power-endurance ni hangboard en cooldown. Los dedos ya están fatigados por la sesión (§3.6).
 
+DISTRIBUCIÓN SEMANAL DE CARGA (Doc 02 §3.3, §3.4, §3.9 — reglas duras del mesociclo, se validan y disparan retry):
+
+- Máximo 3 sesiones con intensityLevel='hard' por semana. NUNCA 3 días 'hard' seguidos en calendario (§3.3). Ejemplo válido:
+    L=hard  M=easy  X=hard  J=easy  V=hard  S=off  D=off  (Lu/Mi/Vi hard, con off intercalados)
+  Ejemplo INVÁLIDO:
+    L=hard  M=hard  X=hard  … (3 hards consecutivos, no importa el volumen individual)
+  Si el perfil tiene 4+ sesiones/semana, alterná hard con easy/medium por día calendario. Nunca dos hard back-to-back sin gap.
+
+- Recuperación mínima entre sesiones del MISMO stimulusCategory (§3.4). Contá días del año, no números de sesión:
+    * strength         → 2 días de separación (48h). MaxHangs L y J OK, no L y X.
+    * power            → 2 días de separación (48h). Campus L y J OK, no L y M.
+    * power-endurance  → 3 días de separación (72h). 4x4 L → próximo PE no antes de V.
+    * aerobic-base     → 1 día de separación (24h). ARC L → próximo aeróbico M o X OK.
+  Regla operativa: si session[i].stimulusCategory aparece en día D, la próxima aparición de ese MISMO stimulus debe estar en día D + min_recovery o después. Distinto stimulus el día siguiente es OK.
+  Ejemplo válido de semana con 4 días de tracción:
+    L=strength (max hangs)  M=aerobic-base (ARC)  X=power (campus)  J=easy/off  V=strength (max hangs, +48h desde lunes)
+  Ejemplo INVÁLIDO:
+    L=strength (max hangs)  M=strength (dominadas con lastre)  … (dos strength consecutivos, gap 1 día < 2 requeridos)
+
+- Progresión del mesociclo (§3.9). NO programes stimulusCategory='power-endurance' (4x4, boulders repetidos con recuperación incompleta, hangboard repeaters densos, laps sostenidos) antes de la semana 7 si el atleta no tiene 6 semanas previas de base aeróbica en el plan:
+    * Las primeras 6 semanas del plan (o hasta que el mesociclo entre en fase build/peak) deben incluir al menos 1 sesión/semana con stimulusCategory='aerobic-base' (ARC, Aero Cap, escalada continua de baja intensidad, capilarización).
+    * Recién a partir de la semana 7 (o cuando el mesociclo entre en build/peak después de esa base) podés introducir power-endurance.
+    * Si el plan es de <6 semanas totales (macrociclo corto), NO uses power-endurance en absoluto. Quedate en strength / power / skill / aerobic-base / mobility. El anaeróbico sin base aeróbica prevía es fisiológicamente inviable y va a ser rechazado por el validador.
+  Regla operativa: contá cuántas semanas del plan tienen ≥1 sesión aerobic-base ANTES de la primera semana con ≥1 power-endurance. Debe ser ≥6.
+
 EXTENSORES OBLIGATORIOS (Doc 02 §14.2 — prevención epicondilitis):
 
 - Si el perfil incluye 'elbows' en injuries → CADA SEMANA con ≥1 sesión de tracción debe tener AL MENOS 1 exercise con stimulusCategory='mobility' específico de extensores (band pull-aparts, band extensors, wrist curl inverso). Historial de codo obliga siempre.
@@ -479,6 +504,32 @@ function makeMatcherSummary(): MatcherResolutionSummary {
     rejected: 0,
     rejectedHints: [],
     sampleTrace: []
+  };
+}
+
+/**
+ * Objeto de log unificado del matcher. Se emite en TODOS los paths finales
+ * (éxito, fallback por retries, unrecoverable) para que la observabilidad
+ * en producción pueda verificar `poolLoaded ≈ 265` incluso cuando el plan
+ * falla por otras razones (violaciones §3.x, safety, etc).
+ *
+ * Sin este helper, si el plan falla el bloque matcher no se loguea y no
+ * hay forma de saber si el catálogo se leyó (fue el bug reportado por
+ * Giuliana el 2026-07-13).
+ */
+function matcherLogSummary(
+  matcherPool: CatalogRow[],
+  summary: MatcherResolutionSummary
+) {
+  return {
+    poolLoaded: matcherPool.length,
+    totalCalls: summary.totalCalls,
+    byLevel: summary.byLevel,
+    rejected: summary.rejected,
+    // Ratio explícito para monitoreo. Si sube sistemáticamente sobre 0.05
+    // (5%) el catálogo tiene huecos para algún perfil frecuente.
+    rejectRatio:
+      summary.totalCalls > 0 ? summary.rejected / summary.totalCalls : 0
   };
 }
 
@@ -1328,6 +1379,7 @@ export async function POST(request: Request) {
             location: v.location
           })),
           legacyViolations: safety.ok ? [] : safety.violations.map((v) => ({ rule: v.rule, reason: v.reason })),
+          matcher: matcherLogSummary(matcherPool, matcherSummary),
           timestamp: new Date().toISOString()
         })
       );
@@ -1344,6 +1396,7 @@ export async function POST(request: Request) {
             ...countViolationsByRule(brainEval.blocking),
             ...countViolationsByRule(safety.ok ? [] : safety.violations)
           },
+          matcher: matcherLogSummary(matcherPool, matcherSummary),
           timestamp: new Date().toISOString()
         })
       );
@@ -1420,19 +1473,7 @@ export async function POST(request: Request) {
         attempts: attempt,
         outcome: 'success',
         rulesFinal: {}, // vacío por definición si llegamos acá.
-        matcher: {
-          poolLoaded: matcherPool.length,
-          totalCalls: matcherSummary.totalCalls,
-          byLevel: matcherSummary.byLevel,
-          rejected: matcherSummary.rejected,
-          // Ratio explícito para monitoreo — Giuliana pidió instrumentarlo.
-          // Si sube sistemáticamente sobre 0.05 (5%) → el catálogo tiene
-          // huecos para algún perfil frecuente y hay que investigar.
-          rejectRatio:
-            matcherSummary.totalCalls > 0
-              ? matcherSummary.rejected / matcherSummary.totalCalls
-              : 0
-        },
+        matcher: matcherLogSummary(matcherPool, matcherSummary),
         timestamp: new Date().toISOString()
       })
     );

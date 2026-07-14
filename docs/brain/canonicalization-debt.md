@@ -1102,3 +1102,23 @@ La lógica del check `check_2_4` es trivial una vez que el campo existe (~20 LOC
 6. Al confirmar cerrado, se re-audita: FT-006 pasa de "protegida solo por nivel" a "protegida end-to-end". No requiere borrado adicional; solo actualiza este documento.
 
 **Deudas anidadas que este cierre desbloquea:** también cierra el "prerequisito ≥15 dominadas" para FTP-004 y para cualquier ejercicio futuro que Doc 02 gate por reps de dominada.
+
+## Deuda #13 — §3.4 power-endurance: 3 días recuperación en código, 5 días en Doc 02 (2026-07-13)
+
+**Contexto:** al extender el `WEEK_PROMPT` con §3.4 (recuperación entre sesiones del mismo stimulus) para atrapar el Bug #3 de estructura semanal, hubo divergencia entre lo que dice Doc 02 y lo que el código valida:
+
+- **Doc 02 §3.4:** power-endurance (4x4 al fallo, PE circuits densos) requiere hasta **5 días** de recuperación entre sesiones. Es la ventana biológica canónica citada en la literatura (McClure et al., Hörst; documentado también en Lattice Training).
+- **Código actual** en `lib/brain/rules/section-03-session-programming.ts:148-153` (tabla `MIN_RECOVERY_DAYS`): usa **3 días** para power-endurance. El comentario dice literal: *"3 días como mínimo defensivo (no 5 porque bloqueaba demasiado a 3 días/semana con PE)"*.
+
+**Decisión (Giuliana, 2026-07-13):** mantener 3 días alineando prompt y validador. Rationale:
+
+> El público objetivo entrena típicamente 3 sesiones/semana. Con recuperación de 5 días entre sesiones de power-endurance, quedaría **1 sesión de PE cada 5-7 días** máximo, lo que hace inviable programar un ciclo de PE realista en el mesociclo del usuario. Preferimos que el sistema converja con 3 días (biológicamente sub-óptimo pero programáticamente viable) a que rechace todos los planes por 5 días biológicamente correctos.
+
+**Alineación aplicada 2026-07-13:**
+- `WEEK_PROMPT` en `app/api/generate-plan/route.ts` (sección `DISTRIBUCIÓN SEMANAL DE CARGA`): dice literal *"power-endurance → 3 días de separación (72h)"*.
+- `MIN_RECOVERY_DAYS` en `section-03-session-programming.ts:148-153`: `'power-endurance': 3`.
+- `check_3_4` valida contra el mismo umbral.
+
+**Principio guía:** el prompt y el validador tienen que pedir lo mismo. Si divergen, el LLM cumple el prompt y el validador lo rechaza igual → el plan nunca converge.
+
+**Cuándo revisitar:** si el público cambia a atletas con volumen semanal >4 sesiones y varias de PE (élite competitivo), el umbral de 3 días podría subir a 4-5 sin bloquear viabilidad. Revisar con datos reales de logs (rate de retries por §3.4).
