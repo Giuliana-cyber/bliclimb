@@ -189,11 +189,10 @@ DISTRIBUCIÓN SEMANAL DE CARGA (Doc 02 §3.3, §3.4, §3.9 — reglas duras del 
   Ejemplo INVÁLIDO:
     L=strength (max hangs)  M=strength (dominadas con lastre)  … (dos strength consecutivos, gap 1 día < 2 requeridos)
 
-- Progresión del mesociclo (§3.9). NO programes stimulusCategory='power-endurance' (4x4, boulders repetidos con recuperación incompleta, hangboard repeaters densos, laps sostenidos) antes de la semana 7 si el atleta no tiene 6 semanas previas de base aeróbica en el plan:
-    * Las primeras 6 semanas del plan (o hasta que el mesociclo entre en fase build/peak) deben incluir al menos 1 sesión/semana con stimulusCategory='aerobic-base' (ARC, Aero Cap, escalada continua de baja intensidad, capilarización).
-    * Recién a partir de la semana 7 (o cuando el mesociclo entre en build/peak después de esa base) podés introducir power-endurance.
-    * Si el plan es de <6 semanas totales (macrociclo corto), NO uses power-endurance en absoluto. Quedate en strength / power / skill / aerobic-base / mobility. El anaeróbico sin base aeróbica prevía es fisiológicamente inviable y va a ser rechazado por el validador.
-  Regla operativa: contá cuántas semanas del plan tienen ≥1 sesión aerobic-base ANTES de la primera semana con ≥1 power-endurance. Debe ser ≥6.
+- Power-endurance por experiencia (§1.2 ampliada · reemplaza el criterio de §3.9 por duración). El sistema BilClimb genera planes cortos de guía (2-4 semanas); §3.9 canónica (6+ semanas de base aeróbica antes de PE) es matemáticamente inaplicable acá. La protección real la hace §1.2 por experiencia del atleta:
+    * Si el atleta tiene climbingTime='more3' (2+ años de práctica sistemática) → PODÉS usar stimulusCategory='power-endurance' (4x4, boulders repetidos con recuperación incompleta, hangboard repeaters densos, laps sostenidos) en el plan si el objetivo lo pide. Se asume base fisiológica previa fuera del plan.
+    * Si el atleta tiene climbingTime !== 'more3' (menos de 2 años) → el schema de generación va a rechazar estructuralmente stimulusCategory='power-endurance' en cualquier session o exercise. No lo emitas — te lo va a bloquear igual y forzar retry.
+  Regla operativa: verificá climbingTime del perfil. Si es 'more3' PE está permitido; si no, quedate en strength / power / skill / aerobic-base / mobility.
 
 EXTENSORES OBLIGATORIOS (Doc 02 §14.2 — prevención epicondilitis):
 
