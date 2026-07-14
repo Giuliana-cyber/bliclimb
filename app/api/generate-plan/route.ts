@@ -194,6 +194,18 @@ DISTRIBUCIÓN SEMANAL DE CARGA (Doc 02 §3.3, §3.4, §3.9 — reglas duras del 
     * Si el atleta tiene climbingTime !== 'more3' (menos de 2 años) → el schema de generación va a rechazar estructuralmente stimulusCategory='power-endurance' en cualquier session o exercise. No lo emitas — te lo va a bloquear igual y forzar retry.
   Regla operativa: verificá climbingTime del perfil. Si es 'more3' PE está permitido; si no, quedate en strength / power / skill / aerobic-base / mobility.
 
+- Máximo 2 TIPOS distintos de alta intensidad neural en el mainBlock de una sesión (§3.20). Los tipos considerados de alta intensidad son: strength, power, power-endurance. Contá TIPOS DISTINTOS, no cantidad de ejercicios.
+  Ejemplo VÁLIDO (2 tipos: strength + power):
+    mainBlock: [ex(skill), ex(strength), ex(strength), ex(power), ex(mobility)]
+    → strength y power (2 tipos) → OK
+  Ejemplo VÁLIDO (2 tipos con muchos exercises del mismo tipo):
+    mainBlock: [ex(strength), ex(strength), ex(strength), ex(power-endurance), ex(power-endurance)]
+    → strength y power-endurance (2 tipos) → OK
+  Ejemplo INVÁLIDO (3 tipos):
+    mainBlock: [ex(skill), ex(strength), ex(power), ex(power-endurance), ex(mobility)]
+    → strength + power + power-endurance (3 tipos) → VIOLA
+  Regla operativa: al armar el mainBlock, contá cuántas categorías distintas de {strength, power, power-endurance} aparecen. Si son ≥3, quitá una y quedate con 2. Muchos exercises del mismo tipo están bien; el problema son los TIPOS combinados. Fisiología: 3 estímulos neurales altos en una misma sesión saturan al sistema nervioso central.
+
 EXTENSORES OBLIGATORIOS (Doc 02 §14.2 — prevención epicondilitis):
 
 - Si el perfil incluye 'elbows' en injuries → CADA SEMANA con ≥1 sesión de tracción debe tener AL MENOS 1 exercise con stimulusCategory='mobility' específico de extensores (band pull-aparts, band extensors, wrist curl inverso). Historial de codo obliga siempre.
@@ -1183,7 +1195,13 @@ export async function POST(request: Request) {
   // safety loop más abajo.
   const startedAtMs = Date.now();
   const MAX_DURATION_MS = 270_000; // 270s (30s de buffer sobre maxDuration=300).
-  const MS_BUDGET_FOR_RETRY = 90_000; // 90s estimados por regeneración de semanas.
+  // 60_000 (2026-07-13): bajamos de 90s a 60s tras observar una generación
+  // inicial de 221s (log de Giuliana) → remainingMs=49s < 90s → aborto antes
+  // de siquiera 1 retry. Con 60s el retry se permite si la primera termina
+  // hasta ~210s. Un retry regenera solo las semanas que violaron (no las 4);
+  // 60s es defensivo para ese caso menor. Si el retry tarda más y excede
+  // 300s, Vercel corta — es mejor que abortar sin intentar corregir.
+  const MS_BUDGET_FOR_RETRY = 60_000;
 
   try {
     // 1+2. Grounding y metadata corren EN PARALELO.
@@ -1285,9 +1303,13 @@ export async function POST(request: Request) {
     // 3. Generar todas las semanas EN PARALELO. Cada semana recibe el
     //    groundingContext para que los ejercicios y protocolos vengan
     //    anclados en biblioteca + web (allowlist).
+    // Timing por-semana instrumentado (2026-07-13) para diagnosticar
+    // generaciones lentas. Log emitido por cada semana con el ms tomado.
+    const firstGenStartMs = Date.now();
     let fastWeeks = await Promise.all(
-      themes.map((theme) =>
-        generateWeek(
+      themes.map(async (theme) => {
+        const weekStartMs = Date.now();
+        const result = await generateWeek(
           client,
           model,
           profile,
@@ -1297,8 +1319,26 @@ export async function POST(request: Request) {
           blockedCategoriesForPrompt,
           latestCheckInForRules,
           blockedStimuliForSchema
-        )
-      )
+        );
+        console.log(
+          JSON.stringify({
+            kind: 'plan_week_timing',
+            phase: 'first',
+            weekNumber: theme.weekNumber,
+            elapsedMs: Date.now() - weekStartMs,
+            hasBlockedStimuli: blockedStimuliForSchema.length > 0,
+            hasBlockedCategories: blockedCategoriesForPrompt.length > 0
+          })
+        );
+        return result;
+      })
+    );
+    console.log(
+      JSON.stringify({
+        kind: 'plan_first_generation_timing',
+        totalMs: Date.now() - firstGenStartMs,
+        weekCount: themes.length
+      })
     );
     // Paso 5 · Matcher híbrido — carga del pool única por request.
     //
