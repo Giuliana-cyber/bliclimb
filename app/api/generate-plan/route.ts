@@ -117,6 +117,41 @@ REGLAS DE ESTRUCTURA META:
       - "deload" → descarga (~50% volumen). USAR cuando deloadWeek=true.
       - "test"   → semana de evaluación (max hangs, tests de fuerza).`;
 
+// ------------- Copys honestos para equipmentSummary sin muro ---------------
+//
+// Aprobados por Giuliana el 2026-07-13 (Camino C · Deuda #15). Se inyectan
+// LITERAL en el prompt cuando el perfil dispara el trigger. NO parafrasear.
+//
+// Trigger: equipment ⊆ {home, hangboard, pullup_bar, bands, weights, trx}
+// (o sea, sin 'gym' NI 'rock'). En ese caso el usuario NO puede escalar y
+// el plan queda cojo en la parte técnica — Bill/Senda lo dicen sin fingir
+// que "sí le dieron técnica".
+//
+// Elección por coach activo: character='senda' → SENDA, cualquier otro → BILL.
+
+const EQUIPMENT_HONESTY_BILL =
+  'Con lo que tienes en casa te preparo fuerza de dedos, tracción, movilidad y core — la base física que hace la diferencia cuando escalas. La técnica no la voy a inventar aquí: eso se aprende en la pared, y prefiero decírtelo antes que darte algo que finja serlo. Si puedes pisar un muro aunque sea una vez a la semana, hazlo — vas a llegar con una base que te va a hacer aprovechar cada sesión.';
+
+const EQUIPMENT_HONESTY_SENDA =
+  'Con lo que tienes en casa nos alcanza para trabajar juntas fuerza de dedos, tracción, movilidad y core, y esa base va a ser tu ventaja cuando escales. Lo que no te voy a hacer es fabricar técnica desde acá — la técnica se descubre en la pared, sintiendo el peso del cuerpo en los pies y aprendiendo cómo se mueve tu propia manera de escalar. Si logras pisar un muro aunque sea una vez por semana, hazlo; todo lo que hagamos acá está pensado para que llegues lista a esa cita.';
+
+/**
+ * Devuelve la instrucción prescriptiva de equipmentSummary para el LLM
+ * cuando el perfil no tiene acceso a muro. Cadena vacía si tiene gym/rock.
+ */
+function equipmentHonestyInstruction(profile: UserProfile): string {
+  const equip = new Set(profile.equipment ?? []);
+  if (equip.has('gym') || equip.has('rock')) return '';
+  const copy = profile.character === 'senda'
+    ? EQUIPMENT_HONESTY_SENDA
+    : EQUIPMENT_HONESTY_BILL;
+  return `INSTRUCCIÓN PRESCRIPTIVA DE equipmentSummary — el usuario NO tiene acceso a un muro (equipment sin 'gym' NI 'rock'). Copiá EL TEXTO LITERAL abajo en el campo equipmentSummary de tu respuesta. NO parafrasees, NO agregues frases antes o después, NO expandas: este texto ya fue aprobado por el equipo editorial y su tono está calibrado:
+
+${copy}
+
+Cuando el equipmentSummary tenga este texto literal, el resto de tus campos (athleteSummary, riskSummary, mesocycleType, weekThemes, etc.) siguen siendo tuyos — solo equipmentSummary lleva el texto verbatim.`;
+}
+
 const WEEK_PROMPT = `Eres un coach de escalada profesional del calibre de Lattice Training, Eric Hörst y Power Company. Generas UNA SEMANA de entrenamiento serio. NO inventas fluff genérico de gym.
 
 ${PRO_STYLE_RULES}
@@ -868,6 +903,13 @@ async function generateMetadata(
   latestCheckIn: { fingerPain?: number | null } | null = null
 ): Promise<FastPlanMetadata> {
   const messages: ChatMessage[] = [{ role: 'system', content: METADATA_PROMPT }];
+
+  // Copy honesto de equipmentSummary cuando el usuario no tiene muro
+  // (Camino C · Deuda #15 · aprobado por Giuliana 2026-07-13).
+  const equipmentHonesty = equipmentHonestyInstruction(profile);
+  if (equipmentHonesty) {
+    messages.push({ role: 'system', content: equipmentHonesty });
+  }
 
   if (groundingContext) {
     messages.push({
