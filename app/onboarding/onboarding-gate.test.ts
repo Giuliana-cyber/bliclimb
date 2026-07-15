@@ -43,7 +43,9 @@ function step5PassesGate(input: {
     totalDays(input.climbingDaysPerWeek, input.trainingDaysPerWeek) >= 1 &&
     input.availableDays.length > 0 &&
     input.sessionDuration > 0 &&
-    input.equipment.length > 0 &&
+    // Cierre Deuda #15 (2026-07-14): equipment.length>0 no alcanza — el paso 5
+    // exige 'gym' explícitamente (BilClimb requiere acceso a rocódromo).
+    input.equipment.includes('gym') &&
     input.previousTraining !== ''
   );
 }
@@ -71,7 +73,7 @@ describe('H-03 total derivado', () => {
         trainingDaysPerWeek: 0,
         availableDays: ['monday'],
         sessionDuration: 90,
-        equipment: ['gym'],
+        equipment: ['gym'], // gym requerido (cierre Deuda #15)
         previousTraining: 'informal'
       })
     ).toBe(false);
@@ -84,7 +86,7 @@ describe('H-03 total derivado', () => {
         trainingDaysPerWeek: 0,
         availableDays: ['monday'],
         sessionDuration: 90,
-        equipment: ['gym'],
+        equipment: ['gym'], // gym requerido (cierre Deuda #15)
         previousTraining: 'informal'
       })
     ).toBe(true);
@@ -94,9 +96,45 @@ describe('H-03 total derivado', () => {
         trainingDaysPerWeek: 1,
         availableDays: ['monday'],
         sessionDuration: 90,
-        equipment: ['gym'],
+        equipment: ['gym'], // gym requerido (cierre Deuda #15)
         previousTraining: 'informal'
       })
+    ).toBe(true);
+  });
+});
+
+// -------------------- Cierre Deuda #15: gate exige 'gym' --------------------
+
+describe('paso 5 exige gym en equipment', () => {
+  const baseInput = {
+    climbingDaysPerWeek: 2,
+    trainingDaysPerWeek: 1,
+    availableDays: ['monday', 'wednesday', 'friday'],
+    sessionDuration: 90,
+    previousTraining: 'informal'
+  };
+
+  it('equipment=[home, pullup_bar] (sin gym) → NO pasa', () => {
+    expect(
+      step5PassesGate({ ...baseInput, equipment: ['home', 'pullup_bar'] })
+    ).toBe(false);
+  });
+
+  it('equipment=[rock, home] (sin gym) → NO pasa', () => {
+    expect(step5PassesGate({ ...baseInput, equipment: ['rock', 'home'] })).toBe(false);
+  });
+
+  it('equipment=[] → NO pasa', () => {
+    expect(step5PassesGate({ ...baseInput, equipment: [] })).toBe(false);
+  });
+
+  it('equipment=[gym] → PASA', () => {
+    expect(step5PassesGate({ ...baseInput, equipment: ['gym'] })).toBe(true);
+  });
+
+  it('equipment=[gym, home, pullup_bar, hangboard] → PASA', () => {
+    expect(
+      step5PassesGate({ ...baseInput, equipment: ['gym', 'home', 'pullup_bar', 'hangboard'] })
     ).toBe(true);
   });
 });

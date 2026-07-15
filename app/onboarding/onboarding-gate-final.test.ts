@@ -47,7 +47,10 @@ function missingByStep(form: FormShape) {
   if (form.climbingDaysPerWeek + form.trainingDaysPerWeek < 1) step5.push('Días');
   if (!form.availableDays.length) step5.push('Días disponibles');
   if (!form.sessionDuration) step5.push('Duración sesión');
-  if (!form.equipment.length) step5.push('Equipo');
+  // Cierre Deuda #15 (2026-07-14): la ausencia de 'gym' bloquea el paso 5.
+  // El label es 'Acceso a rocódromo' (no genérico "Equipo") para dar señal
+  // clara al usuario de por qué el paso quedó incompleto.
+  if (!form.equipment.includes('gym')) step5.push('Acceso a rocódromo');
   if (step5.length) missing.push({ step: 5, title: 'Tu entrenamiento', fields: step5 });
   const step6: string[] = [];
   if (!form.goals.length && !form.goalDescription.trim()) step6.push('Objetivo');
@@ -172,7 +175,34 @@ describe('gate final útil (Bloque 4 audit-360)', () => {
       'Días',
       'Días disponibles',
       'Duración sesión',
-      'Equipo'
+      'Acceso a rocódromo'
     ]);
+  });
+
+  // Cierre Deuda #15 (2026-07-14): equipment sin 'gym' bloquea el paso 5.
+  describe('paso 5 · equipment exige gym', () => {
+    it('equipment=[home, pullup_bar] (sin gym) → lista "Acceso a rocódromo"', () => {
+      const missing = missingByStep({
+        ...baseComplete(),
+        equipment: ['home', 'pullup_bar']
+      });
+      expect(missing.find((m) => m.step === 5)?.fields).toContain('Acceso a rocódromo');
+    });
+
+    it('equipment=[rock, home] (rock puro sin gym) → lista "Acceso a rocódromo"', () => {
+      const missing = missingByStep({
+        ...baseComplete(),
+        equipment: ['rock', 'home']
+      });
+      expect(missing.find((m) => m.step === 5)?.fields).toContain('Acceso a rocódromo');
+    });
+
+    it('equipment=[gym, home, pullup_bar] → paso 5 OK', () => {
+      const missing = missingByStep({
+        ...baseComplete(),
+        equipment: ['gym', 'home', 'pullup_bar']
+      });
+      expect(missing.find((m) => m.step === 5)).toBeUndefined();
+    });
   });
 });

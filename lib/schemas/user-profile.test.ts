@@ -9,6 +9,10 @@ const minimalValidProfile = {
   climbingTime: '1to3',
   daysPerWeek: 3,
   planDuration: 4,
+  // Cierre Deuda #15 (2026-07-14): equipment refine exige 'gym'. Todos los
+  // fixtures válidos del schema incluyen gym; los tests de ausencia de gym
+  // van explícitos abajo.
+  equipment: ['gym'],
   createdAt: '2026-06-15T00:00:00Z',
   updatedAt: '2026-06-15T00:00:00Z'
 };
@@ -19,10 +23,48 @@ describe('UserProfileSchema', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.disciplines).toEqual([]);
-      expect(result.data.equipment).toEqual([]);
+      expect(result.data.equipment).toEqual(['gym']);
       expect(result.data.trainingAggressiveness).toBe('balanced');
       expect(result.data.currentFingerPain).toBe(0);
     }
+  });
+
+  // Cierre Deuda #15 (2026-07-14): equipment refine exige 'gym' server-side.
+  describe('equipment refine · gym requerido', () => {
+    it('rechaza equipment sin gym (home + pullup_bar)', () => {
+      const result = UserProfileSchema.safeParse({
+        ...minimalValidProfile,
+        equipment: ['home', 'pullup_bar']
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const issue = result.error.issues.find((i) => i.path.join('.') === 'equipment');
+        expect(issue).toBeDefined();
+        expect(issue?.message).toMatch(/gym/i);
+      }
+    });
+
+    it('rechaza equipment sin gym (rock + home, escalador de roca puro)', () => {
+      const result = UserProfileSchema.safeParse({
+        ...minimalValidProfile,
+        equipment: ['rock', 'home']
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('rechaza equipment vacío (default) — sin gym no pasa', () => {
+      const { equipment: _drop, ...noEquip } = minimalValidProfile;
+      const result = UserProfileSchema.safeParse(noEquip);
+      expect(result.success).toBe(false);
+    });
+
+    it('acepta equipment con gym + otros', () => {
+      const result = UserProfileSchema.safeParse({
+        ...minimalValidProfile,
+        equipment: ['gym', 'home', 'pullup_bar', 'hangboard']
+      });
+      expect(result.success).toBe(true);
+    });
   });
 
   it('rechaza payload basura con detalle de issues', () => {

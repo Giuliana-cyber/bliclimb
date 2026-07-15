@@ -34,7 +34,21 @@ export const UserProfileSchema = z.object({
   // viejos, y aceptamos 0 (el user puede tener 0 días de gym extra).
   climbingDaysPerWeek: z.number().int().min(0).max(7).optional(),
   trainingDaysPerWeek: z.number().int().min(0).max(7).optional(),
-  equipment: z.array(z.string()).optional().default([]),
+  // Regla de producto (2026-07-14 · Giuliana · cierre Deuda #15):
+  // BilClimb requiere acceso a un rocódromo. Sin 'gym' el catálogo curado
+  // no puede armar un plan de escalada — solo acondicionamiento genérico,
+  // que no es el producto. El onboarding también hace este gate, este
+  // refine es defense-in-depth server-side.
+  // Trade-off aceptado: perfiles legacy sin 'gym' recibirán 400 al pedir
+  // plan y tendrán que volver a onboarding a marcarlo. Aceptable en app
+  // nueva (registrado en cierre de Deuda #15).
+  equipment: z
+    .array(z.string())
+    .default([])
+    .refine((arr) => arr.includes('gym'), {
+      message:
+        'BilClimb requiere acceso a un rocódromo (gym). Marca "Gym de escalada" en el paso de equipamiento para continuar.'
+    }),
   equipmentNotes: z.string().optional().default(''),
   previousTraining: z.string().optional().default(''),
   goal: z.string().optional().default(''),

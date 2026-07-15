@@ -1221,3 +1221,73 @@ Ninguno reemplaza escalar de verdad. Pero son mejores que "movilidad genérica" 
 Ampliar `CATEGORY_SIBLINGS['boulder']` a incluir `movilidad` habría hecho que el matcher L3 entregue movilidad genérica cuando Bill pide boulder. Giuliana lo rechazó: "Darle movilidad genérica cuando pidió escalada es fingir que le diste lo que pidió." Es lo opuesto al principio "Bill nunca miente".
 
 **Cuándo revisitar:** cuando alguien tenga tiempo para la curación del Camino A. Prioridad media — el Camino C ya corta los rechazos, pero el plan solo-casa queda cojo en la parte técnica hasta que se cure el catálogo.
+
+---
+
+### CERRADA (2026-07-14) — decisión de producto: gym pasa a requisito de onboarding
+
+**Contexto del cierre:** al ir a implementar el fail-closed del matcher (bug #1 del smoke del 2026-07-13, ejercicios rechazados llegaban al plan con nombres inventados por el LLM), la auditoría del catálogo confirmó que **no es un catálogo incompleto, es el límite físico del deporte**:
+
+- Perfil `principiante + [home, pullup_bar]` (típico "solo casa"): **48/265 ejercicios disponibles**, con **0 boulder, 0 técnica, 0 fuerza-dedos, 0 resistencia-aeróbica, 0 resistencia-anaeróbica, 0 fuerza-tren-inferior, 0 skill, 0 aerobic-base, 0 power-endurance**.
+- Perfil `principiante + [gym]` (nueva línea base): **75/265 ejercicios**, técnica=18, skill=20, aerobic-base=6. Viable para 4 semanas × 5 días.
+- Reporte crudo: `/private/tmp/.../scratchpad/audit-hueco-casa.ts` + `audit-perfil-gym.ts`.
+
+**Decisión (Giuliana 2026-07-14):**
+> "Se elimina 'solo casa' del onboarding. BilClimb es una app de escalada. Sin muro no hay escalada — hay acondicionamiento genérico, que no es nuestro producto. Y crear filas falsas ('boulder en el suelo', 'jumping jacks como resistencia') contradiría el principio de que Bill no finge."
+
+**Cambios aplicados (Commit A · 2026-07-14):**
+
+1. **Onboarding (`app/onboarding/page.tsx`)**: el gate del paso 5 exige `form.equipment.includes('gym')`. `equipment.length > 0` ya no alcanza. `rock`, `home` y el resto quedan visibles como equipamiento adicional (no como alternativa al gym — ver Deuda #16 abajo).
+2. **Schema server-side (`lib/schemas/user-profile.ts`)**: `equipment` con `.refine(arr => arr.includes('gym'), …)`. Defense in depth — el endpoint `/api/generate-plan` responde 400 si el perfil llega sin gym.
+3. **Copy inline en el paso 5** (aprobado verbatim por Giuliana):
+   - Bill: *"BilClimb arma planes para escalar, y para eso hace falta un muro. Sin rocódromo puedo darte acondicionamiento, pero no te haría mejor escalador — y prefiero no venderte eso. Cuando tengas dónde escalar, aquí estoy."*
+   - Senda: *"BilClimb arma planes para escalar, y para eso necesitamos un muro. Sin rocódromo puedo acompañarte con acondicionamiento, pero no te haría mejor en la pared — y prefiero decírtelo antes que darte algo que finja ser lo que no es. Cuando tengas dónde escalar, aquí te espero."*
+   - Selección por `profile.character` (patrón §1.3 `activePain`/`activePainSenda`).
+4. **Rollback commits `926efff` + `fcbb781`**: `WEEK_PROMPT` sin la sección "RESTRICCIÓN POR EQUIPAMIENTO" y `METADATA_PROMPT` sin el `equipmentHonestyInstruction`. Ambas salvaguardas dejan de aplicar porque ningún perfil válido llega sin muro. Los copys aprobados quedan en historial de git en esos dos commits — si en el futuro reabrimos "solo casa", se rescatan de ahí.
+
+**Trade-off aceptado:** perfiles legacy sin `gym` en `equipment` recibirán 400 al pedir plan y tendrán que volver a onboarding a marcarlo. Aceptable — app nueva, base de usuarios chica.
+
+**Deudas nuevas que surgen del cierre:**
+- **Deuda #16** — reclasificar filas gym-only a `[gym, rock]` para desbloquear rock puro.
+- **Deuda #17** — huecos menores del perfil gym (fuerza-tren-inferior=0, hombros-escapulas en calentamiento=0, fuerza-empuje=1).
+
+---
+
+## Deuda #16 — Rock puro sin catálogo por sub-clasificación conservadora de `equipo_canonico` (2026-07-14)
+
+**Contexto:** al confirmar Opción A (gym exclusivo v1) en el cierre de la Deuda #15, la misma auditoría mostró que el perfil `principiante + [rock, home]` (escalador de roca puro sin gym) queda con **44/265 ejercicios**, con los mismos huecos totales que "solo casa": 0 técnica, 0 boulder, 0 fuerza-dedos, 0 aeróbica.
+
+**Diagnóstico:** solo 16 filas del catálogo tienen `equipo_canonico=[gym, rock]` (0023). El resto de técnica, boulder y resistencia-aeróbica está marcado únicamente `[gym]`, aunque físicamente muchas se hacen igual en roca. Ejemplos: `TC-QUIET` (silent feet), `TC-002` (footwork limpio), `TC-EXPLORE` (exploración de movimientos), `CO-002/CO-P002` (10 on/10 off aeróbico) — todas viables en un sector de roca fácil.
+
+**Por qué está fuera de scope del cierre Deuda #15:** el hueco de rock puro **no es límite físico del deporte** (a diferencia de "solo casa") — es una sub-clasificación conservadora del backfill 0023 que asumió gym para simplificar. La solución es curación técnica, no producto.
+
+**Acción cuando se aborde:**
+1. Auditar las ~40 filas de `categoria_canonica ∈ {tecnica, boulder, resistencia-aerobica}` con `equipo_canonico=[gym]`.
+2. Para cada una, decidir si la técnica se ejecuta igual en roca (probablemente sí para técnica pura y aeróbico; probablemente no para boulder indoor por problemas marcados).
+3. Migración `00XX` que extienda `equipo_canonico=[gym]` → `[gym, rock]` en ~15-20 filas.
+4. Cuando se cierre, remover la advertencia (si se agrega) en el onboarding sobre rock puro.
+
+**Prioridad:** media-baja — el usuario de rock puro es minoritario, y hoy no está bloqueado del onboarding (`gym` se marca si tiene gym como respaldo; si NO tiene ningún gym el gate lo saca, lo cual es correcto por la Deuda #15).
+
+**Costo estimado:** ~1-2h de curación editorial + migración simple.
+
+---
+
+## Deuda #17 — Huecos menores del perfil `gym` para principiante (2026-07-14)
+
+**Contexto:** la auditoría del perfil `principiante + [gym]` (nueva línea base tras Deuda #15) mostró un pool de 75 ejercicios — viable, pero con tres huecos menores que no bloquean pero pueden causar rechazos del matcher si Bill pide algo específico.
+
+**Los tres huecos (evidencia cruda del auditor):**
+
+1. **`fuerza-tren-inferior` = 0 filas** para cualquier perfil principiante. El catálogo entero tiene 3 filas en esta categoría, todas ≥intermedio. Si Bill emite `suggestedCategory='fuerza-tren-inferior'` para un principiante, el matcher rechaza → fail-closed dispara retry innecesario.
+2. **`hombros-escapulas` en `momento='calentamiento'` = 0 filas**. Todo hombros-escapulas está marcado `principal`. Si Bill emite un exercise de warmup con `suggestedCategory='hombros-escapulas'`, no hay match — el fallback L3 lo lleva a movilidad genérica.
+3. **`fuerza-empuje` = 1 fila** para principiante en gym (solo `CAL-001` push-ups de calentamiento, y es `momento='calentamiento'`, no principal). Si Bill emite fuerza-empuje en principal, el matcher rechaza.
+
+**Acción cuando se aborde:**
+1. **Fuerza-tren-inferior**: crear 2-3 filas nivel principiante (goblet squat con lastre ligero, sit-throughs, split squat). Todas viables en gym con `[gym, home]` o `[gym, weights]`.
+2. **Hombros-escapulas calentamiento**: reclasificar `HE-IYTW` y `HE-WTOI` a `momento='calentamiento'` (hoy son `principal` pero funcionan mejor como activación previa) — es UPDATE de una columna, no fila nueva.
+3. **Fuerza-empuje principal**: crear 2-3 filas (push-up variantes en gym: diamond, decline, pike).
+
+**Prioridad:** baja — los huecos son marginales para el flujo típico (Bill raramente pide tren-inferior o hombros-en-calentamiento en un plan de escalada). Registrar impacto real en producción tras 2-4 semanas del deploy del fail-closed (Commit B): si `rejectedHintsTop` muestra rechazos recurrentes en estas categorías, promover a prioridad media.
+
+**Costo estimado:** ~1h curación editorial + 1 migración simple con 5-6 rows nuevas + 2 UPDATE.

@@ -156,6 +156,17 @@ const equipmentOptions: Option[] = [
   { label: 'TRX / anillas', value: 'trx' }
 ];
 
+// Copys aprobados verbatim por Giuliana el 2026-07-14 (cierre Deuda #15).
+// Se renderizan inline debajo del selector de equipo cuando el usuario NO
+// marcó 'gym'. NO modificar sin re-aprobación (el copy user-facing pasa por
+// revisión editorial). Selección por coach activo: character='senda' → SENDA,
+// cualquier otro (incluye 'bill' y default) → BILL.
+const NO_GYM_COPY_BILL =
+  'BilClimb arma planes para escalar, y para eso hace falta un muro. Sin rocódromo puedo darte acondicionamiento, pero no te haría mejor escalador — y prefiero no venderte eso.\n\nCuando tengas dónde escalar, aquí estoy.';
+
+const NO_GYM_COPY_SENDA =
+  'BilClimb arma planes para escalar, y para eso necesitamos un muro. Sin rocódromo puedo acompañarte con acondicionamiento, pero no te haría mejor en la pared — y prefiero decírtelo antes que darte algo que finja ser lo que no es.\n\nCuando tengas dónde escalar, aquí te espero.';
+
 const previousTrainingOptions: Option[] = [
   { label: 'Nunca', value: 'never' },
   { label: 'Sí pero informal', value: 'informal' },
@@ -409,7 +420,11 @@ export default function OnboardingPage() {
         (form.climbingDaysPerWeek + form.trainingDaysPerWeek) >= 1 &&
           form.availableDays.length &&
           form.sessionDuration &&
-          form.equipment.length
+          // Regla de producto (2026-07-14 · Giuliana · cierre Deuda #15):
+          // BilClimb requiere acceso a un rocódromo. Marcar equipment.length
+          // no alcanza — hace falta 'gym' explícitamente. rock, home y el
+          // resto quedan como equipamiento adicional, no como alternativa.
+          form.equipment.includes('gym')
       ),
       6: Boolean((form.goals.length || form.goalDescription.trim()) && form.durationChoice),
       7: true
@@ -442,7 +457,10 @@ export default function OnboardingPage() {
     if (form.climbingDaysPerWeek + form.trainingDaysPerWeek < 1) step5.push('Días');
     if (!form.availableDays.length) step5.push('Días disponibles');
     if (!form.sessionDuration) step5.push('Duración sesión');
-    if (!form.equipment.length) step5.push('Equipo');
+    // Cierre Deuda #15: sin 'gym' el gate del paso 5 no pasa. El campo que
+    // falta en la lista se llama 'Acceso a rocódromo' (no genérico "Equipo")
+    // para que el usuario entienda por qué el paso queda bloqueado.
+    if (!form.equipment.includes('gym')) step5.push('Acceso a rocódromo');
     if (step5.length) missing.push({ step: 5, title: 'Tu entrenamiento', fields: step5 });
     const step6: string[] = [];
     if (!form.goals.length && !form.goalDescription.trim()) step6.push('Objetivo');
@@ -1035,6 +1053,21 @@ export default function OnboardingPage() {
                 </OptionButton>
               ))}
             </OptionGrid>
+            {/*
+              Bloqueo inline sin muro (cierre Deuda #15 · aprobado por Giuliana 2026-07-14).
+              El copy tiene que aparecer en el momento del bloqueo — no enterrado
+              en la lista del paso 7. Se muestra apenas el usuario tocó al menos
+              una opción de equipo pero no marcó 'gym'. Si todavía no eligió
+              nada, no lo mostramos para no gritarle antes de tiempo.
+            */}
+            {form.equipment.length > 0 && !form.equipment.includes('gym') ? (
+              <div
+                role="alert"
+                className="mt-3 whitespace-pre-line rounded-md border border-brand-mustard/24 bg-brand-mustard/10 p-4 text-sm leading-6 text-brand-mustard"
+              >
+                {form.character === 'senda' ? NO_GYM_COPY_SENDA : NO_GYM_COPY_BILL}
+              </div>
+            ) : null}
           </FieldGroup>
 
           <TextareaField

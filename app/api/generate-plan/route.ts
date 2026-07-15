@@ -117,40 +117,13 @@ REGLAS DE ESTRUCTURA META:
       - "deload" → descarga (~50% volumen). USAR cuando deloadWeek=true.
       - "test"   → semana de evaluación (max hangs, tests de fuerza).`;
 
-// ------------- Copys honestos para equipmentSummary sin muro ---------------
-//
-// Aprobados por Giuliana el 2026-07-13 (Camino C · Deuda #15). Se inyectan
-// LITERAL en el prompt cuando el perfil dispara el trigger. NO parafrasear.
-//
-// Trigger: equipment ⊆ {home, hangboard, pullup_bar, bands, weights, trx}
-// (o sea, sin 'gym' NI 'rock'). En ese caso el usuario NO puede escalar y
-// el plan queda cojo en la parte técnica — Bill/Senda lo dicen sin fingir
-// que "sí le dieron técnica".
-//
-// Elección por coach activo: character='senda' → SENDA, cualquier otro → BILL.
-
-const EQUIPMENT_HONESTY_BILL =
-  'Con lo que tienes en casa te preparo fuerza de dedos, tracción, movilidad y core — la base física que hace la diferencia cuando escalas. La técnica no la voy a inventar aquí: eso se aprende en la pared, y prefiero decírtelo antes que darte algo que finja serlo. Si puedes pisar un muro aunque sea una vez a la semana, hazlo — vas a llegar con una base que te va a hacer aprovechar cada sesión.';
-
-const EQUIPMENT_HONESTY_SENDA =
-  'Con lo que tienes en casa nos alcanza para trabajar juntas fuerza de dedos, tracción, movilidad y core, y esa base va a ser tu ventaja cuando escales. Lo que no te voy a hacer es fabricar técnica desde acá — la técnica se descubre en la pared, sintiendo el peso del cuerpo en los pies y aprendiendo cómo se mueve tu propia manera de escalar. Si logras pisar un muro aunque sea una vez por semana, hazlo; todo lo que hagamos acá está pensado para que llegues lista a esa cita.';
-
-/**
- * Devuelve la instrucción prescriptiva de equipmentSummary para el LLM
- * cuando el perfil no tiene acceso a muro. Cadena vacía si tiene gym/rock.
- */
-function equipmentHonestyInstruction(profile: UserProfile): string {
-  const equip = new Set(profile.equipment ?? []);
-  if (equip.has('gym') || equip.has('rock')) return '';
-  const copy = profile.character === 'senda'
-    ? EQUIPMENT_HONESTY_SENDA
-    : EQUIPMENT_HONESTY_BILL;
-  return `INSTRUCCIÓN PRESCRIPTIVA DE equipmentSummary — el usuario NO tiene acceso a un muro (equipment sin 'gym' NI 'rock'). Copiá EL TEXTO LITERAL abajo en el campo equipmentSummary de tu respuesta. NO parafrasees, NO agregues frases antes o después, NO expandas: este texto ya fue aprobado por el equipo editorial y su tono está calibrado:
-
-${copy}
-
-Cuando el equipmentSummary tenga este texto literal, el resto de tus campos (athleteSummary, riskSummary, mesocycleType, weekThemes, etc.) siguen siendo tuyos — solo equipmentSummary lleva el texto verbatim.`;
-}
+// Nota (2026-07-14): commits 926efff (WEEK_PROMPT restricción por equipamiento)
+// y fcbb781 (copys honestos Bill/Senda de equipmentSummary sin muro) fueron
+// removidos. La decisión de producto pasa a exigir `gym` en el onboarding
+// (ver Deuda #15 cerrada en docs/brain/canonicalization-debt.md), por lo que
+// ningún perfil válido llega sin muro y las salvaguardas de prompt dejan de
+// aplicar. Si en el futuro reabrimos "solo casa" como modo, el copy
+// aprobado verbatim vive en el historial de git en esos dos commits.
 
 const WEEK_PROMPT = `Eres un coach de escalada profesional del calibre de Lattice Training, Eric Hörst y Power Company. Generas UNA SEMANA de entrenamiento serio. NO inventas fluff genérico de gym.
 
@@ -240,19 +213,6 @@ DISTRIBUCIÓN SEMANAL DE CARGA (Doc 02 §3.3, §3.4, §3.9 — reglas duras del 
     mainBlock: [ex(skill), ex(strength), ex(power), ex(power-endurance), ex(mobility)]
     → strength + power + power-endurance (3 tipos) → VIOLA
   Regla operativa: al armar el mainBlock, contá cuántas categorías distintas de {strength, power, power-endurance} aparecen. Si son ≥3, quitá una y quedate con 2. Muchos exercises del mismo tipo están bien; el problema son los TIPOS combinados. Fisiología: 3 estímulos neurales altos en una misma sesión saturan al sistema nervioso central.
-
-RESTRICCIÓN POR EQUIPAMIENTO — sin muro no hay escalada:
-
-- Si el equipment del usuario NO incluye 'gym' NI 'rock', el usuario NO tiene acceso a un muro. En ese caso NO propongas ejercicios con suggestedCategory='boulder' NI suggestedCategory='tecnica' — el catálogo no tiene ejercicios seguros de esas categorías para practicar en casa (la técnica de escalada se entrena escalando, y el boulder requiere pared).
-- Para un usuario solo-casa (equipment ∈ subset de {home, hangboard, pullup_bar, bands, weights, trx}) trabajá exclusivamente con estas categorías del catálogo:
-    * fuerza-dedos (si tiene hangboard)
-    * fuerza-traccion (si tiene pullup_bar)
-    * fuerza-empuje, fuerza-tren-inferior
-    * core
-    * movilidad, hombros-escapulas, munecas-antebrazos
-    * piel (rutina de cuidado)
-  Estas van a construir base física; la parte técnica del plan queda en pausa hasta que el usuario acceda a un muro.
-- El METADATA_PROMPT genera un equipmentSummary honesto que le explica al usuario esta limitación — NO lo repitas en cada sesión, pero SÍ evitá el rechazo estructural del catálogo.
 
 EXTENSORES OBLIGATORIOS (Doc 02 §14.2 — prevención epicondilitis):
 
@@ -903,13 +863,6 @@ async function generateMetadata(
   latestCheckIn: { fingerPain?: number | null } | null = null
 ): Promise<FastPlanMetadata> {
   const messages: ChatMessage[] = [{ role: 'system', content: METADATA_PROMPT }];
-
-  // Copy honesto de equipmentSummary cuando el usuario no tiene muro
-  // (Camino C · Deuda #15 · aprobado por Giuliana 2026-07-13).
-  const equipmentHonesty = equipmentHonestyInstruction(profile);
-  if (equipmentHonesty) {
-    messages.push({ role: 'system', content: equipmentHonesty });
-  }
 
   if (groundingContext) {
     messages.push({
