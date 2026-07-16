@@ -45,6 +45,10 @@ const routesWithoutShell = [
   '/sign-in',
   '/sign-up',
   '/auth',
+  // Landing pública de mantenimiento (MAINTENANCE_MODE=1). No requiere
+  // sesión, no muestra AppShell — es la única cara pública mientras la
+  // app está cerrada.
+  '/maintenance',
   // Invitación de coach: el cliente típicamente abre el link sin sesión
   // todavía. La página ya maneja signed-in / not-signed-in internamente.
   '/invite',

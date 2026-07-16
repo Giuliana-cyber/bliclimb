@@ -19,6 +19,13 @@ import { getStripe, getStripePriceId } from '@/lib/billing/stripe';
 
 export const runtime = 'nodejs';
 
+// Defensa en profundidad · 2026-07-15. El middleware ya bloquea rutas app en
+// MAINTENANCE_MODE=1, pero incluso si el middleware fallara este endpoint
+// responde 503. Idem para /api/coach/upgrade.
+function isMaintenance(): boolean {
+  return process.env.MAINTENANCE_MODE === '1';
+}
+
 const BodySchema = z.object({
   email: z.string().email(),
   billingCycle: z.enum(['monthly', 'annual']).optional().default('annual')
@@ -76,6 +83,18 @@ async function resolveStripeCustomerId(
 }
 
 export async function POST(request: Request) {
+  // 0. Modo mantenimiento — nunca abrimos checkout si la app está cerrada.
+  if (isMaintenance()) {
+    log({ event: 'blocked_maintenance' });
+    return NextResponse.json(
+      {
+        code: 'service_unavailable',
+        error: 'BilClimb está en mantenimiento. Volvemos pronto.'
+      },
+      { status: 503, headers: { 'retry-after': '86400' } }
+    );
+  }
+
   // 1. Auth
   const supabase = createClient();
   const {

@@ -17,6 +17,21 @@ const PROTECTED_PREFIXES = [
 
 const AUTH_PAGES = ['/sign-in', '/sign-up'];
 
+// Modo mantenimiento (2026-07-15 · Giuliana): con `MAINTENANCE_MODE=1` en
+// Vercel envvars, todas las rutas salvo /maintenance y assets estáticos
+// redirigen a /maintenance. Los endpoints /api/* responden 503. Se desactiva
+// borrando la env var — el Edge middleware la relee en cada invocación.
+const MAINTENANCE_MODE = process.env.MAINTENANCE_MODE === '1';
+
+// Rutas que siguen disponibles en mantenimiento.
+const MAINTENANCE_ALLOWLIST = new Set([
+  '/maintenance',
+  '/api/health',
+  // sign-in queda accesible por si Giuliana necesita entrar como admin.
+  '/sign-in',
+  '/api/auth/status'
+]);
+
 function isProtectedPath(pathname: string) {
   if (pathname === '/') {
     return true;
@@ -31,8 +46,32 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const { response, user } = await updateSession(request);
   const { pathname } = request.nextUrl;
+
+  // Cortocircuito mantenimiento — antes del fetch de sesión Supabase para
+  // no cargar backend mientras la app está cerrada. Webhooks de Stripe/MP
+  // se dejan pasar para no perder eventos entrantes.
+  const isWebhook = pathname.startsWith('/api/webhooks/');
+  if (MAINTENANCE_MODE && !MAINTENANCE_ALLOWLIST.has(pathname) && !isWebhook) {
+    if (pathname.startsWith('/api/')) {
+      return new NextResponse(
+        JSON.stringify({
+          error: 'service_unavailable',
+          message: 'BilClimb está en mantenimiento. Volvemos pronto.'
+        }),
+        {
+          status: 503,
+          headers: { 'content-type': 'application/json', 'retry-after': '86400' }
+        }
+      );
+    }
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/maintenance';
+    redirectUrl.search = '';
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  const { response, user } = await updateSession(request);
 
   if (!user && isProtectedPath(pathname)) {
     const redirectUrl = request.nextUrl.clone();
