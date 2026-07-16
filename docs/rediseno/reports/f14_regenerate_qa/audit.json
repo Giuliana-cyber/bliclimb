@@ -1,0 +1,1844 @@
+{
+  "checks": [
+    {
+      "check_id": "xlsx_integrity_check",
+      "count": 0,
+      "findings": [],
+      "level": "error"
+    },
+    {
+      "check_id": "subcategory_removed",
+      "count": 0,
+      "findings": [],
+      "level": "error"
+    },
+    {
+      "check_id": "casing_normalization",
+      "count": 0,
+      "findings": [],
+      "level": "error"
+    },
+    {
+      "check_id": "domain_check_category",
+      "count": 0,
+      "findings": [],
+      "level": "error"
+    },
+    {
+      "check_id": "domain_check_severity",
+      "count": 0,
+      "findings": [],
+      "level": "error"
+    },
+    {
+      "check_id": "domain_check_structure",
+      "count": 4,
+      "findings": [
+        {
+          "column": "structure",
+          "count": "1",
+          "example_ids": "PR-FOR-012",
+          "kind": "off_canon",
+          "sheet": "Protocols",
+          "value": "Inicio específico o test ligero"
+        },
+        {
+          "column": "structure",
+          "count": "1",
+          "example_ids": "PR-FOR-014",
+          "kind": "off_canon",
+          "sheet": "Protocols",
+          "value": "Rehabilitación general no diagnóstica"
+        },
+        {
+          "column": "structure",
+          "count": "1",
+          "example_ids": "PR-FOR-015",
+          "kind": "off_canon",
+          "sheet": "Protocols",
+          "value": "Rehabilitación supervisada"
+        },
+        {
+          "column": "structure",
+          "count": "1",
+          "example_ids": "PR-FOR-016",
+          "kind": "off_canon",
+          "sheet": "Protocols",
+          "value": "Después de sesiones intensas"
+        }
+      ],
+      "level": "error"
+    },
+    {
+      "check_id": "domain_check_risk_level_exercises",
+      "count": 0,
+      "findings": [],
+      "level": "error"
+    },
+    {
+      "check_id": "domain_check_risk_level_protocols",
+      "count": 0,
+      "findings": [],
+      "level": "error"
+    },
+    {
+      "check_id": "domain_check_equipment",
+      "count": 32,
+      "findings": [
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "borde estable",
+          "row_id": "EX-FIN-027",
+          "sheet": "Exercises",
+          "value": "Borde estable"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "pinch ball",
+          "row_id": "EX-FIN-031",
+          "sheet": "Exercises",
+          "value": "Pinch ball/block"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "bloque",
+          "row_id": "EX-FIN-033",
+          "sheet": "Exercises",
+          "value": "Bloque/volumen"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "system wall",
+          "row_id": "EX-FIN-043",
+          "sheet": "Exercises",
+          "value": "System wall"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "dinamómetro",
+          "row_id": "EX-FIN-061",
+          "sheet": "Exercises",
+          "value": "Dinamómetro"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "dinamómetro específico",
+          "row_id": "EX-FIN-062",
+          "sheet": "Exercises",
+          "value": "Dinamómetro específico"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "cuerda",
+          "row_id": "EX-PULL-028",
+          "sheet": "Exercises",
+          "value": "Cuerda"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "escalera bachar",
+          "row_id": "EX-PULL-029",
+          "sheet": "Exercises",
+          "value": "Escalera Bachar"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "trabajo muscular alrededor de escápula.",
+          "row_id": "EX-SCAP-002",
+          "sheet": "Exercises",
+          "value": "Trabajo muscular alrededor de escápula."
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "activación suave bajo axila",
+          "row_id": "EX-SCAP-003",
+          "sheet": "Exercises",
+          "value": "Activación suave bajo axila/escápula."
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "activación en espalda alta.",
+          "row_id": "EX-SCAP-004",
+          "sheet": "Exercises",
+          "value": "Activación en espalda alta."
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "movilidad",
+          "row_id": "EX-SHO-004",
+          "sheet": "Exercises",
+          "value": "Movilidad/activación suave."
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "liga elástica",
+          "row_id": "EX-FOR-009",
+          "sheet": "Exercises",
+          "value": "Liga elástica"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "liga elástica",
+          "row_id": "EX-FOR-010",
+          "sheet": "Exercises",
+          "value": "Liga elástica"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "cubeta con arroz",
+          "row_id": "EX-FOR-011",
+          "sheet": "Exercises",
+          "value": "Cubeta con arroz"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "cubeta con arroz",
+          "row_id": "EX-FOR-012",
+          "sheet": "Exercises",
+          "value": "Cubeta con arroz"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "pinch block",
+          "row_id": "EX-FOR-026",
+          "sheet": "Exercises",
+          "value": "Pinch block/pesa"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "pelota blanda",
+          "row_id": "EX-FOR-027",
+          "sheet": "Exercises",
+          "value": "Pelota blanda"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "sin equipo",
+          "row_id": "EX-FOR-029",
+          "sheet": "Exercises",
+          "value": "Sin equipo"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "sin equipo",
+          "row_id": "EX-FOR-030",
+          "sheet": "Exercises",
+          "value": "Sin equipo"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "sin equipo",
+          "row_id": "EX-FOR-031",
+          "sheet": "Exercises",
+          "value": "Sin equipo"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "mesa",
+          "row_id": "EX-FOR-038",
+          "sheet": "Exercises",
+          "value": "Mesa"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "system board",
+          "row_id": "EX-CAMP-018",
+          "sheet": "Exercises",
+          "value": "system board"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "board",
+          "row_id": "EX-CAMP-019",
+          "sheet": "Exercises",
+          "value": "board"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "balón medicinal",
+          "row_id": "EX-CAMP-023",
+          "sheet": "Exercises",
+          "value": "balón medicinal"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "balón medicinal",
+          "row_id": "EX-CAMP-024",
+          "sheet": "Exercises",
+          "value": "balón medicinal"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "presa grande",
+          "row_id": "EX-CAMP-030",
+          "sheet": "Exercises",
+          "value": "presa grande/dinamómetro opcional"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "fitball",
+          "row_id": "EX-CORE-026",
+          "sheet": "Exercises",
+          "value": "fitball"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "trineo",
+          "row_id": "EX-STR-025",
+          "sheet": "Exercises",
+          "value": "trineo"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "caminadora",
+          "row_id": "EX-STR-026",
+          "sheet": "Exercises",
+          "value": "caminadora/terreno"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "bicicleta",
+          "row_id": "EX-STR-027",
+          "sheet": "Exercises",
+          "value": "bicicleta"
+        },
+        {
+          "column": "equipment",
+          "kind": "off_canon",
+          "off_token": "exterior",
+          "row_id": "EX-STR-036",
+          "sheet": "Exercises",
+          "value": "exterior/caminadora"
+        }
+      ],
+      "level": "error"
+    },
+    {
+      "check_id": "action_vocabulary_check",
+      "count": 4,
+      "findings": [
+        {
+          "column": "action",
+          "count": "1",
+          "kind": "action_off_vocab",
+          "sheet": "Gates",
+          "value": "No tests máximos; bajar carga y recomendar validación."
+        },
+        {
+          "column": "action",
+          "count": "1",
+          "kind": "action_off_vocab",
+          "sheet": "Gates",
+          "value": "Usar progresión asistida y aprendizaje técnico."
+        },
+        {
+          "column": "action",
+          "count": "1",
+          "kind": "action_off_vocab",
+          "sheet": "Gates",
+          "value": "Limitar volumen de fuerza; priorizar técnica en muro."
+        },
+        {
+          "column": "action",
+          "count": "1",
+          "kind": "action_off_vocab",
+          "sheet": "Gates",
+          "value": "Plan conservador; no máximos."
+        }
+      ],
+      "level": "error"
+    },
+    {
+      "check_id": "cross_column_contamination",
+      "count": 110,
+      "findings": [
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-001",
+          "sheet": "Exercises",
+          "value": "hangboard; bands"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-006",
+          "sheet": "Exercises",
+          "value": "hangboard; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-009",
+          "sheet": "Exercises",
+          "value": "hangboard; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-016",
+          "sheet": "Exercises",
+          "value": "hangboard; bands"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-025",
+          "sheet": "Exercises",
+          "value": "hangboard; bands; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-041",
+          "sheet": "Exercises",
+          "value": "gym; rock"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-042",
+          "sheet": "Exercises",
+          "value": "gym; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-044",
+          "sheet": "Exercises",
+          "value": "gym; rock"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-045",
+          "sheet": "Exercises",
+          "value": "gym; rock"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-046",
+          "sheet": "Exercises",
+          "value": "pullup_bar; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-056",
+          "sheet": "Exercises",
+          "value": "gym; rock"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-058",
+          "sheet": "Exercises",
+          "value": "hangboard; bands"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-PULL-002",
+          "sheet": "Exercises",
+          "value": "pullup_bar; bands"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-PULL-004",
+          "sheet": "Exercises",
+          "value": "pullup_bar; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-PULL-015",
+          "sheet": "Exercises",
+          "value": "pullup_bar; bands"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-PULL-016",
+          "sheet": "Exercises",
+          "value": "gym; pullup_bar; home"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-PULL-017",
+          "sheet": "Exercises",
+          "value": "pullup_bar; bands"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-PULL-025",
+          "sheet": "Exercises",
+          "value": "pullup_bar; trx"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-PULL-026",
+          "sheet": "Exercises",
+          "value": "pullup_bar; bands; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-PULL-027",
+          "sheet": "Exercises",
+          "value": "bands; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-PULL-030",
+          "sheet": "Exercises",
+          "value": "campus; gym"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-PULL-036",
+          "sheet": "Exercises",
+          "value": "pullup_bar; home"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-PULL-038",
+          "sheet": "Exercises",
+          "value": "pullup_bar; bands"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SCAP-001",
+          "sheet": "Exercises",
+          "value": "Fatiga leve/moderada en zona escapular, no dolor de hombro."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-001",
+          "sheet": "Exercises",
+          "value": "Trabajo suave posterior/lateral de hombro."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-002",
+          "sheet": "Exercises",
+          "value": "Activación en manguito, alta demanda de control."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-003",
+          "sheet": "Exercises",
+          "value": "Trabajo en parte alta de espalda/hombro posterior."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-005",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-006",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-007",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-008",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-009",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-010",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-011",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-012",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-013",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-014",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-015",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-016",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-017",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-018",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-019",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-020",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-021",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-022",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-023",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-024",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-025",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-026",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-027",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-028",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-029",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-030",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-031",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-032",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-033",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-034",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-035",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-SHO-036",
+          "sheet": "Exercises",
+          "value": "Activación muscular controlada; no dolor articular."
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FOR-014",
+          "sheet": "Exercises",
+          "value": "bands; weights; home"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FOR-015",
+          "sheet": "Exercises",
+          "value": "bands; weights; home"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FOR-016",
+          "sheet": "Exercises",
+          "value": "bands; home"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FOR-017",
+          "sheet": "Exercises",
+          "value": "bands; home"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FOR-019",
+          "sheet": "Exercises",
+          "value": "pullup_bar; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FOR-020",
+          "sheet": "Exercises",
+          "value": "pullup_bar; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FOR-022",
+          "sheet": "Exercises",
+          "value": "home; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FOR-023",
+          "sheet": "Exercises",
+          "value": "home; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FOR-024",
+          "sheet": "Exercises",
+          "value": "home; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FOR-036",
+          "sheet": "Exercises",
+          "value": "pullup_bar; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-CAMP-001",
+          "sheet": "Exercises",
+          "value": "campus; gym"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-CAMP-002",
+          "sheet": "Exercises",
+          "value": "campus; gym"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-CAMP-003",
+          "sheet": "Exercises",
+          "value": "campus; gym"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-CAMP-004",
+          "sheet": "Exercises",
+          "value": "campus; gym"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-CAMP-005",
+          "sheet": "Exercises",
+          "value": "campus; gym"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-CAMP-006",
+          "sheet": "Exercises",
+          "value": "campus; gym"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-CAMP-007",
+          "sheet": "Exercises",
+          "value": "campus; gym"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-CAMP-008",
+          "sheet": "Exercises",
+          "value": "campus; gym"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-CAMP-009",
+          "sheet": "Exercises",
+          "value": "campus; gym; bands"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-CAMP-010",
+          "sheet": "Exercises",
+          "value": "campus; gym"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-CAMP-022",
+          "sheet": "Exercises",
+          "value": "pullup_bar; trx"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-CAMP-027",
+          "sheet": "Exercises",
+          "value": "campus; gym; bands"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-CAMP-028",
+          "sheet": "Exercises",
+          "value": "campus; gym"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-CORE-015",
+          "sheet": "Exercises",
+          "value": "pullup_bar; home"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-CORE-021",
+          "sheet": "Exercises",
+          "value": "pullup_bar; trx"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-CORE-022",
+          "sheet": "Exercises",
+          "value": "pullup_bar; trx"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-CORE-023",
+          "sheet": "Exercises",
+          "value": "pullup_bar; trx"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-CORE-028",
+          "sheet": "Exercises",
+          "value": "pullup_bar; home"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-002",
+          "sheet": "Exercises",
+          "value": "pullup_bar; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-003",
+          "sheet": "Exercises",
+          "value": "pullup_bar; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-004",
+          "sheet": "Exercises",
+          "value": "pullup_bar; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-005",
+          "sheet": "Exercises",
+          "value": "pullup_bar; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-006",
+          "sheet": "Exercises",
+          "value": "pullup_bar; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-007",
+          "sheet": "Exercises",
+          "value": "weights; home"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-008",
+          "sheet": "Exercises",
+          "value": "weights; home"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-009",
+          "sheet": "Exercises",
+          "value": "weights; home"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-010",
+          "sheet": "Exercises",
+          "value": "weights; home"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-011",
+          "sheet": "Exercises",
+          "value": "weights; home"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-012",
+          "sheet": "Exercises",
+          "value": "bands; home"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-015",
+          "sheet": "Exercises",
+          "value": "weights; home"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-016",
+          "sheet": "Exercises",
+          "value": "pullup_bar; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-018",
+          "sheet": "Exercises",
+          "value": "weights; home"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-019",
+          "sheet": "Exercises",
+          "value": "pullup_bar; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-028",
+          "sheet": "Exercises",
+          "value": "bands; weights; home"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-029",
+          "sheet": "Exercises",
+          "value": "pullup_bar; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-030",
+          "sheet": "Exercises",
+          "value": "home; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-STR-032",
+          "sheet": "Exercises",
+          "value": "weights; home"
+        },
+        {
+          "column": "action",
+          "kind": "action_has_prose",
+          "row_id": "GT-PULL-019",
+          "sheet": "Gates",
+          "value": "No tests máximos; bajar carga y recomendar validación."
+        },
+        {
+          "column": "action",
+          "kind": "action_has_prose",
+          "row_id": "GT-PULL-020",
+          "sheet": "Gates",
+          "value": "Usar progresión asistida y aprendizaje técnico."
+        },
+        {
+          "column": "action",
+          "kind": "action_has_prose",
+          "row_id": "GT-PULL-026",
+          "sheet": "Gates",
+          "value": "Limitar volumen de fuerza; priorizar técnica en muro."
+        },
+        {
+          "column": "action",
+          "kind": "action_has_prose",
+          "row_id": "GT-PULL-028",
+          "sheet": "Gates",
+          "value": "Plan conservador; no máximos."
+        }
+      ],
+      "level": "error"
+    },
+    {
+      "check_id": "gates_column_populated",
+      "count": 0,
+      "curated_categories": [],
+      "findings": [],
+      "level": "error",
+      "pending_non_curated": [
+        {
+          "category": "fuerza-dedos",
+          "count": "62",
+          "kind": "pending_non_curated_category",
+          "level_hint": "info",
+          "sheet": "APP_ExerciseCatalog"
+        },
+        {
+          "category": "traccion",
+          "count": "42",
+          "kind": "pending_non_curated_category",
+          "level_hint": "info",
+          "sheet": "APP_ExerciseCatalog"
+        },
+        {
+          "category": "hombros-escapulas",
+          "count": "40",
+          "kind": "pending_non_curated_category",
+          "level_hint": "info",
+          "sheet": "APP_ExerciseCatalog"
+        },
+        {
+          "category": "antebrazo-muneca-codo",
+          "count": "38",
+          "kind": "pending_non_curated_category",
+          "level_hint": "info",
+          "sheet": "APP_ExerciseCatalog"
+        },
+        {
+          "category": "fuerza-general",
+          "count": "36",
+          "kind": "pending_non_curated_category",
+          "level_hint": "info",
+          "sheet": "APP_ExerciseCatalog"
+        },
+        {
+          "category": "core",
+          "count": "32",
+          "kind": "pending_non_curated_category",
+          "level_hint": "info",
+          "sheet": "APP_ExerciseCatalog"
+        },
+        {
+          "category": "campus-potencia",
+          "count": "30",
+          "kind": "pending_non_curated_category",
+          "level_hint": "info",
+          "sheet": "APP_ExerciseCatalog"
+        }
+      ]
+    },
+    {
+      "check_id": "dosage_completeness",
+      "count": 0,
+      "findings": [],
+      "level": "error",
+      "warning_count": 73,
+      "warnings": [
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-HB-001",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval",
+          "populated": "sets, reps, intensity",
+          "row_id": "PR-HB-002",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval",
+          "populated": "sets, reps, intensity",
+          "row_id": "PR-HB-003",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval",
+          "populated": "sets, reps, intensity",
+          "row_id": "PR-HB-004",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval",
+          "populated": "sets, reps, intensity",
+          "row_id": "PR-HB-005",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval",
+          "populated": "sets, reps, intensity",
+          "row_id": "PR-HB-006",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval",
+          "populated": "sets, reps, intensity",
+          "row_id": "PR-HB-007",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets",
+          "populated": "reps, intensity",
+          "row_id": "PR-HB-008",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval",
+          "populated": "sets, reps, intensity",
+          "row_id": "PR-HB-009",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval",
+          "populated": "sets, reps, intensity",
+          "row_id": "PR-HB-010",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-HB-011",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval",
+          "populated": "sets, reps, intensity",
+          "row_id": "PR-HB-012",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-HB-013",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-HB-014",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-HB-015",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-HB-016",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-HB-017",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-HB-018",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-HB-019",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-HB-020",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets",
+          "populated": "reps, intensity",
+          "row_id": "PR-PULL-001",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-PULL-002",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-PULL-003",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-PULL-004",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-PULL-005",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-PULL-006",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-PULL-007",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-PULL-008",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets",
+          "populated": "reps, intensity",
+          "row_id": "PR-PULL-009",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-PULL-010",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-PULL-011",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval",
+          "populated": "sets, reps, intensity",
+          "row_id": "PR-PULL-012",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-PULL-013",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-PULL-014",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-PULL-015",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, reps",
+          "populated": "sets, intensity",
+          "row_id": "PR-PULL-016",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-PULL-017",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-PULL-018",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-SCAP-001",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-SCAP-002",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-SCAP-003",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-SHO-001",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-SHO-002",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-SHO-003",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-SHO-004",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-SHO-005",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-SHO-006",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-SHO-007",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-SHO-008",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-SHO-009",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-SHO-010",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-SHO-011",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-SHO-012",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-SHO-013",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-SHO-014",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval",
+          "populated": "sets, reps, intensity",
+          "row_id": "PR-SHO-015",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, sets, reps",
+          "populated": "intensity",
+          "row_id": "PR-SHO-016",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval",
+          "populated": "sets, reps, intensity",
+          "row_id": "PR-FOR-001",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval",
+          "populated": "sets, reps, intensity",
+          "row_id": "PR-FOR-002",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval",
+          "populated": "sets, reps, intensity",
+          "row_id": "PR-FOR-003",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval",
+          "populated": "sets, reps, intensity",
+          "row_id": "PR-FOR-004",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, reps",
+          "populated": "sets, intensity",
+          "row_id": "PR-FOR-005",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, reps",
+          "populated": "sets, intensity",
+          "row_id": "PR-FOR-006",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, reps",
+          "populated": "sets, intensity",
+          "row_id": "PR-FOR-007",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval",
+          "populated": "sets, reps, intensity",
+          "row_id": "PR-FOR-008",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval",
+          "populated": "sets, reps, intensity",
+          "row_id": "PR-FOR-009",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, reps",
+          "populated": "sets, intensity",
+          "row_id": "PR-FOR-010",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, reps",
+          "populated": "sets, intensity",
+          "row_id": "PR-FOR-011",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, reps",
+          "populated": "sets, intensity",
+          "row_id": "PR-FOR-012",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, reps",
+          "populated": "sets, intensity",
+          "row_id": "PR-FOR-013",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, reps",
+          "populated": "sets, intensity",
+          "row_id": "PR-FOR-014",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, reps",
+          "populated": "sets, intensity",
+          "row_id": "PR-FOR-015",
+          "sheet": "Protocols"
+        },
+        {
+          "kind": "partial_dosage",
+          "level": "warning",
+          "missing": "work_interval, rest_interval, reps",
+          "populated": "sets, intensity",
+          "row_id": "PR-FOR-016",
+          "sheet": "Protocols"
+        }
+      ]
+    },
+    {
+      "check_id": "relationships_orphans",
+      "count": 2,
+      "findings": [
+        {
+          "count": "129",
+          "kind": "from_id_orphan",
+          "sample": "REL-336: TS-PULL-001 | REL-337: TS-PULL-002 | REL-338: TS-PULL-003 | REL-339-1: TS-PULL-004 | REL-339-2: TS-PULL-004 | REL-340: TS-PULL-005 | REL-341: TS-PULL-006 | REL-342: TS-PULL-007 | REL-343: TS-PULL-008 | REL-344: TS-PULL-009 | REL-345: TS-PULL-010 | REL-346: TS-PULL-011 | REL-347: TS-PULL-012 | REL-S8-001: uses_category | REL-S8-002: uses_category | REL-S8-003: uses_category | REL-S8-004: uses_category | REL-S8-005: uses_category | REL-S8-006: uses_category | REL-S8-007: uses_category",
+          "sheet": "Relationships"
+        },
+        {
+          "count": "478",
+          "kind": "to_id_orphan",
+          "sample": "REL-S6-167: PR-WALL-001 | REL-S6-171: PR-WALL-002 | REL-S6-175: PR-WALL-003 | REL-S6-179: PR-WALL-001 | REL-S6-183: PR-WALL-001 | REL-S6-187: PR-GEN-001 | REL-S6-191: PR-PREHAB-001 | REL-S6-195: PR-GEN-001 | REL-S6-250: SRC-001 | REL-S6-251: SRC-001 | REL-S6-252: SRC-005 | REL-S6-253: SRC-001 | REL-S6-254: SRC-005 | REL-S6-255: SRC-001 | REL-S6-256: SRC-001 | REL-S6-257: SRC-001 | REL-S6-258: SRC-005 | REL-S6-259: SRC-006 | REL-S6-260: SRC-001 | REL-S6-261: SRC-005",
+          "sheet": "Relationships"
+        }
+      ],
+      "level": "error"
+    },
+    {
+      "check_id": "golden_cases_smoke",
+      "count": 0,
+      "findings": [],
+      "level": "error",
+      "note": "PENDIENTE post-Fase-2. GC-001 a GC-007 deben producir su expected_focus."
+    }
+  ],
+  "source": "docs/biblioteca-maestra-v3.1.xlsx",
+  "totals": {
+    "checks_run": 15,
+    "curated_categories": [],
+    "errors": 152,
+    "warnings": 73
+  }
+}

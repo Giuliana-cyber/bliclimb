@@ -1,0 +1,78 @@
+vocabulary,raw_value,count
+equipment,Activación muscular controlada; no dolor articular.,32
+equipment,Sin equipo,3
+equipment,Liga elástica,2
+equipment,Cubeta con arroz,2
+equipment,balón medicinal,2
+equipment,Borde estable,1
+equipment,Pinch ball/block,1
+equipment,Bloque/volumen,1
+equipment,System wall,1
+equipment,Dinamómetro,1
+equipment,Dinamómetro específico,1
+equipment,Cuerda,1
+equipment,Escalera Bachar,1
+equipment,"Fatiga leve/moderada en zona escapular, no dolor de hombro.",1
+equipment,Trabajo muscular alrededor de escápula.,1
+equipment,Activación suave bajo axila/escápula.,1
+equipment,Activación en espalda alta.,1
+equipment,Trabajo suave posterior/lateral de hombro.,1
+equipment,"Activación en manguito, alta demanda de control.",1
+equipment,Trabajo en parte alta de espalda/hombro posterior.,1
+equipment,Movilidad/activación suave.,1
+equipment,Pinch block/pesa,1
+equipment,Pelota blanda,1
+equipment,Mesa,1
+equipment,system board,1
+equipment,board,1
+equipment,presa grande/dinamómetro opcional,1
+equipment,fitball,1
+equipment,trineo,1
+equipment,caminadora/terreno,1
+equipment,bicicleta,1
+equipment,exterior/caminadora,1
+status,Manguito rotador,3
+status,Serrato anterior,2
+status,Serrato anterior/rotadores,1
+status,Trapecio bajo,1
+status,Trapecio bajo/dorsal,1
+status,Trapecio medio/bajo,1
+status,Infraespinoso/redondo menor,1
+status,Deltoides posterior/romboides,1
+status,Serrato/trapecio bajo,1
+status,Serrato/estabilidad,1
+status,Estabilidad dinámica,1
+status,Estabilidad hombro/cintura escapular,1
+status,Estabilidad fina,1
+status,Fuerza overhead general,1
+status,Fuerza unilateral,1
+status,Deltoides medio,1
+status,Deltoides posterior,1
+status,Escápula/hombro posterior,1
+status,Retracción escapular,1
+status,Dorsal/escápula,1
+status,Extensión hombro,1
+status,Plano escapular,1
+status,Control escapular,1
+status,Espalda alta,1
+status,Movilidad anterior,1
+status,Movilidad torácica,1
+status,Movilidad activa,1
+status,Manguito/escápula,1
+status,Empuje vertical/antagonista,1
+status,Empuje posterior,1
+status,Empuje básico,1
+status,Empuje horizontal,1
+status,Empuje avanzado,1
+status,Soporte overhead,1
+status,Escápula overhead,1
+status,Estabilidad hombro,1
+status,Estabilidad empuje,1
+structure,Inicio específico o test ligero,1
+structure,Rehabilitación general no diagnóstica,1
+structure,Rehabilitación supervisada,1
+structure,Después de sesiones intensas,1
+action,No tests máximos; bajar carga y recomendar validación.,1
+action,Usar progresión asistida y aprendizaje técnico.,1
+action,Limitar volumen de fuerza; priorizar técnica en muro.,1
+action,Plan conservador; no máximos.,1

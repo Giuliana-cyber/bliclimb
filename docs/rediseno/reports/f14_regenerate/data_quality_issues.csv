@@ -1,0 +1,121 @@
+sheet,row_id,column,value,kind
+Exercises,EX-SCAP-001,equipment,"Fatiga leve/moderada en zona escapular, no dolor de hombro.",equipment_has_prose
+Exercises,EX-SCAP-001,risk_level,PR-SCAP-001,risk_level_has_id
+Exercises,EX-SCAP-001,app_status,Serrato anterior/rotadores,status_has_anatomy
+Exercises,EX-SCAP-002,risk_level,PR-SCAP-001,risk_level_has_id
+Exercises,EX-SCAP-002,app_status,Trapecio bajo,status_has_anatomy
+Exercises,EX-SCAP-003,risk_level,PR-SCAP-002,risk_level_has_id
+Exercises,EX-SCAP-003,app_status,Trapecio bajo/dorsal,status_has_anatomy
+Exercises,EX-SCAP-004,risk_level,PR-SCAP-003,risk_level_has_id
+Exercises,EX-SCAP-004,app_status,Trapecio medio/bajo,status_has_anatomy
+Exercises,EX-SHO-001,risk_level,PR-SHO-001,risk_level_has_id
+Exercises,EX-SHO-001,app_status,Infraespinoso/redondo menor,status_has_anatomy
+Exercises,EX-SHO-002,risk_level,PR-SHO-001,risk_level_has_id
+Exercises,EX-SHO-002,app_status,Manguito rotador,status_has_anatomy
+Exercises,EX-SHO-003,risk_level,PR-SCAP-003,risk_level_has_id
+Exercises,EX-SHO-003,app_status,Deltoides posterior/romboides,status_has_anatomy
+Exercises,EX-SHO-004,risk_level,PR-SHO-002,risk_level_has_id
+Exercises,EX-SHO-004,app_status,Serrato/trapecio bajo,status_has_anatomy
+Exercises,EX-SHO-005,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-005,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-005,app_status,Serrato anterior,status_has_anatomy
+Exercises,EX-SHO-006,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-006,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-006,app_status,Serrato anterior,status_has_anatomy
+Exercises,EX-SHO-007,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-007,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-007,app_status,Serrato/estabilidad,status_has_anatomy
+Exercises,EX-SHO-008,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-008,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-009,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-009,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-010,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-010,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-011,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-011,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-012,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-012,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-013,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-013,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-013,app_status,Deltoides medio,status_has_anatomy
+Exercises,EX-SHO-014,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-014,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-014,app_status,Deltoides posterior,status_has_anatomy
+Exercises,EX-SHO-015,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-015,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-015,app_status,Escápula/hombro posterior,status_has_anatomy
+Exercises,EX-SHO-016,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-016,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-017,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-017,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-017,app_status,Dorsal/escápula,status_has_anatomy
+Exercises,EX-SHO-018,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-018,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-019,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-019,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-019,app_status,Manguito rotador,status_has_anatomy
+Exercises,EX-SHO-020,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-020,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-020,app_status,Manguito rotador,status_has_anatomy
+Exercises,EX-SHO-021,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-021,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-022,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-022,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-023,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-023,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-024,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-024,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-025,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-025,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-026,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-026,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-027,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-027,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-027,app_status,Manguito/escápula,status_has_anatomy
+Exercises,EX-SHO-028,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-028,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-029,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-029,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-030,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-030,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-031,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-031,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-032,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-032,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-033,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-033,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-034,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-034,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-034,app_status,Escápula overhead,status_has_anatomy
+Exercises,EX-SHO-035,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-035,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-SHO-036,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
+Exercises,EX-SHO-036,risk_level,PR-SHO-003,risk_level_has_id
+Gates,GT-PULL-001,action,Bloquear ejercicios altos y tests; ofrecer regresión o descanso técnico.,action_has_prose
+Gates,GT-PULL-002,action,Bloquear y pedir validación profesional.,action_has_prose
+Gates,GT-PULL-003,action,Usar jalón/remo/asistencia; no tests de suspensión.,action_has_prose
+Gates,GT-PULL-004,action,"Elegir dominada asistida, jalón o negativas controladas; bloquear lastre/Frenchies.",action_has_prose
+Gates,GT-PULL-005,action,"Bloquear lastre, Frenchies completos y unilaterales.",action_has_prose
+Gates,GT-PULL-006,action,Bloquear lastre.,action_has_prose
+Gates,GT-PULL-007,action,Bloquear o usar versión asistida.,action_has_prose
+Gates,GT-PULL-008,action,Bloquear por defecto.,action_has_prose
+Gates,GT-PULL-009,action,Bloquear.,action_has_prose
+Gates,GT-PULL-010,action,No seleccionar tests máximos; usar estimación conservadora.,action_has_prose
+Gates,GT-PULL-011,action,Reducir intensidad o posponer.,action_has_prose
+Gates,GT-PULL-012,action,Bloquear hangs/lock-offs; derivar a validación.,action_has_prose
+Gates,GT-PULL-013,action,"Bloquear excéntricos intensos, Frenchies, curls pesados y unilaterales.",action_has_prose
+Gates,GT-PULL-014,action,Bloquear.,action_has_prose
+Gates,GT-PULL-015,action,Bloquear y mover a Sprint Campus.,action_has_prose
+Gates,GT-PULL-016,action,Evitar combinación; elegir un estímulo principal.,action_has_prose
+Gates,GT-PULL-017,action,Bloquear alto riesgo y pedir validación profesional.,action_has_prose
+Gates,GT-PULL-018,action,Requiere validación profesional antes de tests/cargas altas.,action_has_prose
+Gates,GT-PULL-019,action,No tests máximos; bajar carga y recomendar validación.,action_has_prose
+Gates,GT-PULL-020,action,Usar progresión asistida y aprendizaje técnico.,action_has_prose
+Gates,GT-PULL-021,action,Bloquear.,action_has_prose
+Gates,GT-PULL-022,action,Detener y pedir validación profesional.,action_has_prose
+Gates,GT-PULL-023,action,Usar regresiones y volumen bajo; validar progresión.,action_has_prose
+Gates,GT-PULL-024,action,Bloquear o reducir.,action_has_prose
+Gates,GT-PULL-025,action,Bloquear.,action_has_prose
+Gates,GT-PULL-026,action,Limitar volumen de fuerza; priorizar técnica en muro.,action_has_prose
+Gates,GT-PULL-027,action,Bloquear unilaterales; usar bilateral o validación.,action_has_prose
+Gates,GT-PULL-028,action,Plan conservador; no máximos.,action_has_prose
