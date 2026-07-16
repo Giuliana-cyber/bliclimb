@@ -253,24 +253,50 @@ def cmd_cancel(token: str, live: bool) -> None:
         print("⚠ NO todos se cancelaron. Revisá cancellation_log.jsonl y reintentá.")
 
 
-def find_preapprovals_by_email(token: str, email: str, statuses: tuple[str, ...] = ("authorized",)) -> list[dict]:
+def find_preapprovals_by_email(
+    token: str, email: str, statuses: tuple[str, ...] = ("authorized",)
+) -> list[dict]:
     """Busca preapprovals que match payer_email en los estados dados.
-    MP soporta filtrar por payer_email directamente en /preapproval/search,
-    pero por si acaso también hacemos match cliente-side case-insensitive."""
+
+    Estrategia:
+      1. Intento primero con filtro server-side `payer_email` (rápido).
+      2. Si MP devuelve 403 sobre ese filtro (restricción común de OAuth
+         de MP por privacidad — el filtro por email de payer requiere
+         permisos elevados), fallback a listar TODOS los preapprovals
+         del vendedor y filtrar client-side.
+
+    En ambos casos el match final es case-insensitive contra `payer_email`.
+    """
     email_norm = email.strip().lower()
     matches: list[dict] = []
+    fallback_used = False
+
     for status in statuses:
         offset = 0
+        server_filter_ok = True
         while True:
-            query = {
-                "payer_email": email_norm,
-                "status": status,
-                "limit": "100",
-                "offset": str(offset),
-            }
-            payload = mp_request("GET", "/preapproval/search", token, query=query)
+            base_query = {"status": status, "limit": "100", "offset": str(offset)}
+            query = ({"payer_email": email_norm, **base_query}
+                     if server_filter_ok else base_query)
+            try:
+                payload = mp_request("GET", "/preapproval/search", token, query=query)
+            except RuntimeError as e:
+                # Fallback si el filtro payer_email no está permitido
+                if "HTTP 403" in str(e) and server_filter_ok:
+                    if not fallback_used:
+                        print(
+                            f"  ⚠ Filtro server-side payer_email no permitido "
+                            f"(HTTP 403). Fallback: listado completo + match "
+                            f"client-side."
+                        )
+                        fallback_used = True
+                    server_filter_ok = False
+                    offset = 0
+                    continue
+                raise
+
             results = payload.get("results") or []
-            # Filtro defensivo cliente-side
+            # Match final client-side (case-insensitive)
             for r in results:
                 pa_email = (r.get("payer_email") or "").strip().lower()
                 if pa_email == email_norm:
