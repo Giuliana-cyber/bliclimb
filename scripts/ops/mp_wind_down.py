@@ -253,6 +253,138 @@ def cmd_cancel(token: str, live: bool) -> None:
         print("⚠ NO todos se cancelaron. Revisá cancellation_log.jsonl y reintentá.")
 
 
+def find_preapprovals_by_email(token: str, email: str, statuses: tuple[str, ...] = ("authorized",)) -> list[dict]:
+    """Busca preapprovals que match payer_email en los estados dados.
+    MP soporta filtrar por payer_email directamente en /preapproval/search,
+    pero por si acaso también hacemos match cliente-side case-insensitive."""
+    email_norm = email.strip().lower()
+    matches: list[dict] = []
+    for status in statuses:
+        offset = 0
+        while True:
+            query = {
+                "payer_email": email_norm,
+                "status": status,
+                "limit": "100",
+                "offset": str(offset),
+            }
+            payload = mp_request("GET", "/preapproval/search", token, query=query)
+            results = payload.get("results") or []
+            # Filtro defensivo cliente-side
+            for r in results:
+                pa_email = (r.get("payer_email") or "").strip().lower()
+                if pa_email == email_norm:
+                    matches.append(r)
+            paging = payload.get("paging") or {}
+            total = int(paging.get("total") or 0)
+            offset += 100
+            if offset >= total or not results:
+                break
+            time.sleep(0.2)
+    return matches
+
+
+def cmd_find_by_email(token: str, email: str) -> None:
+    """Solo lectura: lista TODAS las suscripciones del email (cualquier estado)."""
+    OUTDIR.mkdir(parents=True, exist_ok=True)
+    print(f"Buscando preapprovals de {email} (todos los estados)...")
+    matches = find_preapprovals_by_email(
+        token, email, statuses=("authorized", "paused", "cancelled")
+    )
+    if not matches:
+        print(f"  Sin preapprovals para {email}.")
+        return
+    active = [m for m in matches if m.get("status") == "authorized"]
+    other = [m for m in matches if m.get("status") != "authorized"]
+    print(f"\n{len(matches)} preapproval(s) encontrados · {len(active)} activo(s)")
+    for m in matches:
+        auto = m.get("auto_recurring") or {}
+        print(
+            f"  [{m.get('status')}] {m.get('id')} · "
+            f"{auto.get('transaction_amount')} {auto.get('currency_id', '?')} · "
+            f"date_created={m.get('date_created', '?')[:10]} · "
+            f"reason={(m.get('reason') or '')[:50]}"
+        )
+    snap_path = OUTDIR / f"find_{email.replace('@', '_at_').replace('.', '_')}.json"
+    snap_path.write_text(json.dumps(matches, indent=2, ensure_ascii=False, sort_keys=True))
+    print(f"\nDetalle completo: {snap_path}")
+
+
+def cmd_cancel_by_email(token: str, email: str, live: bool) -> None:
+    """Cancela SOLO los preapprovals authorized del email dado. Uso típico:
+    usuario ya reembolsado manualmente, cerrar su suscripción individual."""
+    OUTDIR.mkdir(parents=True, exist_ok=True)
+    print(f"Buscando preapprovals activos de {email}...")
+    active = find_preapprovals_by_email(token, email, statuses=("authorized",))
+
+    if not active:
+        print(f"  0 preapprovals activos para {email}. Nada que cancelar.")
+        # Aun así reporto histórico para dejar registro
+        cmd_find_by_email(token, email)
+        return
+
+    print(f"\n{len(active)} preapproval(s) activo(s) para {email}:")
+    for pa in active:
+        auto = pa.get("auto_recurring") or {}
+        print(
+            f"  {pa.get('id')} · "
+            f"{auto.get('transaction_amount')} {auto.get('currency_id', '?')} · "
+            f"reason={(pa.get('reason') or '')[:60]}"
+        )
+
+    if not live:
+        print("\n[DRY-RUN] --live no pasado, no se cancela nada.")
+        return
+
+    confirm = input(
+        f"\nConfirmá CANCELACIÓN de {len(active)} preapproval(s) de {email} "
+        f"· escribí 'CANCELAR' para proceder: "
+    ).strip()
+    if confirm != "CANCELAR":
+        print("Abortado.")
+        return
+
+    log_path = OUTDIR / "cancellation_log.jsonl"
+    ok = 0
+    failed = 0
+    with log_path.open("a") as log_f:
+        for pa in active:
+            pid = pa.get("id")
+            entry: dict = {
+                "ts": datetime.now(timezone.utc).isoformat(),
+                "context": "cancel_by_email",
+                "target_email": email,
+                "preapproval_id": pid,
+                "payer_email": pa.get("payer_email", "?"),
+            }
+            try:
+                res = cancel_preapproval(pid, token)
+                entry["result"] = "ok"
+                entry["new_status"] = res.get("status")
+                ok += 1
+                print(f"  ✅ {pid} → {res.get('status')}")
+            except Exception as e:  # noqa: BLE001
+                entry["result"] = "error"
+                entry["error"] = str(e)[:500]
+                failed += 1
+                print(f"  ❌ {pid} → {e}")
+            log_f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            time.sleep(0.3)
+
+    print(f"\nOK: {ok} · FAILED: {failed} · Log: {log_path}")
+
+    # Verificación estricta pedida por Giuliana: 0 activos restantes para este email
+    print(f"\nVerificando que {email} no tenga preapprovals activos...")
+    still_active = find_preapprovals_by_email(token, email, statuses=("authorized",))
+    if still_active:
+        print(f"⚠ Quedan {len(still_active)} preapprovals activos:")
+        for m in still_active:
+            print(f"   {m.get('id')} · status={m.get('status')}")
+        print("Reintentá con `cancel-by-email --live`.")
+    else:
+        print(f"✅ Confirmado: {email} sin preapprovals en 'authorized'.")
+
+
 def cmd_export_payments(token: str) -> None:
     """Exporta CSV con todos los pagos cobrados via preapprovals para reembolsos."""
     OUTDIR.mkdir(parents=True, exist_ok=True)
@@ -349,6 +481,14 @@ def main() -> int:
         help="Solo simula (equivalente a NO pasar --live)",
     )
 
+    p_find = sub.add_parser("find-by-email", help="Busca preapprovals de un email (todos los estados)")
+    p_find.add_argument("email", help="Email exacto del payer")
+
+    p_cbe = sub.add_parser("cancel-by-email", help="Cancela preapprovals authorized de un email específico")
+    p_cbe.add_argument("email", help="Email exacto del payer")
+    p_cbe.add_argument("--live", action="store_true")
+    p_cbe.add_argument("--dry-run", action="store_true")
+
     sub.add_parser("export-payments", help="Exporta CSV de pagos para reembolsos")
 
     args = parser.parse_args()
@@ -358,6 +498,10 @@ def main() -> int:
         cmd_list(token)
     elif args.cmd == "cancel":
         cmd_cancel(token, live=args.live and not args.dry_run)
+    elif args.cmd == "find-by-email":
+        cmd_find_by_email(token, args.email)
+    elif args.cmd == "cancel-by-email":
+        cmd_cancel_by_email(token, args.email, live=args.live and not args.dry_run)
     elif args.cmd == "export-payments":
         cmd_export_payments(token)
     else:
