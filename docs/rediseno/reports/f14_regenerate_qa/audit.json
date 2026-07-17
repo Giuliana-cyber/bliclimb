@@ -83,55 +83,31 @@
     },
     {
       "check_id": "domain_check_equipment",
-      "count": 32,
+      "count": 22,
       "findings": [
         {
           "column": "equipment",
           "kind": "off_canon",
-          "off_token": "borde estable",
-          "row_id": "EX-FIN-027",
-          "sheet": "Exercises",
-          "value": "Borde estable"
-        },
-        {
-          "column": "equipment",
-          "kind": "off_canon",
-          "off_token": "pinch ball",
+          "off_token": "pinch_block",
           "row_id": "EX-FIN-031",
           "sheet": "Exercises",
-          "value": "Pinch ball/block"
+          "value": "pinch_block"
         },
         {
           "column": "equipment",
           "kind": "off_canon",
-          "off_token": "bloque",
-          "row_id": "EX-FIN-033",
-          "sheet": "Exercises",
-          "value": "Bloque/volumen"
-        },
-        {
-          "column": "equipment",
-          "kind": "off_canon",
-          "off_token": "system wall",
-          "row_id": "EX-FIN-043",
-          "sheet": "Exercises",
-          "value": "System wall"
-        },
-        {
-          "column": "equipment",
-          "kind": "off_canon",
-          "off_token": "dinamómetro",
+          "off_token": "dynamometer",
           "row_id": "EX-FIN-061",
           "sheet": "Exercises",
-          "value": "Dinamómetro"
+          "value": "dynamometer"
         },
         {
           "column": "equipment",
           "kind": "off_canon",
-          "off_token": "dinamómetro específico",
+          "off_token": "dynamometer",
           "row_id": "EX-FIN-062",
           "sheet": "Exercises",
-          "value": "Dinamómetro específico"
+          "value": "dynamometer"
         },
         {
           "column": "equipment",
@@ -184,22 +160,6 @@
         {
           "column": "equipment",
           "kind": "off_canon",
-          "off_token": "liga elástica",
-          "row_id": "EX-FOR-009",
-          "sheet": "Exercises",
-          "value": "Liga elástica"
-        },
-        {
-          "column": "equipment",
-          "kind": "off_canon",
-          "off_token": "liga elástica",
-          "row_id": "EX-FOR-010",
-          "sheet": "Exercises",
-          "value": "Liga elástica"
-        },
-        {
-          "column": "equipment",
-          "kind": "off_canon",
           "off_token": "cubeta con arroz",
           "row_id": "EX-FOR-011",
           "sheet": "Exercises",
@@ -216,10 +176,10 @@
         {
           "column": "equipment",
           "kind": "off_canon",
-          "off_token": "pinch block",
+          "off_token": "pinch_block",
           "row_id": "EX-FOR-026",
           "sheet": "Exercises",
-          "value": "Pinch block/pesa"
+          "value": "pinch_block"
         },
         {
           "column": "equipment",
@@ -232,50 +192,10 @@
         {
           "column": "equipment",
           "kind": "off_canon",
-          "off_token": "sin equipo",
-          "row_id": "EX-FOR-029",
-          "sheet": "Exercises",
-          "value": "Sin equipo"
-        },
-        {
-          "column": "equipment",
-          "kind": "off_canon",
-          "off_token": "sin equipo",
-          "row_id": "EX-FOR-030",
-          "sheet": "Exercises",
-          "value": "Sin equipo"
-        },
-        {
-          "column": "equipment",
-          "kind": "off_canon",
-          "off_token": "sin equipo",
-          "row_id": "EX-FOR-031",
-          "sheet": "Exercises",
-          "value": "Sin equipo"
-        },
-        {
-          "column": "equipment",
-          "kind": "off_canon",
           "off_token": "mesa",
           "row_id": "EX-FOR-038",
           "sheet": "Exercises",
           "value": "Mesa"
-        },
-        {
-          "column": "equipment",
-          "kind": "off_canon",
-          "off_token": "system board",
-          "row_id": "EX-CAMP-018",
-          "sheet": "Exercises",
-          "value": "system board"
-        },
-        {
-          "column": "equipment",
-          "kind": "off_canon",
-          "off_token": "board",
-          "row_id": "EX-CAMP-019",
-          "sheet": "Exercises",
-          "value": "board"
         },
         {
           "column": "equipment",
@@ -296,10 +216,10 @@
         {
           "column": "equipment",
           "kind": "off_canon",
-          "off_token": "presa grande",
+          "off_token": "dynamometer",
           "row_id": "EX-CAMP-030",
           "sheet": "Exercises",
-          "value": "presa grande/dinamómetro opcional"
+          "value": "dynamometer"
         },
         {
           "column": "equipment",
@@ -381,42 +301,252 @@
     },
     {
       "check_id": "cross_column_contamination",
-      "count": 110,
+      "count": 150,
       "findings": [
         {
           "column": "equipment",
           "kind": "equipment_has_prose",
           "row_id": "EX-FIN-001",
           "sheet": "Exercises",
-          "value": "hangboard; bands"
+          "value": "gym; hangboard; bands"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-002",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-003",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-004",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-005",
+          "sheet": "Exercises",
+          "value": "hangboard; gym"
         },
         {
           "column": "equipment",
           "kind": "equipment_has_prose",
           "row_id": "EX-FIN-006",
           "sheet": "Exercises",
-          "value": "hangboard; weights"
+          "value": "gym; hangboard; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-007",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-008",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
         },
         {
           "column": "equipment",
           "kind": "equipment_has_prose",
           "row_id": "EX-FIN-009",
           "sheet": "Exercises",
-          "value": "hangboard; weights"
+          "value": "gym; hangboard; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-010",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-011",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-012",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-013",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-014",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-015",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
         },
         {
           "column": "equipment",
           "kind": "equipment_has_prose",
           "row_id": "EX-FIN-016",
           "sheet": "Exercises",
-          "value": "hangboard; bands"
+          "value": "gym; hangboard; bands"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-017",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-018",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-019",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-020",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-021",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-022",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-023",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-024",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
         },
         {
           "column": "equipment",
           "kind": "equipment_has_prose",
           "row_id": "EX-FIN-025",
           "sheet": "Exercises",
-          "value": "hangboard; bands; weights"
+          "value": "gym; hangboard; bands; weights"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-028",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-029",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-030",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-034",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-035",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-036",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-037",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-038",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-039",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-040",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
         },
         {
           "column": "equipment",
@@ -456,6 +586,41 @@
         {
           "column": "equipment",
           "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-050",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-051",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-052",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-053",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-054",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
           "row_id": "EX-FIN-056",
           "sheet": "Exercises",
           "value": "gym; rock"
@@ -465,7 +630,21 @@
           "kind": "equipment_has_prose",
           "row_id": "EX-FIN-058",
           "sheet": "Exercises",
-          "value": "hangboard; bands"
+          "value": "gym; hangboard; bands"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-059",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-FIN-060",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
         },
         {
           "column": "equipment",
@@ -505,6 +684,20 @@
         {
           "column": "equipment",
           "kind": "equipment_has_prose",
+          "row_id": "EX-PULL-019",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-PULL-020",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
           "row_id": "EX-PULL-025",
           "sheet": "Exercises",
           "value": "pullup_bar; trx"
@@ -529,6 +722,13 @@
           "row_id": "EX-PULL-030",
           "sheet": "Exercises",
           "value": "campus; gym"
+        },
+        {
+          "column": "equipment",
+          "kind": "equipment_has_prose",
+          "row_id": "EX-PULL-033",
+          "sheet": "Exercises",
+          "value": "gym; hangboard"
         },
         {
           "column": "equipment",
@@ -871,70 +1071,70 @@
           "kind": "equipment_has_prose",
           "row_id": "EX-CAMP-001",
           "sheet": "Exercises",
-          "value": "campus; gym"
+          "value": "gym; campus"
         },
         {
           "column": "equipment",
           "kind": "equipment_has_prose",
           "row_id": "EX-CAMP-002",
           "sheet": "Exercises",
-          "value": "campus; gym"
+          "value": "gym; campus"
         },
         {
           "column": "equipment",
           "kind": "equipment_has_prose",
           "row_id": "EX-CAMP-003",
           "sheet": "Exercises",
-          "value": "campus; gym"
+          "value": "gym; campus"
         },
         {
           "column": "equipment",
           "kind": "equipment_has_prose",
           "row_id": "EX-CAMP-004",
           "sheet": "Exercises",
-          "value": "campus; gym"
+          "value": "gym; campus"
         },
         {
           "column": "equipment",
           "kind": "equipment_has_prose",
           "row_id": "EX-CAMP-005",
           "sheet": "Exercises",
-          "value": "campus; gym"
+          "value": "gym; campus"
         },
         {
           "column": "equipment",
           "kind": "equipment_has_prose",
           "row_id": "EX-CAMP-006",
           "sheet": "Exercises",
-          "value": "campus; gym"
+          "value": "gym; campus"
         },
         {
           "column": "equipment",
           "kind": "equipment_has_prose",
           "row_id": "EX-CAMP-007",
           "sheet": "Exercises",
-          "value": "campus; gym"
+          "value": "gym; campus"
         },
         {
           "column": "equipment",
           "kind": "equipment_has_prose",
           "row_id": "EX-CAMP-008",
           "sheet": "Exercises",
-          "value": "campus; gym"
+          "value": "gym; campus"
         },
         {
           "column": "equipment",
           "kind": "equipment_has_prose",
           "row_id": "EX-CAMP-009",
           "sheet": "Exercises",
-          "value": "campus; gym; bands"
+          "value": "gym; campus; bands"
         },
         {
           "column": "equipment",
           "kind": "equipment_has_prose",
           "row_id": "EX-CAMP-010",
           "sheet": "Exercises",
-          "value": "campus; gym"
+          "value": "gym; campus"
         },
         {
           "column": "equipment",
@@ -948,14 +1148,14 @@
           "kind": "equipment_has_prose",
           "row_id": "EX-CAMP-027",
           "sheet": "Exercises",
-          "value": "campus; gym; bands"
+          "value": "gym; campus; bands"
         },
         {
           "column": "equipment",
           "kind": "equipment_has_prose",
           "row_id": "EX-CAMP-028",
           "sheet": "Exercises",
-          "value": "campus; gym"
+          "value": "gym; campus"
         },
         {
           "column": "equipment",
@@ -1838,7 +2038,7 @@
   "totals": {
     "checks_run": 15,
     "curated_categories": [],
-    "errors": 152,
+    "errors": 182,
     "warnings": 73
   }
 }

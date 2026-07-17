@@ -7,7 +7,7 @@
 ## Resumen
 
 - Checks corridos: **15**
-- Errores totales: **152**
+- Errores totales: **182**
 - Warnings totales: **73**
 - Categorías curadas (≥50% con gates): **0**
 
@@ -39,26 +39,26 @@ Sample:
 
 ### domain_check_risk_level_protocols · error · ✅ OK
 
-### domain_check_equipment · error · ❌ 32 findings
+### domain_check_equipment · error · ❌ 22 findings
 
 Sample:
 
-- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Borde estable` · `off_token=borde estable` · `row_id=EX-FIN-027`
-- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Pinch ball/block` · `off_token=pinch ball` · `row_id=EX-FIN-031`
-- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Bloque/volumen` · `off_token=bloque` · `row_id=EX-FIN-033`
-- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=System wall` · `off_token=system wall` · `row_id=EX-FIN-043`
-- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Dinamómetro` · `off_token=dinamómetro` · `row_id=EX-FIN-061`
-- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Dinamómetro específico` · `off_token=dinamómetro específico` · `row_id=EX-FIN-062`
+- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=pinch_block` · `off_token=pinch_block` · `row_id=EX-FIN-031`
+- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=dynamometer` · `off_token=dynamometer` · `row_id=EX-FIN-061`
+- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=dynamometer` · `off_token=dynamometer` · `row_id=EX-FIN-062`
 - `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Cuerda` · `off_token=cuerda` · `row_id=EX-PULL-028`
 - `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Escalera Bachar` · `off_token=escalera bachar` · `row_id=EX-PULL-029`
 - `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Trabajo muscular alrededor de escápula.` · `off_token=trabajo muscular alrededor de escápula.` · `row_id=EX-SCAP-002`
 - `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Activación suave bajo axila/escápula.` · `off_token=activación suave bajo axila` · `row_id=EX-SCAP-003`
 - `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Activación en espalda alta.` · `off_token=activación en espalda alta.` · `row_id=EX-SCAP-004`
 - `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Movilidad/activación suave.` · `off_token=movilidad` · `row_id=EX-SHO-004`
-- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Liga elástica` · `off_token=liga elástica` · `row_id=EX-FOR-009`
-- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Liga elástica` · `off_token=liga elástica` · `row_id=EX-FOR-010`
 - `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Cubeta con arroz` · `off_token=cubeta con arroz` · `row_id=EX-FOR-011`
-- ... y 17 más
+- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Cubeta con arroz` · `off_token=cubeta con arroz` · `row_id=EX-FOR-012`
+- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=pinch_block` · `off_token=pinch_block` · `row_id=EX-FOR-026`
+- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Pelota blanda` · `off_token=pelota blanda` · `row_id=EX-FOR-027`
+- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Mesa` · `off_token=mesa` · `row_id=EX-FOR-038`
+- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=balón medicinal` · `off_token=balón medicinal` · `row_id=EX-CAMP-023`
+- ... y 7 más
 
 ### action_vocabulary_check · error · ❌ 4 findings
 
@@ -69,26 +69,26 @@ Sample:
 - `kind=action_off_vocab` · `sheet=Gates` · `column=action` · `value=Limitar volumen de fuerza; priorizar técnica en muro.` · `count=1`
 - `kind=action_off_vocab` · `sheet=Gates` · `column=action` · `value=Plan conservador; no máximos.` · `count=1`
 
-### cross_column_contamination · error · ❌ 110 findings
+### cross_column_contamination · error · ❌ 150 findings
 
 Sample:
 
-- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=hangboard; bands` · `row_id=EX-FIN-001`
-- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=hangboard; weights` · `row_id=EX-FIN-006`
-- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=hangboard; weights` · `row_id=EX-FIN-009`
-- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=hangboard; bands` · `row_id=EX-FIN-016`
-- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=hangboard; bands; weights` · `row_id=EX-FIN-025`
-- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; rock` · `row_id=EX-FIN-041`
-- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; weights` · `row_id=EX-FIN-042`
-- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; rock` · `row_id=EX-FIN-044`
-- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; rock` · `row_id=EX-FIN-045`
-- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=pullup_bar; weights` · `row_id=EX-FIN-046`
-- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; rock` · `row_id=EX-FIN-056`
-- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=hangboard; bands` · `row_id=EX-FIN-058`
-- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=pullup_bar; bands` · `row_id=EX-PULL-002`
-- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=pullup_bar; weights` · `row_id=EX-PULL-004`
-- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=pullup_bar; bands` · `row_id=EX-PULL-015`
-- ... y 95 más
+- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; hangboard; bands` · `row_id=EX-FIN-001`
+- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; hangboard` · `row_id=EX-FIN-002`
+- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; hangboard` · `row_id=EX-FIN-003`
+- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; hangboard` · `row_id=EX-FIN-004`
+- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=hangboard; gym` · `row_id=EX-FIN-005`
+- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; hangboard; weights` · `row_id=EX-FIN-006`
+- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; hangboard` · `row_id=EX-FIN-007`
+- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; hangboard` · `row_id=EX-FIN-008`
+- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; hangboard; weights` · `row_id=EX-FIN-009`
+- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; hangboard` · `row_id=EX-FIN-010`
+- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; hangboard` · `row_id=EX-FIN-011`
+- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; hangboard` · `row_id=EX-FIN-012`
+- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; hangboard` · `row_id=EX-FIN-013`
+- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; hangboard` · `row_id=EX-FIN-014`
+- `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; hangboard` · `row_id=EX-FIN-015`
+- ... y 135 más
 
 ### gates_column_populated · error · ✅ OK
 

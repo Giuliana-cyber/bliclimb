@@ -67,6 +67,8 @@ except ImportError:
 CANON_EQUIPMENT_TOKENS = {
     "gym", "hangboard", "campus", "weights", "rock",
     "home", "bands", "pullup_bar", "trx",
+    # +2 tokens aprobados por Giuliana 2026-07-16 (F1.5)
+    "dynamometer", "pinch_block",
 }
 
 CANON_CATEGORY = {
@@ -173,6 +175,23 @@ CATEGORY_ALIASES: dict[str, str] = {
 # Equipment · substrings → tokens canónicos. Se aplica en orden (long
 # match first para evitar que "banda" capture "banda/palo").
 EQUIPMENT_SUBSTRING_MAP: list[tuple[str, list[str]]] = [
+    # Ajustes F1.5 aprobados por Giuliana 2026-07-16
+    ("dinamómetro específico", ["dynamometer"]),
+    ("dinamómetro", ["dynamometer"]),
+    ("dynamometer", ["dynamometer"]),
+    ("pinch ball/block", ["pinch_block"]),
+    ("pinch block", ["pinch_block"]),
+    ("bloque de pinza", ["pinch_block"]),
+    ("borde estable", ["hangboard"]),
+    ("system wall", ["gym"]),
+    ("bloque/volumen", ["gym"]),
+    ("bloque / volumen", ["gym"]),
+    ("board", ["gym"]),  # spray/moon/kilter boards
+    ("liga elástica", ["bands"]),
+    ("liga elastica", ["bands"]),
+    ("sin equipo", ["home"]),
+    ("no equipment", ["home"]),
+    ("bodyweight only", ["home"]),
     # Combos primero (longer match wins)
     ("hangboard/pocket board", ["hangboard"]),
     ("hangboard con lastre", ["hangboard", "weights"]),
@@ -758,6 +777,9 @@ def flatten_exercise_row(
     equip_tokens, equip_ok = canon_equipment_tokens(row.get("equipment", ""))
     if not equip_ok and row.get("equipment", "").strip():
         unmapped["equipment"][row.get("equipment", "")] += 1
+        # Regla F1.5 (Giuliana): equipment no mapeado → forzar
+        # manual_review para que el motor no lo prescriba automáticamente.
+        status = "manual_review"
 
     return {
         "exercise_id": ex_id,
@@ -802,6 +824,10 @@ def flatten_protocol_row(
     if not risk_ok:
         unmapped["risk_level"][row.get("risk_level", "")] += 1
     status, _ = canon_status(row.get("app_status", ""))
+    # Regla F1.5 (Giuliana): structure no mapeado (residuales de
+    # forearm/tracción) → manual_review. Se resuelve en Fase 4.
+    if not struct_ok:
+        status = "manual_review"
 
     # Parser de dosis · rangos
     work_min, work_max, work_notes = parse_dosage_field(row.get("work_interval", ""))
@@ -907,6 +933,10 @@ def flatten_gate_row(row: dict, unmapped: dict, contamination: list) -> dict:
     if not sev_ok:
         unmapped["severity"][row.get("severity", "")] += 1
     status, _ = canon_status(row.get("status", ""))
+    # Regla F1.5 (Giuliana): action no mapeado (residuales de
+    # forearm/tracción) → manual_review. Se resuelve en Fase 4.
+    if not action_ok:
+        status = "manual_review"
     return {
         "gate_id": gt_id,
         "name": row.get("gate_name", ""),
