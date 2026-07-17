@@ -20,6 +20,7 @@ import { filterByCategory } from './catalog-loader';
 import { restrictPool } from './restrict-pool';
 import { buildSlicePrompt } from './prompt-builder';
 import { assemble, type AssembledSession } from './assembler';
+import { deriveFocus } from './focus-selector';
 
 export interface PlanGeneratorOptions {
   category: string; // 'fuerza-dedos' en Fase 2
@@ -32,7 +33,7 @@ export interface PlanGeneratorOptions {
 export async function generateSession(params: {
   catalog: Catalog;
   profile: Profile;
-  focus: FocusObject;
+  focus?: FocusObject; // opcional · si se omite se deriva con FocusRules
   options: PlanGeneratorOptions;
 }): Promise<{
   session: AssembledSession;
@@ -41,10 +42,22 @@ export async function generateSession(params: {
     blockedCount: number;
     tokensUsed?: number;
     latencyMs: number;
+    focusRule?: string; // Fase 3: qué regla FR-XXX gatilló el focus
   };
 }> {
-  const { catalog, profile, focus, options } = params;
+  const { catalog, profile, options } = params;
   const t0 = Date.now();
+
+  // Fase 3: deriva focus automáticamente si no se pasó explícito.
+  let focus: FocusObject;
+  let focusRuleId: string | undefined;
+  if (params.focus) {
+    focus = params.focus;
+  } else {
+    const derived = deriveFocus(catalog, profile);
+    focus = derived.focus;
+    focusRuleId = derived.matchedRule.id;
+  }
 
   // 1. Filtro por categoría
   const categoryPool = filterByCategory(catalog, options.category);
@@ -124,6 +137,7 @@ export async function generateSession(params: {
       blockedCount: poolResult.blocked.length,
       tokensUsed,
       latencyMs: Date.now() - t0,
+      focusRule: focusRuleId,
     },
   };
 }

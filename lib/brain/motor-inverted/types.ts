@@ -121,11 +121,25 @@ export interface Relationship {
   notes: string;
 }
 
+export interface FocusRule {
+  id: string; // FR-001..FR-012
+  priorityOrder: number;
+  condition: string; // condition_expression compatible con gate-evaluator
+  focusPhase: string; // texto español del v3.0
+  primaryPriority: string;
+  secondaryPriority: string;
+  avoidOrLimit: string;
+  rationaleUser: string;
+  status: string;
+  reviewNote: string;
+}
+
 export interface Catalog {
   exercises: Exercise[];
   protocols: Protocol[];
   gates: Gate[];
   relationships: Relationship[];
+  focusRules: FocusRule[];
   // acceso indexado (poblado por loader):
   exerciseById: Map<string, Exercise>;
   gateById: Map<string, Gate>;

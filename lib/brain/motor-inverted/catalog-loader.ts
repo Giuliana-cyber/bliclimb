@@ -11,7 +11,7 @@
  */
 
 import type {
-  Catalog, Exercise, Gate, Protocol, Relationship, EquipmentToken,
+  Catalog, Exercise, Gate, Protocol, Relationship, EquipmentToken, FocusRule,
 } from './types';
 import rawCatalog from '@/data/catalog-v3.1.json';
 
@@ -115,6 +115,22 @@ function loadGates(): Gate[] {
   }));
 }
 
+function loadFocusRules(): FocusRule[] {
+  const rows = ((rawCatalog as any).FocusRules ?? []) as Record<string, string>[];
+  return rows.map((r) => ({
+    id: r.focus_rule_id,
+    priorityOrder: Number(r.priority_order) || 99,
+    condition: r.condition_expression,
+    focusPhase: r.focus_phase,
+    primaryPriority: r.primary_priority,
+    secondaryPriority: r.secondary_priority,
+    avoidOrLimit: r.avoid_or_limit,
+    rationaleUser: r.rationale_user,
+    status: r.status,
+    reviewNote: r.review_note,
+  }));
+}
+
 function loadRelationships(): Relationship[] {
   const rows = (rawCatalog as any).APP_Relationships as Record<string, string>[];
   return rows.map((r) => ({
@@ -137,6 +153,7 @@ export function loadCatalog(): Catalog {
   const protocols = loadProtocols();
   const gates = loadGates();
   const relationships = loadRelationships();
+  const focusRules = loadFocusRules();
 
   const exerciseById = new Map(exercises.map((e) => [e.id, e]));
   const gateById = new Map(gates.map((g) => [g.id, g]));
@@ -163,6 +180,7 @@ export function loadCatalog(): Catalog {
     protocols,
     gates,
     relationships,
+    focusRules,
     exerciseById,
     gateById,
     protocolById,
