@@ -27,6 +27,13 @@ const config: Config = {
         'bil-green': '#2F7D63',
         'bil-red': '#D6463A',
         'bil-ink': '#241F1C',
+        // Ampliación aprobada por Giuliana 2026-07-17:
+        // - bil-gold: streak badge (racha) + border-l del callout
+        //   "¿por qué esto hoy?" que antes usaba wood-tan del sistema MD3.
+        // - bil-navy: acento de Senda (planning screens · headers cuando
+        //   Senda es el coach activo).
+        'bil-gold': '#F2B23C',
+        'bil-navy': '#21395A',
         // Sistema Material Design 3 · Stitch (app autenticada).
         // Traducidos del code.html de carpeta_3/hoy_bilclimb_1 y afines.
         // NO renombrar · las pantallas Stitch los referencian directo.

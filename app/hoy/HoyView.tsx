@@ -59,7 +59,7 @@ export function HoyView({ session, focusRule, streak, weekPath, error }: HoyView
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 streak-badge px-3 py-1 rounded-full text-white font-bold text-sm">
+          <div className="flex items-center gap-2 bg-bil-gold px-3 py-1 rounded-full text-white font-bold text-sm shadow-[0_2px_8px_rgba(242,178,60,0.35)]">
             <span
               className="material-symbols-outlined text-[18px]"
               style={{ fontVariationSettings: "'FILL' 1" }}
@@ -118,9 +118,9 @@ export function HoyView({ session, focusRule, streak, weekPath, error }: HoyView
                 No pude armar tu sesión ahora mismo. {error}
               </div>
             ) : session ? (
-              <div className="bg-surface-container rounded p-4 mb-6 border-l-4 border-wood-tan">
+              <div className="bg-surface-container rounded p-4 mb-6 border-l-4 border-bil-gold">
                 <div className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-wood-tan mt-1">
+                  <span className="material-symbols-outlined text-bil-gold mt-1">
                     lightbulb
                   </span>
                   <div>
@@ -183,10 +183,7 @@ export function HoyView({ session, focusRule, streak, weekPath, error }: HoyView
         .soft-card-shadow {
           box-shadow: 0 8px 24px rgba(36, 31, 28, 0.08);
         }
-        .streak-badge {
-          background: linear-gradient(135deg, #ffd93d 0%, #ff8400 100%);
-          box-shadow: 0 2px 8px rgba(255, 132, 0, 0.3);
-        }
+        /* streak-badge se reemplazó por bg-bil-gold directo en el JSX. */
         .mountain-path::before {
           content: '';
           position: absolute;
