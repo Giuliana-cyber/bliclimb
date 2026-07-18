@@ -56,6 +56,9 @@ const routesWithoutShell = [
   // Stitch (4 items). El resto del proyecto sigue con AppShell viejo
   // hasta que las 15 pantallas restantes migren.
   '/hoy',
+  // Sesión Fase 4 UI (Batch 1) · en curso + terminada. Pantallas
+  // transaccionales — sin nav inferior; se sale por el CTA o el top bar.
+  '/sesion',
   // Invitación de coach: el cliente típicamente abre el link sin sesión
   // todavía. La página ya maneja signed-in / not-signed-in internamente.
   '/invite',
