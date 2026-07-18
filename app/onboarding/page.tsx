@@ -1321,7 +1321,7 @@ function CharacterCard({
       )}
     >
       <div className="mb-4 grid h-44 place-items-end overflow-hidden rounded-xl bg-gradient-to-br from-white/[0.06] to-white/[0.02]">
-        <CharacterAvatar character={character} variant="full" className="h-44 w-auto mx-auto" />
+        <CharacterAvatar character={character} variant="avatar" size="xl" className="h-40 w-40 mx-auto" />
       </div>
       <h3 className="text-xl font-extrabold">{name}</h3>
       <p className="mt-2 text-sm leading-6 text-white/70">{description}</p>

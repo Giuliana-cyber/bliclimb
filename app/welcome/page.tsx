@@ -51,7 +51,7 @@ export default function WelcomePage() {
         >
           <div className="absolute left-1/2 -translate-x-full ml-4">
             <Image
-              src="/characters/senda-full.png"
+              src="/characters/senda-avatar.png"
               alt="Senda"
               width={128}
               height={128}
@@ -60,7 +60,7 @@ export default function WelcomePage() {
           </div>
           <div className="absolute left-1/2 translate-x-0 -ml-4">
             <Image
-              src="/characters/bill-full.png"
+              src="/characters/bill-avatar.png"
               alt="Bill"
               width={128}
               height={128}

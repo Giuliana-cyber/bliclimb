@@ -5,7 +5,10 @@ import { useState } from 'react';
 import { Dumbbell, Mountain } from 'lucide-react';
 
 type Character = 'bill' | 'senda';
-type Variant = 'avatar' | 'full';
+// Solo 'avatar' — variante 'full' descartada 2026-07-18. El asset único
+// es el disco verde horneado #24614D · siempre va sobre superficie
+// crema/blanca (nunca sobre header verde · el casco se fundiría).
+type Variant = 'avatar';
 type Size = 'sm' | 'md' | 'lg' | 'xl';
 
 const SIZE_PX: Record<Size, number> = {
@@ -38,26 +41,6 @@ export function CharacterAvatar({
   const [hasImage, setHasImage] = useState(true);
   const src = `/characters/${character}-${variant}.png`;
   const pixels = SIZE_PX[size];
-
-  if (variant === 'full') {
-    return (
-      <div className={`relative ${className}`}>
-        {hasImage ? (
-          <Image
-            src={src}
-            alt={`${character} ilustración`}
-            width={400}
-            height={600}
-            onError={() => setHasImage(false)}
-            className="h-full w-full object-contain"
-            priority={false}
-          />
-        ) : (
-          <FallbackFull character={character} />
-        )}
-      </div>
-    );
-  }
 
   return (
     <div
@@ -96,19 +79,3 @@ function FallbackAvatar({ character }: { character: Character }) {
   );
 }
 
-function FallbackFull({ character }: { character: Character }) {
-  const isBill = character === 'bill';
-  return (
-    <div
-      className={`grid h-24 w-full place-items-center rounded-2xl ${
-        isBill ? 'bg-brand-cyan/10 text-brand-cyan' : 'bg-brand-mustard/10 text-brand-mustard'
-      }`}
-    >
-      {isBill ? (
-        <Dumbbell aria-hidden="true" size={40} strokeWidth={2.1} />
-      ) : (
-        <Mountain aria-hidden="true" size={40} strokeWidth={2.1} />
-      )}
-    </div>
-  );
-}

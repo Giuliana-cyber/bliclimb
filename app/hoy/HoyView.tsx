@@ -85,7 +85,7 @@ export function HoyView({ session, focusRule, streak, weekPath, error }: HoyView
             <div className="flex gap-4 items-start relative z-10">
               <div className="flex-shrink-0">
                 <Image
-                  src="/characters/bill-full.png"
+                  src="/characters/bill-avatar.png"
                   alt="Coach Bill sticker"
                   width={80}
                   height={80}
@@ -201,6 +201,11 @@ export function HoyView({ session, focusRule, streak, weekPath, error }: HoyView
           font-family: 'Material Symbols Outlined';
           font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
+        /* El layout raíz tiene bg-brand-dark para el AppShell viejo.
+           En /hoy (routesWithoutShell) el body scrollea 64px y se ve una
+           franja oscura entre el header fixed y el content. Forzamos el
+           bg crema al html/body mientras esté esta pantalla. */
+        html, body { background: #fef9ef; }
       `}</style>
     </div>
   );
