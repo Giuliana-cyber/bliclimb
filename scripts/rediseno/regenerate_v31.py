@@ -457,6 +457,11 @@ STATUS_HEURISTIC_ORDER = [
     ("no automático", "manual_review"),
     ("bloqueado", "manual_review"),
     ("investigación", "manual_review"),
+    # F4.0 (Sprint 13-24 usan requires_validation): 'Sí' + 'Requiere validación'
+    # → manual_review. 'No' → active.
+    ("requiere validación", "manual_review"),
+    ("requiere validacion", "manual_review"),
+    ("sí", "manual_review"),
     ("borrador", "draft"),
     ("draft", "draft"),
     ("deprecated", "deprecated"),
@@ -469,6 +474,8 @@ STATUS_HEURISTIC_ORDER = [
     ("lista", "active"),
     ("validado", "active"),
     ("listo", "active"),
+    # 'No' solo (de requires_validation=No en sprints) → active
+    ("no", "active"),
 ]
 
 
@@ -754,13 +761,31 @@ def detect_contamination(sheet: str, row: dict, row_id: str) -> list[dict]:
 # APLANADORES POR HOJA
 # ===========================================================================
 
+FORCED_MANUAL_REVIEW_IDS = {
+    # F2.4 findings editoriales (aprobado por Giuliana 2026-07-16):
+    # dejarlas en manual_review hasta que Giuliana las revise en v3.0.
+    "EX-FIN-030",  # Suspensión máxima full crimp (nombre autoproclamado máximo)
+    "EX-FIN-040",  # Mono bloqueado en app (nombre autoproclamado)
+}
+
+
 def flatten_exercise_row(
-    row: dict, unmapped: dict, contamination: list
+    row: dict, unmapped: dict, contamination: list, auto_fix_stats: dict
 ) -> dict:
     """v3.0 (46 cols) → v3.1 APP_ExerciseCatalog (21 cols)."""
     ex_id = row.get("exercise_id", "")
 
-    # Detectar contaminación primero
+    # F4.0c · Auto-corrección de contamination patronada en hombros-escapulas.
+    # Se aplica ANTES del detector de contamination para bajar el conteo real.
+    # Los patrones auto-corregidos son claros (PR-* en risk_level, prosa en
+    # equipment como oración con punto final, anatomía en app_status). Los
+    # casos borderline quedan para revisión editorial de Giuliana.
+    cat_raw = (row.get("category") or "").strip().lower()
+    is_shoulder = "hombros" in cat_raw or "escápulas" in cat_raw or "escapulas" in cat_raw
+    if is_shoulder:
+        _autofix_shoulder_row(row, auto_fix_stats)
+
+    # Detectar contaminación (post-autofix)
     for c in detect_contamination("Exercises", row, ex_id):
         contamination.append(c)
 
@@ -779,6 +804,10 @@ def flatten_exercise_row(
         unmapped["equipment"][row.get("equipment", "")] += 1
         # Regla F1.5 (Giuliana): equipment no mapeado → forzar
         # manual_review para que el motor no lo prescriba automáticamente.
+        status = "manual_review"
+
+    # F4.0b · Findings editoriales F2.4 → force manual_review por ID.
+    if ex_id in FORCED_MANUAL_REVIEW_IDS:
         status = "manual_review"
 
     return {
@@ -990,6 +1019,78 @@ def _sprint_from_row(row: dict) -> str:
 
 
 # ===========================================================================
+# AUTO-CORRECCIÓN CONTAMINATION HOMBROS-ESCAPULAS · F4.0c
+# ===========================================================================
+
+# Patrones anatómicos comunes que aparecen en `app_status` cuando deberían
+# estar en `secondary_muscle_group` (que no existe en v3.1 · los movemos a
+# `objective` como contexto conservado).
+_ANATOMY_TOKENS = (
+    "serrato", "trapecio", "deltoides", "manguito", "rotador",
+    "infraespinoso", "escápula", "escapula", "romboides", "supraespinoso",
+    "redondo menor", "dorsal", "pectoral",
+)
+
+# Prosa en `equipment` que en realidad es texto de expected_feeling o
+# execution_summary. Se detecta por: (a) contiene punto final y >30 chars,
+# o (b) contiene ";" con oración normal.
+def _looks_like_prose(v: str) -> bool:
+    if len(v) < 30:
+        return False
+    return v.rstrip().endswith(".") or (";" in v and len(v) > 40)
+
+
+def _autofix_shoulder_row(row: dict, stats: dict) -> None:
+    """Aplica reglas de auto-corrección a una fila de hombros-escapulas.
+    Muta la fila en sitio; los movimientos quedan trazados en `stats`."""
+    ex_id = row.get("exercise_id", "?")
+
+    # Regla 1: PR-* en risk_level → moverlo a `dosage_link` (donde deberían
+    # vivir las referencias a protocolos) + limpiar risk_level.
+    risk_raw = row.get("risk_level", "").strip()
+    if any(risk_raw.startswith(p) for p in ("PR-", "TS-", "TST-", "GT-", "SRC-", "EX-")):
+        # El regenerador ya mapea PR-* → medium-high por fallback. Además,
+        # persistimos la referencia a protocolo en dosage_link para no perder.
+        existing_dose = row.get("dosage_link", "").strip()
+        row["dosage_link"] = (
+            f"{existing_dose}; {risk_raw}" if existing_dose else risk_raw
+        )
+        row["risk_level"] = "medium-high"  # fallback conservador
+        stats["moved_pr_to_dosage_link"] = stats.get("moved_pr_to_dosage_link", 0) + 1
+        stats.setdefault("moved_rows", []).append(f"{ex_id}: PR→dosage")
+
+    # Regla 2: anatomía en app_status → moverla a `objective` (conservar
+    # como contexto) + status crudo queda vacío → heurística lo pondrá en
+    # 'active' o 'manual_review' según reglas normales.
+    status_raw = row.get("app_status", "").strip()
+    status_low = status_raw.lower()
+    if any(tok in status_low for tok in _ANATOMY_TOKENS):
+        obj_existing = row.get("objective", "").strip()
+        # Solo conservar si el objective no ya menciona la anatomía
+        if status_raw and status_raw not in obj_existing:
+            row["objective"] = (
+                f"{obj_existing} · {status_raw}" if obj_existing else status_raw
+            )
+        row["app_status"] = "Lista con restricciones"  # default active-ish
+        stats["moved_anatomy_to_objective"] = stats.get("moved_anatomy_to_objective", 0) + 1
+        stats.setdefault("moved_rows", []).append(f"{ex_id}: anatomy→objective")
+
+    # Regla 3: prosa en equipment → moverla a expected_feeling (existente
+    # o nueva) + equipment queda vacío → tokenizer canónico lo dejará como
+    # empty (que pasa el gate como bodyweight).
+    equip_raw = row.get("equipment", "").strip()
+    if _looks_like_prose(equip_raw):
+        feel = row.get("expected_feeling", "").strip()
+        if equip_raw not in feel:
+            row["expected_feeling"] = (
+                f"{feel} · {equip_raw}" if feel else equip_raw
+            )
+        row["equipment"] = ""  # sin equipo canonicalizable
+        stats["moved_prose_from_equipment"] = stats.get("moved_prose_from_equipment", 0) + 1
+        stats.setdefault("moved_rows", []).append(f"{ex_id}: prose→feeling")
+
+
+# ===========================================================================
 # EXPANDER DE RELATIONSHIPS
 # ===========================================================================
 
@@ -1087,6 +1188,14 @@ def sheet_to_dicts(ws) -> list[dict[str, str]]:
     except StopIteration:
         return []
     headers = [str(h) if h is not None else "" for h in headers]
+    # Detectar banner en primera fila (una sola celda, resto None) y buscar
+    # el header real más abajo. Sprint13_Exercises usa este patrón.
+    if len([h for h in headers if h and not h.startswith("Sprint")]) <= 1:
+        for r in rows_iter:
+            values = [c for c in r if c is not None]
+            if len(values) >= 3:  # heurística: header real tiene ≥3 cols
+                headers = [str(c) if c is not None else "" for c in r]
+                break
     out: list[dict[str, str]] = []
     for r in rows_iter:
         if not any(c is not None for c in r):
@@ -1099,6 +1208,76 @@ def sheet_to_dicts(ws) -> list[dict[str, str]]:
                 row[h] = ""
         out.append(row)
     return out
+
+
+# Mapeo de headers de Sprint*_Exercises → Exercises (main). Aprobado
+# F4.0 (2026-07-16): algunas hojas sprint usan nombres ligeramente
+# distintos que hay que normalizar antes del pipeline canónico.
+SPRINT_EX_HEADER_MAP = {
+    "canonical_name": "canonical_name_es",
+    "execution": "execution_summary",
+    "requires_validation": "app_status",  # se remapeará a status en canonicalización
+    "risk_notes": "validation_note",
+    "eligibility": "minimum_user_state",
+    "gates_required": "prerequisite_ids",
+}
+
+
+def normalize_sprint_headers(rows: list[dict], mapping: dict[str, str]) -> list[dict]:
+    """Renombra keys de una hoja sprint al vocabulario de main."""
+    out = []
+    for row in rows:
+        new_row = {}
+        for k, v in row.items():
+            new_key = mapping.get(k, k)
+            new_row[new_key] = v
+        out.append(new_row)
+    return out
+
+
+def merge_all_exercises(wb) -> list[dict[str, str]]:
+    """Fase 4 · lee Exercises + Sprint*_Exercises con dedupe por ID.
+    Prefiere main (Sprint 1-12) sobre las hojas sprint sueltas."""
+    main_rows = sheet_to_dicts(wb["Exercises"]) if "Exercises" in wb.sheetnames else []
+    seen = {r["exercise_id"] for r in main_rows if r.get("exercise_id")}
+    merged = list(main_rows)
+
+    for sheet in wb.sheetnames:
+        if not (sheet.startswith("Sprint") and sheet.endswith("_Exercises")):
+            continue
+        sprint_rows = sheet_to_dicts(wb[sheet])
+        sprint_rows = normalize_sprint_headers(sprint_rows, SPRINT_EX_HEADER_MAP)
+        added = 0
+        for r in sprint_rows:
+            ex_id = (r.get("exercise_id") or "").strip()
+            if not ex_id or ex_id in seen:
+                continue
+            seen.add(ex_id)
+            merged.append(r)
+            added += 1
+        if added:
+            print(f"  merged {sheet}: +{added}")
+    return merged
+
+
+def merge_all_by_pattern(wb, main_name: str, sprint_pattern: str) -> list[dict]:
+    """Genérico: main + Sprint*_<Pattern> con dedupe por primer campo ID."""
+    main_rows = sheet_to_dicts(wb[main_name]) if main_name in wb.sheetnames else []
+    if not main_rows:
+        return []
+    id_field = list(main_rows[0].keys())[0]
+    seen = {r.get(id_field, "") for r in main_rows if r.get(id_field)}
+    merged = list(main_rows)
+    for sheet in wb.sheetnames:
+        if not (sheet.startswith("Sprint") and sheet.endswith(f"_{sprint_pattern}")):
+            continue
+        for r in sheet_to_dicts(wb[sheet]):
+            v = r.get(id_field, "").strip()
+            if not v or v in seen:
+                continue
+            seen.add(v)
+            merged.append(r)
+    return merged
 
 
 def write_v31_xlsx(target: Path, sheets: dict[str, list[dict]]) -> None:
@@ -1148,15 +1327,18 @@ def main() -> int:
             return []
         return sheet_to_dicts(wb[name])
 
-    exercises_v30 = load("Exercises")
-    protocols_v30 = load("Protocols")
-    tests_v30 = load("Tests")
-    gates_v30 = load("Gates")
-    sources_v30 = load("Sources")
-    relationships_v30 = load("Relationships")
+    # F4.0 · merge main + Sprint*_ para las 5 entidades principales.
+    print("Merge de main + Sprint*_*:")
+    exercises_v30 = merge_all_exercises(wb)
+    protocols_v30 = merge_all_by_pattern(wb, "Protocols", "Protocols")
+    tests_v30 = merge_all_by_pattern(wb, "Tests", "Tests")
+    gates_v30 = merge_all_by_pattern(wb, "Gates", "Gates")
+    sources_v30 = merge_all_by_pattern(wb, "Sources", "Sources")
+    relationships_v30 = merge_all_by_pattern(wb, "Relationships", "Relations")
     profile_schema_v30 = load("ProfileSchema")
     pipeline_v30 = load("SelectionPipeline")
 
+    print(f"\nTotales post-merge:")
     print(f"  {len(exercises_v30)} EX · {len(protocols_v30)} PR · "
           f"{len(tests_v30)} TS · {len(gates_v30)} GT · "
           f"{len(sources_v30)} SRC · {len(relationships_v30)} REL")
@@ -1164,10 +1346,12 @@ def main() -> int:
     # Contadores de unmapped values
     unmapped: dict[str, Counter] = defaultdict(Counter)
     contamination: list[dict] = []
+    auto_fix_stats: dict = {}
 
     print("\nAplanando + canonicalizando...")
     exercises_v31 = [
-        flatten_exercise_row(r, unmapped, contamination) for r in exercises_v30
+        flatten_exercise_row(r, unmapped, contamination, auto_fix_stats)
+        for r in exercises_v30
     ]
     protocols_v31 = [
         flatten_protocol_row(r, unmapped, contamination) for r in protocols_v30
@@ -1225,7 +1409,12 @@ def main() -> int:
     total_unmapped = sum(sum(c.values()) for c in unmapped.values())
     print(f"\nMétricas:")
     print(f"  Sheets escritas: {len(sheets)}")
-    print(f"  Contamination detectada: {len(contamination)} filas")
+    print(f"  Contamination detectada (post-autofix): {len(contamination)} filas")
+    print(f"  Auto-fix hombros-escapulas:")
+    for k, v in auto_fix_stats.items():
+        if k == "moved_rows":
+            continue
+        print(f"    {k}: {v}")
     print(f"  Unmapped values: {total_unmapped}")
     for vocab, counter in unmapped.items():
         print(f"    {vocab}: {sum(counter.values())} ({len(counter)} valores únicos)")

@@ -1,16 +1,9 @@
 vocabulary,raw_value,count
-equipment,Activación muscular controlada; no dolor articular.,32
 equipment,Cubeta con arroz,2
 equipment,balón medicinal,2
 equipment,Cuerda,1
 equipment,Escalera Bachar,1
-equipment,"Fatiga leve/moderada en zona escapular, no dolor de hombro.",1
-equipment,Trabajo muscular alrededor de escápula.,1
-equipment,Activación suave bajo axila/escápula.,1
 equipment,Activación en espalda alta.,1
-equipment,Trabajo suave posterior/lateral de hombro.,1
-equipment,"Activación en manguito, alta demanda de control.",1
-equipment,Trabajo en parte alta de espalda/hombro posterior.,1
 equipment,Movilidad/activación suave.,1
 equipment,Pelota blanda,1
 equipment,Mesa,1
@@ -19,43 +12,154 @@ equipment,trineo,1
 equipment,caminadora/terreno,1
 equipment,bicicleta,1
 equipment,exterior/caminadora,1
-status,Manguito rotador,3
-status,Serrato anterior,2
-status,Serrato anterior/rotadores,1
-status,Trapecio bajo,1
-status,Trapecio bajo/dorsal,1
-status,Trapecio medio/bajo,1
-status,Infraespinoso/redondo menor,1
-status,Deltoides posterior/romboides,1
-status,Serrato/trapecio bajo,1
-status,Serrato/estabilidad,1
+equipment,"En cuadrupedia, apoyar palmas, desplazar el peso adelante y atrás sin dolor. Mantener codos extendidos suaves y respiración controlada.",1
+equipment,"Mover la muñeca lentamente en círculos completos, evitando compensar con antebrazo.",1
+equipment,Realizar círculos lentos de hombro manteniendo costillas controladas y sin dolor.,1
+equipment,"Antebrazos o manos en pared; mover escápulas en elevación, depresión, protracción y retracción con control.",1
+equipment,"Mano detrás de cabeza, abrir codo hacia el techo y volver. Mantener pelvis estable.",1
+equipment,"Acostado lateral, rodillas flexionadas; abrir brazo superior hacia atrás siguiendo con la mirada.",1
+equipment,"En cuadrupedia, alternar flexión y extensión de columna intentando segmentar el movimiento.",1
+equipment,"Sentado en 90/90, cambiar de lado de forma controlada sin colapsar torso.",1
+equipment,"Desplazar peso a una pierna en sentadilla lateral, mantener talón apoyado si es posible.",1
+equipment,"Mantener sentadilla profunda con apoyo si hace falta, columna larga y pies activos.",1
+equipment,"Llevar rodilla hacia pared sin despegar talón, controlar alineación de rodilla.",1
+equipment,"Desde zancada, apoyar mano y rotar el torso elevando brazo.",1
+equipment,Deslizar brazos por pared manteniendo costillas abajo y sin dolor.,1
+equipment,"En plancha o cuadrupedia, mover escápulas sin flexionar codos.",1
+equipment,Apoyar dorsal sobre roller y extender suavemente con respiración.,1
+equipment,"De pie sobre una pierna, abrir y cerrar pelvis con control usando apoyo.",1
+equipment,"Gatear lento con rodillas cerca del suelo, controlando hombros, cadera y respiración.",1
+equipment,"Boca abajo, llevar brazos de overhead a espalda baja con control sin dolor.",1
+equipment,"Tomar pies, bajar a sentadilla, luego elevar caderas extendiendo rodillas parcialmente.",1
+equipment,"Zancada larga, codo hacia suelo y rotación de torso hacia pierna adelantada.",1
+equipment,Palmas al suelo con dedos hacia rodillas; desplazar suavemente cadera atrás.,1
+equipment,"Sentarse sobre talones con dedos extendidos, graduando presión.",1
+equipment,"Movimientos lentos de flexión, extensión leve, inclinación y rotación sin forzar.",1
+equipment,"Con agarre amplio, pasar banda/palo de frente a atrás sin dolor ni compensar lumbar.",1
+equipment,"Acostado cerca de pared, elevar y bajar pierna con control dentro de rango cómodo.",1
+equipment,Alternar zancada lateral de lado a lado con control y pies activos.,1
+equipment,"Desde puente de glúteo, rotar y alcanzar con brazo hacia atrás sin dolor lumbar.",1
+equipment,"Extender codo, llevar muñeca a extensión suave con ayuda de la otra mano sin dolor.",1
+equipment,"Extender codo, flexionar muñeca suavemente con ayuda de la otra mano.",1
+equipment,"Antebrazo en marco de puerta, girar torso suavemente hasta sentir tensión cómoda.",1
+equipment,"Manos en pared, llevar cadera atrás y respirar en la espalda lateral.",1
+equipment,"Desde postura del niño, caminar manos hacia un lado para sentir dorsal opuesto.",1
+equipment,"Rodilla atrás apoyada, pelvis en retroversión suave y avanzar levemente.",1
+equipment,"Rodilla cerca de pared, empeine atrás, tronco erguido sin compensar lumbar.",1
+equipment,"Acostado, elevar pierna con banda manteniendo pelvis estable.",1
+equipment,"Sentado o de pie, flexionar cadera manteniendo respiración y sin redondear agresivamente.",1
+equipment,"Sentado con piernas abiertas, inclinar desde cadera dentro de rango cómodo.",1
+equipment,"Rodillas separadas, cadera atrás, mantener tensión cómoda sin dolor.",1
+equipment,"En supino, cruzar tobillo sobre rodilla y acercar pierna.",1
+equipment,Similar a pantorrilla pero con rodilla trasera flexionada.,1
+equipment,"Inclinar cabeza suavemente, hombro opuesto relajado. Sin tirar fuerte.",1
+equipment,"Desde cuadrupedia, pasar brazo bajo el cuerpo y apoyar hombro/cabeza suavemente.",1
+equipment,"Brazo cruzado al frente, acercar suavemente con brazo contrario sin elevar hombro.",1
+equipment,"Codo arriba, mano hacia espalda, asistir suavemente sin arquear lumbar.",1
+equipment,Flexión segmentada lenta desde cuello a lumbar con carga mínima o sin carga.,1
+equipment,"En posición de estiramiento cómodo, intentar elevar pierna activamente pocos centímetros.",1
+equipment,"Zancada larga, pelvis estable, mantener tensión anterior de cadera con glúteo activo.",1
+equipment,"En cuadrupedia con pierna lateral extendida, llevar cadera atrás y sostener.",1
+equipment,Zancada baja con brazo del lado posterior arriba e inclinación lateral suave.,1
+equipment,Rotar antebrazo suavemente hacia pronación/supinación con asistencia mínima.,1
+equipment,Escalar lateralmente en terreno fácil manteniendo respiración controlada y sin llegar a fallo.,1
+equipment,"Subir vías fáciles de forma continua, priorizando fluidez y bajo agarre.",1
+equipment,"Hacer vueltas en autobelay a intensidad baja, bajando con control y descansando según necesidad.",1
+equipment,"Repetir bloques muy fáciles sin caer ni llegar a fallo, descansando poco.",1
+equipment,"Crear circuito de movimientos fáciles en presas grandes, ritmo constante.",1
+equipment,Subir y bajar por terreno fácil para aumentar tiempo bajo tensión y técnica.,1
+equipment,Escalar fácil poniendo foco en pies precisos y silenciosos.,1
+equipment,Escalar fácil buscando usar la mínima fuerza de agarre necesaria.,1
+equipment,"Escalar circuito continuo por debajo del límite, sin caídas ni bloqueo excesivo.",1
+equipment,Escalar por un bloque de tiempo definido manteniendo intensidad baja.,1
+equipment,Usar respiración cómoda como regulador de intensidad en terreno fácil.,1
+equipment,Escalar terreno menos desplomado para sostener volumen con menor carga de dedos.,1
+equipment,Continuidad en desplome leve manteniendo intensidad submáxima y sin llegar a fallo.,1
+equipment,Repetir vías conocidas para reducir carga cognitiva y mejorar eficiencia.,1
+equipment,"Entre bloques duros, usar escalada muy fácil como recuperación activa solo si no aumenta fatiga.",1
+equipment,"Alternar tramos muy fáciles y fáciles, evitando pump alto.",1
+equipment,"Alternar bloques de escalada fácil con compañero, manteniendo descanso suficiente.",1
+equipment,"Tras proyecto, escalada muy fácil para soltar sin añadir fatiga.",1
+equipment,"Escalar fácil con microreposos programados, sin llegar a fallo.",1
+equipment,Escalar fácil anticipando los siguientes movimientos sin detenerse demasiado.,1
 status,Estabilidad dinámica,1
-status,Estabilidad hombro/cintura escapular,1
 status,Estabilidad fina,1
 status,Fuerza overhead general,1
 status,Fuerza unilateral,1
-status,Deltoides medio,1
-status,Deltoides posterior,1
-status,Escápula/hombro posterior,1
-status,Retracción escapular,1
-status,Dorsal/escápula,1
 status,Extensión hombro,1
-status,Plano escapular,1
-status,Control escapular,1
 status,Espalda alta,1
 status,Movilidad anterior,1
 status,Movilidad torácica,1
 status,Movilidad activa,1
-status,Manguito/escápula,1
 status,Empuje vertical/antagonista,1
 status,Empuje posterior,1
 status,Empuje básico,1
 status,Empuje horizontal,1
 status,Empuje avanzado,1
 status,Soporte overhead,1
-status,Escápula overhead,1
 status,Estabilidad hombro,1
 status,Estabilidad empuje,1
+risk_level,Dolor anterior hombro,3
+risk_level,Dolor lumbar/cadera,2
+risk_level,Dolor lumbar/rodilla,2
+risk_level,Dolor ciático,2
+risk_level,Dolor lumbar/hombro,2
+risk_level,"Hormigueo, dolor punzante",2
+risk_level,Pinzamiento hombro,2
+risk_level,Dolor rodilla/lumbar,2
+risk_level,Dolor lumbar/ciático,2
+risk_level,Dolor ingle/rodilla,2
+risk_level,"Dolor agudo, hormigueo, pérdida de fuerza",1
+risk_level,Dolor punzante,1
+risk_level,"Dolor, chasquido doloroso",1
+risk_level,Dolor de hombro/cuello,1
+risk_level,Dolor lumbar o mareo,1
+risk_level,Dolor irradiado,1
+risk_level,Dolor lumbar,1
+risk_level,Dolor de cadera/rodilla,1
+risk_level,Dolor de rodilla/cadera,1
+risk_level,Dolor rodilla/cadera/lumbar,1
+risk_level,Dolor anterior de tobillo,1
+risk_level,Pinzamiento o dolor,1
+risk_level,Dolor hombro/muñeca,1
+risk_level,Dolor cervical/lumbar,1
+risk_level,Dolor cadera/rodilla,1
+risk_level,Dolor muñeca/hombro/lumbar,1
+risk_level,Dolor muñeca/hombro,1
+risk_level,"Dolor nervioso, hormigueo",1
+risk_level,Dolor agudo pie,1
+risk_level,"Mareo, hormigueo, dolor irradiado",1
+risk_level,"Pinzamiento, dolor anterior",1
+risk_level,Dolor rodilla/aductor,1
+risk_level,Dolor hombro/lumbar,1
+risk_level,Dolor ciático/hormigueo,1
+risk_level,Dolor aductor/rodilla,1
+risk_level,Dolor Aquiles,1
+risk_level,Dolor tendón,1
+risk_level,Mareo/hormigueo,1
+risk_level,Dolor cuello/hombro,1
+risk_level,Calambre/dolor neural,1
+risk_level,Dolor codo/muñeca,1
+risk_level,"Pump alto, técnica rota, dolor dedos/codo/hombro",1
+risk_level,Pump alto o miedo excesivo,1
+risk_level,"Fatiga técnica, dolor",1
+risk_level,"Caídas frecuentes, técnica rota",1
+risk_level,"Pump alto, dolor dedos",1
+risk_level,"Miedo, fatiga excesiva",1
+risk_level,Técnica se degrada,1
+risk_level,Pump alto o dolor dedos,1
+risk_level,"Pump alto, fallos repetidos",1
+risk_level,RPE alto o pump alto,1
+risk_level,"Ahogo, mareo",1
+risk_level,Dolor pies/rodilla/dedos,1
+risk_level,"Pump alto, fallo",1
+risk_level,Fatiga técnica,1
+risk_level,Fatiga acumulada,1
+risk_level,Pump alto,1
+risk_level,Fatiga excesiva,1
+risk_level,Pump residual alto,1
+risk_level,Fallos o pump alto,1
+risk_level,Tensión mental alta,1
 structure,Inicio específico o test ligero,1
 structure,Rehabilitación general no diagnóstica,1
 structure,Rehabilitación supervisada,1

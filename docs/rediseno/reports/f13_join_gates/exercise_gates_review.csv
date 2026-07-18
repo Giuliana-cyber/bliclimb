@@ -1,0 +1,583 @@
+exercise_id,exercise_name,exercise_category,risk_level,gates_blocked_by,gates_controlled_by,gates_governed_by,gates_canonical_count,gates_related_to,gates_weak_count
+EX-ARC-001,Traversing continuo fácil,ARC,"Pump alto, técnica rota, dolor dedos/codo/hombro",,,,0,GT-ARC-001,1
+EX-ARC-002,Vueltas en top-rope fácil,ARC,Pump alto o miedo excesivo,,,,0,GT-ARC-002,1
+EX-ARC-003,Autobelay laps suaves,ARC,"Fatiga técnica, dolor",,,,0,GT-ARC-003,1
+EX-ARC-004,Boulder fácil repetido,ARC,"Caídas frecuentes, técnica rota",,,,0,GT-ARC-004,1
+EX-ARC-005,Circuito de presas grandes,ARC,"Pump alto, dolor dedos",,,,0,GT-ARC-005,1
+EX-ARC-006,Downclimbing fácil,ARC/Técnica,"Miedo, fatiga excesiva",,,,0,GT-ARC-006,1
+EX-ARC-007,ARC con pies silenciosos,ARC/Técnica,Técnica se degrada,,,,0,GT-ARC-007,1
+EX-ARC-008,ARC con agarre mínimo,ARC/Técnica,Pump alto o dolor dedos,,,,0,GT-ARC-008,1
+EX-ARC-009,Circuito easy-moderate sin fallo,ARC,"Pump alto, fallos repetidos",,,,0,GT-ARC-009,1
+EX-ARC-010,Escalada continua por tiempo,ARC,RPE alto o pump alto,,,,0,GT-ARC-010,1
+EX-ARC-011,Subidas muy fáciles con respiración nasal,ARC,"Ahogo, mareo",,,,0,GT-ARC-011,1
+EX-ARC-012,ARC en slab/vertical,ARC,Dolor pies/rodilla/dedos,,,,0,GT-ARC-012,1
+EX-ARC-013,ARC en desplome leve,ARC,"Pump alto, fallo",,,,0,GT-ARC-001,1
+EX-ARC-014,Volumen técnico en vías conocidas,ARC/Táctica,Fatiga técnica,,,,0,GT-ARC-002,1
+EX-ARC-015,Circuito descanso activo,ARC,Fatiga acumulada,,,,0,GT-ARC-003,1
+EX-ARC-016,ARC con cambio de ritmo suave,ARC,Pump alto,,,,0,GT-ARC-004,1
+EX-ARC-017,Escalada continua en pareja,ARC,Fatiga excesiva,,,,0,GT-ARC-005,1
+EX-ARC-018,ARC de recuperación post-proyecto,ARC,Pump residual alto,,,,0,GT-ARC-006,1
+EX-ARC-019,Circuito de continuidad con reposos breves,ARC,Fallos o pump alto,,,,0,GT-ARC-007,1
+EX-ARC-020,ARC con foco visual/lectura,ARC/Técnica,Tensión mental alta,,,,0,GT-ARC-008,1
+EX-CAMP-001,Campus ladder básico con pies,Campus y potencia específica,Medio,,,,0,,0
+EX-CAMP-002,Campus ladder sin pies,Campus y potencia específica,Alto,,,,0,,0
+EX-CAMP-003,Touches en campus con pies,Campus y potencia específica,Medio,,,,0,,0
+EX-CAMP-004,Touches sin pies,Campus y potencia específica,Alto,,,,0,,0
+EX-CAMP-005,Bump en listón grande con pies,Campus y potencia específica,Medio,,,,0,,0
+EX-CAMP-006,Bump sin pies,Campus y potencia específica,Alto,,,,0,,0
+EX-CAMP-007,Doble dyno en campus con pies,Campus y potencia específica,Alto,,,,0,,0
+EX-CAMP-008,Doble dyno sin pies,Campus y potencia específica,Alto,,,,0,,0
+EX-CAMP-009,Drop-catch asistido,Campus y potencia específica,Alto,,,,0,,0
+EX-CAMP-010,Drop-catch avanzado,Campus y potencia específica,Alto,,,,0,,0
+EX-CAMP-011,Limit boulder dinámico,Campus y potencia específica,Medio,,,,0,,0
+EX-CAMP-012,Coordinación dyno,Campus y potencia específica,Medio,,,,0,,0
+EX-CAMP-013,Deadpoint a presa objetivo,Campus y potencia específica,Medio,,,,0,,0
+EX-CAMP-014,Movimiento coordinativo de compresión,Campus y potencia específica,Medio,,,,0,,0
+EX-CAMP-015,Lanzamiento controlado a presa grande,Campus y potencia específica,Medio,,,,0,,0
+EX-CAMP-016,Boulder de 1-3 movimientos límite,Campus y potencia específica,Alto,,,,0,,0
+EX-CAMP-017,Boulder de coordinación de bajo volumen,Campus y potencia específica,Medio,,,,0,,0
+EX-CAMP-018,System board pull-through dinámico,Campus y potencia específica,Alto,,,,0,,0
+EX-CAMP-019,Board move a presa mala,Campus y potencia específica,Alto,,,,0,,0
+EX-CAMP-020,Explosive pull-up,Campus y potencia específica,Medio,,,,0,,0
+EX-CAMP-021,Pull-up con palmada,Campus y potencia específica,Alto,,,,0,,0
+EX-CAMP-022,Muscle-up técnico asistido,Campus y potencia específica,Alto,,,,0,,0
+EX-CAMP-023,Medicine ball slam,Campus y potencia específica,Medio,,,,0,,0
+EX-CAMP-024,Lanzamiento de balón al muro,Campus y potencia específica,Medio,,,,0,,0
+EX-CAMP-025,Pogo footwork en muro,Campus y potencia específica,Bajo,,,,0,,0
+EX-CAMP-026,Step-through dinámico controlado,Campus y potencia específica,Bajo,,,,0,,0
+EX-CAMP-027,Campus en regleta grande con banda,Campus y potencia específica,Medio,,,,0,,0
+EX-CAMP-028,Campus lock-off catch,Campus y potencia específica,Alto,,,,0,,0
+EX-CAMP-029,Limit move desde posición estática,Campus y potencia específica,Medio,,,,0,,0
+EX-CAMP-030,RFD pull en presa grande,Campus y potencia específica,Medio,,,,0,,0
+EX-CORE-001,Plancha frontal,Core,Bajo,,,,0,,0
+EX-CORE-002,Plancha lateral,Core,Bajo,,,,0,,0
+EX-CORE-003,Plancha con alcance de brazo,Core,Medio,,,,0,,0
+EX-CORE-004,Dead bug,Core,Bajo,,,,0,,0
+EX-CORE-005,Hollow body hold,Core,Medio,,,,0,,0
+EX-CORE-006,Hollow rocks,Core,Medio,,,,0,,0
+EX-CORE-007,Arch hold / superman,Core,Bajo,,,,0,,0
+EX-CORE-008,Bird dog,Core,Bajo,,,,0,,0
+EX-CORE-009,Mountain climber lento,Core,Medio,,,,0,,0
+EX-CORE-010,Bear crawl,Core,Medio,,,,0,,0
+EX-CORE-011,Pallof press con banda,Core,Bajo,,,,0,,0
+EX-CORE-012,Pallof press walkout,Core,Medio,,,,0,,0
+EX-CORE-013,Farmer carry unilateral,Core,Medio,,,,0,,0
+EX-CORE-014,Suitcase carry,Core,Medio,,,,0,,0
+EX-CORE-015,L-sit tuck,Core,Medio,,,,0,,0
+EX-CORE-016,L-sit,Core,Alto,,,,0,,0
+EX-CORE-017,Hanging knee raise,Core,Medio,,,,0,,0
+EX-CORE-018,Hanging leg raise,Core,Alto,,,,0,,0
+EX-CORE-019,Toes to bar controlado,Core,Alto,,,,0,,0
+EX-CORE-020,Windshield wiper regresado,Core,Alto,,,,0,,0
+EX-CORE-021,Front lever tuck,Core,Alto,,,,0,,0
+EX-CORE-022,Front lever one-leg,Core,Alto,,,,0,,0
+EX-CORE-023,Front lever negativo,Core,Alto,,,,0,,0
+EX-CORE-024,Body saw,Core,Medio,,,,0,,0
+EX-CORE-025,Rollout con rueda,Core,Alto,,,,0,,0
+EX-CORE-026,Rollout con fitball,Core,Medio,,,,0,,0
+EX-CORE-027,Compression lift sentado,Core,Medio,,,,0,,0
+EX-CORE-028,Dragon flag regresado,Core,Alto,,,,0,,0
+EX-CORE-029,Reverse plank,Core,Medio,,,,0,,0
+EX-CORE-030,Copenhagen plank regresado,Core,Medio,,,,0,,0
+EX-CORE-031,Escalada silenciosa enfocada en core,Core,Bajo,,,,0,,0
+EX-CORE-032,Toe hook tension drill,Core,Medio,,,,0,,0
+EX-FIN-001,Suspensión asistida en regleta grande,Fuerza de dedos / Hangboard,Medio,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-002,Suspensión bilateral en mano abierta,Fuerza de dedos / Hangboard,Medio,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-003,Suspensión bilateral en medio arqueo,Fuerza de dedos / Hangboard,Medio-alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-004,Suspensión de calentamiento en regleta media,Fuerza de dedos / Hangboard,Medio,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-005,Suspensión con pies en el suelo,Fuerza de dedos / Hangboard,Medio,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-006,Suspensión máxima con peso añadido,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-007,Suspensión máxima en borde mínimo,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-008,Suspensión submáxima larga,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-009,Repeaters con peso añadido,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-010,Repeaters en borde mínimo,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-011,Suspensión de medio arqueo en 18 mm,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-012,Suspensión en 15 mm,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-013,Suspensión en 11 mm hasta criterio,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-014,Dead hang de boulder competitivo,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-015,Intermittent finger hangs competitivos,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-016,Suspensión unilateral asistida,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-017,Suspensión unilateral con carga corporal,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-018,Suspensión offset / una mano más asistida,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-019,Suspensión front three,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-020,Suspensión back three,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-021,Suspensión de dos dedos índice-medio,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-022,Suspensión de dos dedos medio-anular,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-023,Suspensión de dos dedos anular-meñique,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-024,Suspensión mono asistida,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-025,Tirón isométrico en regleta con polea,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-026,Suspensión en barra hasta fatiga,Fuerza de dedos / Hangboard,Medio,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-027,Full crimp sin carga,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-028,Full crimp con pies apoyados,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-029,Suspensión bilateral full crimp asistida,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-030,Suspensión máxima full crimp,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-031,Suspensión en pinza,Fuerza de dedos / Hangboard,Medio-alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-032,Levantamiento con pinch block,Fuerza de dedos / Hangboard,Medio-alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-033,Pinza ancha,Fuerza de dedos / Hangboard,Medio-alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-034,Suspensión en sloper,Fuerza de dedos / Hangboard,Medio-alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-035,Sloper con asistencia,Fuerza de dedos / Hangboard,Medio,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-036,Suspensión en pocket de tres dedos,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-037,Pocket con asistencia,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-038,Tirón parcial de bolsillo,Fuerza de dedos / Hangboard,Medio-alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-039,Front three en medio arqueo,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-040,Mono bloqueado en app,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-041,Boulder límite en agarres específicos,Fuerza de dedos / Hangboard,Medio-alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-042,Boulder con hipergavedad,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-043,System wall de agarre,Fuerza de dedos / Hangboard,Medio-alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-044,Boulder en mano abierta,Fuerza de dedos / Hangboard,Medio,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-045,Boulder de regletas en half crimp,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-046,Finger rolls pesados,Fuerza de dedos / Hangboard,Medio-alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-047,Extensión de dedos con banda,Fuerza de dedos / Hangboard,Bajo-medio,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-048,Flexión-extensión de dedos con peso,Fuerza de dedos / Hangboard,Medio,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-049,Carga isométrica de muñeca para pinza,Fuerza de dedos / Hangboard,Medio-alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-050,Hangboard técnico de hombros activos,Fuerza de dedos / Hangboard,Medio,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-051,Hangboard sin balanceo,Fuerza de dedos / Hangboard,Medio,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-052,Hangboard con respiración y core,Fuerza de dedos / Hangboard,Medio,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-053,Ajuste de carga por buffer,Fuerza de dedos / Hangboard,Regla,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-054,Borde mayor como regresión automática,Fuerza de dedos / Hangboard,Regla,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-055,Asistencia con banda o polea,Fuerza de dedos / Hangboard,Regla,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-056,Bloque sin hangboard: escalar como estímulo,Fuerza de dedos / Hangboard,Bajo-medio,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-057,Deload de dedos,Fuerza de dedos / Hangboard,Regla,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-058,Test de MIFS con % masa corporal,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-059,Test de fuerza en 15 mm,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-060,Test de endurance en 11 mm,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-061,Medición pre/post handgrip,Fuerza de dedos / Hangboard,Bajo-medio,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FIN-062,Contracciones intermitentes máximas E1/E2,Fuerza de dedos / Hangboard,Alto,GT-FIN-001; GT-FIN-002; GT-FIN-017,,,3,,0
+EX-FLX-001,Estiramiento de flexores de antebrazo,Antebrazo/muñeca,"Hormigueo, dolor punzante",,,,0,GT-FLX-001,1
+EX-FLX-002,Estiramiento de extensores de antebrazo,Antebrazo/muñeca,"Hormigueo, dolor punzante",,,,0,GT-FLX-002,1
+EX-FLX-003,Estiramiento de pectoral en puerta,Pecho/hombro,Dolor anterior hombro,,,,0,GT-FLX-003,1
+EX-FLX-004,Estiramiento de dorsal en pared,Dorsal/hombro,Pinzamiento hombro,,,,0,GT-FLX-004,1
+EX-FLX-005,Child pose con alcance lateral,Dorsal/torácica,Dolor hombro/lumbar,,,,0,GT-FLX-005,1
+EX-FLX-006,Estiramiento de flexor de cadera medio arrodillado,Cadera,Dolor lumbar/rodilla,,,,0,GT-FLX-006,1
+EX-FLX-007,Couch stretch,Cuádriceps/flexor cadera,Dolor rodilla/lumbar,,,,0,GT-FLX-007,1
+EX-FLX-008,Estiramiento de isquios en supino con banda,Isquios,Dolor ciático/hormigueo,,,,0,GT-FLX-008,1
+EX-FLX-009,Pike stretch suave,Isquios/espalda,Dolor lumbar/ciático,,,,0,GT-FLX-009,1
+EX-FLX-010,Pancake stretch asistido,Aductores/isquios,Dolor aductor/rodilla,,,,0,GT-FLX-010,1
+EX-FLX-011,Frog stretch,Aductores,Dolor ingle/rodilla,,,,0,GT-FLX-011,1
+EX-FLX-012,Figura 4 / piriforme,Glúteo/rotadores cadera,Dolor ciático,,,,0,GT-FLX-012,1
+EX-FLX-013,Estiramiento de pantorrilla en pared,Tobillo/gemelo,Dolor Aquiles,,,,0,GT-FLX-001,1
+EX-FLX-014,Soleus stretch,Tobillo/sóleo,Dolor tendón,,,,0,GT-FLX-002,1
+EX-FLX-015,Estiramiento de cuello lateral,Cervical/trapecio,Mareo/hormigueo,,,,0,GT-FLX-003,1
+EX-FLX-016,Thread the needle pasivo,Torácica/hombro posterior,Dolor cuello/hombro,,,,0,GT-FLX-004,1
+EX-FLX-017,Estiramiento posterior de hombro,Hombro posterior,Dolor anterior hombro,,,,0,GT-FLX-005,1
+EX-FLX-018,Tríceps overhead stretch,Tríceps/dorsal,Pinzamiento hombro,,,,0,GT-FLX-006,1
+EX-FLX-019,Jefferson curl descargado,Cadena posterior,Dolor lumbar/ciático,,,,0,GT-FLX-007,1
+EX-FLX-020,Active hamstring end-range lift,Isquios,Calambre/dolor neural,,,,0,GT-FLX-008,1
+EX-FLX-021,Split squat hip flexor hold,Cadera,Dolor rodilla/lumbar,,,,0,GT-FLX-009,1
+EX-FLX-022,Aductor rockback hold,Aductores,Dolor ingle/rodilla,,,,0,GT-FLX-010,1
+EX-FLX-023,Low lunge side bend,Cadera/dorsal,Dolor lumbar/hombro,,,,0,GT-FLX-011,1
+EX-FLX-024,Forearm pronation/supination stretch,Antebrazo,Dolor codo/muñeca,,,,0,GT-FLX-012,1
+EX-FOR-001,Extensión de muñeca con mancuerna,"Antebrazo, muñeca y codo",Medio,GT-FOR-011,,,1,,0
+EX-FOR-002,Flexión de muñeca con mancuerna,"Antebrazo, muñeca y codo",Medio,GT-FOR-010,,,1,,0
+EX-FOR-003,Extensión excéntrica de muñeca,"Antebrazo, muñeca y codo",Medio,GT-FOR-011,,,1,,0
+EX-FOR-004,Flexión excéntrica de muñeca,"Antebrazo, muñeca y codo",Medio,GT-FOR-010,,,1,,0
+EX-FOR-005,Pronación con martillo,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-006,Supinación con martillo,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-007,Desviación radial con mancuerna,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-008,Desviación cubital con mancuerna,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-009,Aperturas de dedos con liga,"Antebrazo, muñeca y codo",Bajo,GT-FOR-003,,,1,,0
+EX-FOR-010,Extensión individual de dedos con liga,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-011,Rice bucket — abrir y cerrar mano,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-012,Rice bucket — pronación/supinación,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-013,Wrist roller,"Antebrazo, muñeca y codo",Medio,GT-FOR-006,,,1,,0
+EX-FOR-014,Isométrico de extensión de muñeca,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-015,Isométrico de flexión de muñeca,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-016,Isométrico de pronación,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-017,Isométrico de supinación,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-018,Curl martillo,"Antebrazo, muñeca y codo",Medio,GT-FOR-024,,,1,,0
+EX-FOR-019,Curl inverso,"Antebrazo, muñeca y codo",Medio,,,,0,,0
+EX-FOR-020,Curl supinado controlado,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-021,Extensión de tríceps con banda,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-022,Wrist rocks en cuadrupedia,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-023,Wrist rocks con dedos hacia rodillas,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-024,Puño a palma en cuadrupedia,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-025,Farmer carry ligero,"Antebrazo, muñeca y codo",Medio,,,,0,,0
+EX-FOR-026,Pinch block hold submáximo,"Antebrazo, muñeca y codo",Medio,GT-FOR-012,,,1,,0
+EX-FOR-027,Squeeze con pelota blanda,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-028,Towel wring,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-029,Tendon glides de dedos,"Antebrazo, muñeca y codo",Medio,,,,0,,0
+EX-FOR-030,Nerve glide básico de antebrazo,"Antebrazo, muñeca y codo",Alto,GT-FOR-004,,,1,,0
+EX-FOR-031,Finger flicks,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-032,Forearm pronation/supination con banda,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-033,Wrist extension con banda,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-034,Wrist flexion con banda,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-035,Bar hang de tolerancia en barra grande,"Antebrazo, muñeca y codo",Medio,GT-FOR-007,,,1,,0
+EX-FOR-036,Deadlift hold ligero,"Antebrazo, muñeca y codo",Medio,,,,0,,0
+EX-FOR-037,Rotación controlada de muñeca con palo,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-FOR-038,Extensión de dedos sobre mesa,"Antebrazo, muñeca y codo",Bajo,,,,0,,0
+EX-MEN-001,Respiración diafragmática,Trabajo mental,medio,,,,0,GT-MEN-001,1
+EX-MEN-002,Box breathing,Trabajo mental,medio,,,,0,GT-MEN-002,1
+EX-MEN-003,Respiración 4-6,Trabajo mental,medio,,,,0,GT-MEN-003,1
+EX-MEN-004,Respiración de reset entre intentos,Trabajo mental,medio,,,,0,GT-MEN-004,1
+EX-MEN-005,Visualización de beta,Trabajo mental,medio,,,,0,GT-MEN-005,1
+EX-MEN-006,Visualización del intento completo,Trabajo mental,medio,,,,0,GT-MEN-006,1
+EX-MEN-007,Lectura de ruta desde el suelo,Trabajo mental,medio,,,,0,GT-MEN-007,1
+EX-MEN-008,Plan A / Plan B de secuencia,Trabajo mental,medio,,,,0,GT-MEN-008,1
+EX-MEN-009,Autodiálogo de proceso,Trabajo mental,medio,,,,0,GT-MEN-009,1
+EX-MEN-010,Palabra clave de foco,Trabajo mental,medio,,,,0,GT-MEN-010,1
+EX-MEN-011,Rutina pre-escalada,Trabajo mental,medio,,,,0,GT-MEN-011,1
+EX-MEN-012,Rutina pre-intento,Trabajo mental,medio,,,,0,GT-MEN-012,1
+EX-MEN-013,Chequeo emocional previo,Trabajo mental,medio,,,,0,GT-MEN-013,1
+EX-MEN-014,Escaneo corporal breve,Trabajo mental,medio,,,,0,GT-MEN-014,1
+EX-MEN-015,Atención externa a presas,Trabajo mental,medio,,,,0,GT-MEN-001,1
+EX-MEN-016,Atención a pies,Trabajo mental,medio,,,,0,GT-MEN-002,1
+EX-MEN-017,Pausa consciente en reposo,Trabajo mental,medio,,,,0,GT-MEN-003,1
+EX-MEN-018,Reset tras caída,Trabajo mental,medio,,,,0,GT-MEN-004,1
+EX-MEN-019,Revisión post intento,Trabajo mental,medio,,,,0,GT-MEN-005,1
+EX-MEN-020,Diario de escalada,Trabajo mental,medio,,,,0,GT-MEN-006,1
+EX-MEN-021,Objetivo de proceso,Trabajo mental,medio,,,,0,GT-MEN-007,1
+EX-MEN-022,Microcompromiso del intento,Trabajo mental,medio,,,,0,GT-MEN-008,1
+EX-MEN-023,Estrategia onsight,Trabajo mental,medio,,,,0,GT-MEN-009,1
+EX-MEN-024,Estrategia redpoint,Trabajo mental,medio,,,,0,GT-MEN-010,1
+EX-MEN-025,Gestión de frustración,Trabajo mental,medio,,,,0,GT-MEN-011,1
+EX-MEN-026,Tolerancia progresiva al pump,Trabajo mental,medio,,,,0,GT-MEN-012,1
+EX-MEN-027,Exposición gradual a altura,Trabajo mental,medio,,,,0,GT-MEN-013,1
+EX-MEN-028,Práctica de caída en top rope,Trabajo mental,medio,,,,0,GT-MEN-014,1
+EX-MEN-029,Práctica de caída de primero,Trabajo mental,medio,,,,0,GT-MEN-001,1
+EX-MEN-030,Comunicación con asegurador,Trabajo mental,medio,,,,0,GT-MEN-002,1
+EX-MEN-031,Recuperación mental entre intentos,Trabajo mental,medio,,,,0,GT-MEN-003,1
+EX-MEN-032,Cierre de sesión con aprendizaje,Trabajo mental,medio,,,,0,GT-MEN-004,1
+EX-MOB-001,Movilidad de muñeca en cuadrupedia,Muñeca / dedos,"Dolor agudo, hormigueo, pérdida de fuerza",,,,0,GT-MOB-001,1
+EX-MOB-002,CARs de muñeca,Muñeca,Dolor punzante,,,,0,GT-MOB-002,1
+EX-MOB-003,CARs de hombro,Hombro,"Dolor, chasquido doloroso",,,,0,GT-MOB-003,1
+EX-MOB-004,CARs escapulares en pared,Escápula,Dolor de hombro/cuello,,,,0,GT-MOB-004,1
+EX-MOB-005,Rotación torácica en cuadrupedia,Columna torácica,Dolor lumbar o mareo,,,,0,GT-MOB-005,1
+EX-MOB-006,Open book torácico,Columna torácica,Dolor irradiado,,,,0,GT-MOB-006,1
+EX-MOB-007,Cat-cow segmentado,Columna,Dolor lumbar,,,,0,GT-MOB-007,1
+EX-MOB-008,90/90 hip switches,Cadera,Dolor de cadera/rodilla,,,,0,GT-MOB-008,1
+EX-MOB-009,Cossack squat asistida,Cadera/aductores,Dolor de rodilla/cadera,,,,0,GT-MOB-009,1
+EX-MOB-010,Deep squat hold asistido,Cadera/tobillo,Dolor rodilla/cadera/lumbar,,,,0,GT-MOB-010,1
+EX-MOB-011,Ankle rocks en pared,Tobillo,Dolor anterior de tobillo,,,,0,GT-MOB-011,1
+EX-MOB-012,Lunge dinámico con alcance,Cadera/torácica,Dolor lumbar/cadera,,,,0,GT-MOB-012,1
+EX-MOB-013,Shoulder wall slides,Hombro/escápula,Pinzamiento o dolor,,,,0,GT-MOB-013,1
+EX-MOB-014,Scapular push-up movilidad,Escápula,Dolor hombro/muñeca,,,,0,GT-MOB-014,1
+EX-MOB-015,Thoracic extension sobre foam roller,Columna torácica,Dolor cervical/lumbar,,,,0,GT-MOB-001,1
+EX-MOB-016,Hip airplane asistido,Cadera,Dolor cadera/rodilla,,,,0,GT-MOB-002,1
+EX-MOB-017,Bear crawl lento,Global,Dolor muñeca/hombro/lumbar,,,,0,GT-MOB-003,1
+EX-MOB-018,Downward dog dinámico,Cadena posterior/hombros,Dolor muñeca/hombro,,,,0,GT-MOB-004,1
+EX-MOB-019,Prone swimmers,Hombro/torácica,Dolor anterior hombro,,,,0,GT-MOB-005,1
+EX-MOB-020,Squat-to-stand,Cadera/tobillo/isquios,Dolor lumbar/rodilla,,,,0,GT-MOB-006,1
+EX-MOB-021,World greatest stretch,Cadera/torácica,Dolor lumbar/cadera,,,,0,GT-MOB-007,1
+EX-MOB-022,Wrist extension rock backs,Muñeca,"Dolor nervioso, hormigueo",,,,0,GT-MOB-008,1
+EX-MOB-023,Toe squat movilidad de pies,Pie/tobillo,Dolor agudo pie,,,,0,GT-MOB-009,1
+EX-MOB-024,Movilidad de cuello controlada,Cervical,"Mareo, hormigueo, dolor irradiado",,,,0,GT-MOB-010,1
+EX-MOB-025,Shoulder dislocates con banda,Hombro/pectoral,"Pinzamiento, dolor anterior",,,,0,GT-MOB-011,1
+EX-MOB-026,Elevación activa de pierna en pared,Cadera/isquios,Dolor ciático,,,,0,GT-MOB-012,1
+EX-MOB-027,Side lunge flow,Cadera/aductores,Dolor rodilla/aductor,,,,0,GT-MOB-013,1
+EX-MOB-028,Bridge reach,Torácica/cadera/hombro,Dolor lumbar/hombro,,,,0,GT-MOB-014,1
+EX-PE-001,Boulder intervalos intensos,Power endurance,medio,GT-PE-001,,,1,,0
+EX-PE-002,Boulder 4x4 intenso,Power endurance,medio,GT-PE-002,,,1,,0
+EX-PE-003,Boulder 6x3,Power endurance,medio,GT-PE-003,,,1,,0
+EX-PE-004,Crux repeats intensos,Power endurance,medio,GT-PE-004,,,1,,0
+EX-PE-005,Crux + salida,Power endurance,alto,GT-PE-005,,,1,,0
+EX-PE-006,Secuencia potente repetida,Power endurance,medio,GT-PE-006,,,1,,0
+EX-PE-007,Circuito corto intenso,Power endurance,medio,GT-PE-007,,,1,,0
+EX-PE-008,Circuito medio intenso,Power endurance,medio,GT-PE-008,,,1,,0
+EX-PE-009,Link-up de boulders,Power endurance,medio,GT-PE-009,,,1,,0
+EX-PE-010,Bloques al 85%,Power endurance,alto,GT-PE-010,,,1,,0
+EX-PE-011,Bloques al 90%,Power endurance,medio,GT-PE-011,,,1,,0
+EX-PE-012,Bloques cerca del límite con descanso largo,Power endurance,medio,GT-PE-012,,,1,,0
+EX-PE-013,Bloques anaeróbicos controlados,Power endurance,medio,GT-PE-013,,,1,,0
+EX-PE-014,Intervalos en desplome,Power endurance,medio,GT-PE-014,,,1,,0
+EX-PE-015,Intervalos con movimientos dinámicos,Power endurance,alto,GT-PE-001,,,1,,0
+EX-PE-016,Intervalos con bloqueo largo,Power endurance,medio,GT-PE-002,,,1,,0
+EX-PE-017,Secuencia de coordinación bajo fatiga,Power endurance,medio,GT-PE-003,,,1,,0
+EX-PE-018,Escalada en ruta con crux repetido,Power endurance,medio,GT-PE-004,,,1,,0
+EX-PE-019,Route intervals de alta intensidad,Power endurance,medio,GT-PE-005,,,1,,0
+EX-PE-020,Boulder por rondas competitivas,Power endurance,alto,GT-PE-006,,,1,,0
+EX-PE-021,Intentos limitados con descanso,Power endurance,medio,GT-PE-007,,,1,,0
+EX-PE-022,Boulder en formato semifinal,Power endurance,medio,GT-PE-008,,,1,,0
+EX-PE-023,Boulder en formato final,Power endurance,medio,GT-PE-009,,,1,,0
+EX-PE-024,Circuito potencia-resistencia,Power endurance,medio,GT-PE-010,,,1,,0
+EX-PE-025,Secuencia de compresión repetida,Power endurance,alto,GT-PE-011,,,1,,0
+EX-PE-026,Secuencia de pinzas repetida,Power endurance,medio,GT-PE-012,,,1,,0
+EX-PE-027,Secuencia de regletas submáximas,Power endurance,medio,GT-PE-013,,,1,,0
+EX-PE-028,Secuencia de romos bajo fatiga,Power endurance,medio,GT-PE-014,,,1,,0
+EX-PE-029,Tensión corporal bajo fatiga,Power endurance,medio,GT-PE-001,,,1,,0
+EX-PE-030,Campus asistido repetido,Power endurance,alto,GT-PE-002,,,1,,0
+EX-PE-031,Coordinación dinámica repetida,Power endurance,medio,GT-PE-003,,,1,,0
+EX-PE-032,Bloque explosivo + bloque técnico,Power endurance,medio,GT-PE-004,,,1,,0
+EX-PE-033,Boulder EMOM modificado,Power endurance,medio,GT-PE-005,,,1,,0
+EX-PE-034,Escalada por intervalos 1:1,Power endurance,medio,GT-PE-006,,,1,,0
+EX-PE-035,Escalada por intervalos 1:2,Power endurance,alto,GT-PE-007,,,1,,0
+EX-PE-036,Escalada por intervalos 1:3,Power endurance,medio,GT-PE-008,,,1,,0
+EX-PULL-001,Dominada estricta en barra,Tracción y dominadas,Medio,,,,0,,0
+EX-PULL-002,Dominada asistida con banda,Tracción y dominadas,Bajo-medio,,,,0,,0
+EX-PULL-003,Dominada negativa,Tracción y dominadas,Medio,,,,0,,0
+EX-PULL-004,Dominada con lastre,Tracción y dominadas,Alto,,,,0,,0
+EX-PULL-005,Dominada en agarre supino,Tracción y dominadas,Medio,,,,0,,0
+EX-PULL-006,Dominada agarre neutro,Tracción y dominadas,Medio,,,,0,,0
+EX-PULL-007,Dominada escapular,Tracción y dominadas,Bajo-medio,,,,0,,0
+EX-PULL-008,Suspensión activa en barra,Tracción y dominadas,Medio,,,,0,,0
+EX-PULL-009,Suspensión pasiva en barra,Tracción y dominadas,Medio-alto,,,,0,,0
+EX-PULL-010,Bent-arm hang en barra,Tracción y dominadas,Alto,,,,0,,0
+EX-PULL-011,Lock-off superior en barra,Tracción y dominadas,Alto,,,,0,,0
+EX-PULL-012,Lock-off a 90 grados,Tracción y dominadas,Alto,,,,0,,0
+EX-PULL-013,Lock-off a 120 grados,Tracción y dominadas,Alto,,,,0,,0
+EX-PULL-014,Frenchies,Tracción y dominadas,Alto,,,,0,,0
+EX-PULL-015,Frenchies asistidos,Tracción y dominadas,Medio-alto,,,,0,,0
+EX-PULL-016,Lock-off desigual,Tracción y dominadas,Alto,,,,0,,0
+EX-PULL-017,Lock-off a una mano asistido,Tracción y dominadas,Alto,,,,0,,0
+EX-PULL-018,Lock-off a una mano,Tracción y dominadas,Alto,,,,0,,0
+EX-PULL-019,Dominada en regleta 19 mm,Tracción y dominadas,Alto,,,,0,,0
+EX-PULL-020,Lock-off en regleta 19 mm,Tracción y dominadas,Alto,,,,0,,0
+EX-PULL-021,Suspensión en barra hasta agotamiento,Tracción y dominadas,Alto,,,,0,,0
+EX-PULL-022,Jalón al pecho,Tracción y dominadas,Bajo-medio,,,,0,,0
+EX-PULL-023,Remo sentado,Tracción y dominadas,Bajo-medio,,,,0,,0
+EX-PULL-024,Remo con banda,Tracción y dominadas,Bajo,,,,0,,0
+EX-PULL-025,Remo invertido,Tracción y dominadas,Medio,,,,0,,0
+EX-PULL-026,Curl de bíceps,Tracción y dominadas,Bajo-medio,,,,0,,0
+EX-PULL-027,Curl martillo,Tracción y dominadas,Bajo-medio,,,,0,,0
+EX-PULL-028,Trepa de cuerda,Tracción y dominadas,Alto,,,,0,,0
+EX-PULL-029,Bachar ladder,Tracción y dominadas,Alto,,,,0,,0
+EX-PULL-030,Campus route sin pies,Tracción y dominadas,Alto,,,,0,,0
+EX-PULL-031,Boulder corto de tracción,Tracción y dominadas,Medio-alto,,,,0,,0
+EX-PULL-032,Boulder submáximo de volumen de tracción,Tracción y dominadas,Medio,,,,0,,0
+EX-PULL-033,Pull-up excéntrico en regleta,Tracción y dominadas,Alto,,,,0,,0
+EX-PULL-034,Dominada con pausa arriba,Tracción y dominadas,Medio-alto,,,,0,,0
+EX-PULL-035,Dominada con pausa a 90 grados,Tracción y dominadas,Alto,,,,0,,0
+EX-PULL-036,Dominadas en toalla,Tracción y dominadas,Alto,,,,0,,0
+EX-PULL-037,Isométrico de jalón en polea,Tracción y dominadas,Medio,,,,0,,0
+EX-PULL-038,Pull-up isométrico asistido,Tracción y dominadas,Medio,,,,0,,0
+EX-PULL-039,Pull-up en bloque de fuerza 1–5 reps,Tracción y dominadas,Medio-alto,,,,0,,0
+EX-PULL-040,Pull-up de resistencia submáxima,Tracción y dominadas,Medio,,,,0,,0
+EX-PULL-041,Press-up shrug / encogimiento escapular en flexión,Tracción y dominadas,Bajo-medio,,,,0,,0
+EX-PULL-042,Pull-down escapular,Tracción y dominadas,Bajo-medio,,,,0,,0
+EX-REC-001,Vuelta a la calma con escalada fácil,Recuperación,medio,,,,0,GT-REC-001,1
+EX-REC-002,Travesía suave de cierre,Recuperación,medio,,,,0,GT-REC-002,1
+EX-REC-003,Caminata suave post sesión,Recuperación,medio,,,,0,GT-REC-003,1
+EX-REC-004,Respiración parasimpática,Recuperación,medio,,,,0,GT-REC-004,1
+EX-REC-005,Movilidad suave de antebrazo,Recuperación,medio,,,,0,GT-REC-005,1
+EX-REC-006,Movilidad suave de hombro,Recuperación,medio,,,,0,GT-REC-006,1
+EX-REC-007,Movilidad de cadera post sesión,Recuperación,medio,,,,0,GT-REC-007,1
+EX-REC-008,Descarga de muñeca,Recuperación,medio,,,,0,GT-REC-008,1
+EX-REC-009,Automasaje suave de antebrazo,Recuperación,medio,,,,0,GT-REC-009,1
+EX-REC-010,Elevación y relajación de brazos,Recuperación,medio,,,,0,GT-REC-010,1
+EX-REC-011,Registro de dolor post sesión,Recuperación,medio,,,,0,GT-REC-011,1
+EX-REC-012,Registro de fatiga post sesión,Recuperación,medio,,,,0,GT-REC-012,1
+EX-REC-013,Diario de sueño,Recuperación,medio,,,,0,GT-REC-013,1
+EX-REC-014,Plan de descanso entre sesiones,Recuperación,medio,,,,0,GT-REC-014,1
+EX-REC-015,Día de descarga,Recuperación,medio,,,,0,GT-REC-015,1
+EX-REC-016,Semana de descarga,Recuperación,medio,,,,0,GT-REC-016,1
+EX-REC-017,Recuperación activa suave,Recuperación,medio,,,,0,GT-REC-017,1
+EX-REC-018,Hidratación post sesión,Recuperación,medio,,,,0,GT-REC-018,1
+EX-REC-019,Comida post sesión,Recuperación,medio,,,,0,GT-REC-001,1
+EX-REC-020,Cuidado de piel,Recuperación,medio,,,,0,GT-REC-002,1
+EX-REC-021,Manejo de flapper,Recuperación,medio,,,,0,GT-REC-003,1
+EX-REC-022,Lima suave de callos,Recuperación,medio,,,,0,GT-REC-004,1
+EX-REC-023,Sueño como recuperación,Recuperación,medio,,,,0,GT-REC-005,1
+EX-REC-024,Siesta corta,Recuperación,medio,,,,0,GT-REC-006,1
+EX-REC-025,Relajación guiada,Recuperación,medio,,,,0,GT-REC-007,1
+EX-REC-026,Movilidad restaurativa,Recuperación,medio,,,,0,GT-REC-008,1
+EX-REC-027,Chequeo de readiness al día siguiente,Recuperación,medio,,,,0,GT-REC-009,1
+EX-REC-028,Retorno tras fatiga alta,Recuperación,medio,,,,0,GT-REC-010,1
+EX-REC-029,Reducción de volumen por dolor,Recuperación,medio,,,,0,GT-REC-011,1
+EX-REC-030,Cierre de sesión con aprendizaje,Recuperación,medio,,,,0,GT-REC-012,1
+EX-RF-001,Circuito de boulder continuo,Resistencia de fuerza,medio,GT-RF-001,,,1,,0
+EX-RF-002,Circuito de boulder por rondas,Resistencia de fuerza,medio,GT-RF-002,,,1,,0
+EX-RF-003,Traversing con intensidad media,Resistencia de fuerza,medio,GT-RF-003,,,1,,0
+EX-RF-004,Bloques repetidos submáximos,Resistencia de fuerza,medio,GT-RF-004,,,1,,0
+EX-RF-005,Bloque largo con descansos breves,Resistencia de fuerza,alto,GT-RF-005,,,1,,0
+EX-RF-006,Escalada en top rope continua,Resistencia de fuerza,medio,GT-RF-006,,,1,,0
+EX-RF-007,Escalada en lead submáxima,Resistencia de fuerza,medio,GT-RF-007,,,1,,0
+EX-RF-008,Laps en ruta fácil-moderada,Resistencia de fuerza,medio,GT-RF-008,,,1,,0
+EX-RF-009,Laps descendentes,Resistencia de fuerza,medio,GT-RF-009,,,1,,0
+EX-RF-010,Circuito 10 movimientos,Resistencia de fuerza,alto,GT-RF-010,,,1,,0
+EX-RF-011,Circuito 20 movimientos,Resistencia de fuerza,medio,GT-RF-011,,,1,,0
+EX-RF-012,Circuito 30 movimientos,Resistencia de fuerza,medio,GT-RF-012,,,1,,0
+EX-RF-013,Escalada con reposos programados,Resistencia de fuerza,medio,GT-RF-013,,,1,,0
+EX-RF-014,Escalada con agarres variados,Resistencia de fuerza,medio,GT-RF-014,,,1,,0
+EX-RF-015,Escalada en desplome moderado,Resistencia de fuerza,alto,GT-RF-001,,,1,,0
+EX-RF-016,Escalada en vertical técnica,Resistencia de fuerza,medio,GT-RF-002,,,1,,0
+EX-RF-017,Boulder volumen controlado,Resistencia de fuerza,medio,GT-RF-003,,,1,,0
+EX-RF-018,Boulder densidad media,Resistencia de fuerza,medio,GT-RF-004,,,1,,0
+EX-RF-019,Repeticiones de crux submáximo,Resistencia de fuerza,medio,GT-RF-005,,,1,,0
+EX-RF-020,Crux + continuidad,Resistencia de fuerza,alto,GT-RF-006,,,1,,0
+EX-RF-021,Entradas repetidas a secuencia,Resistencia de fuerza,medio,GT-RF-007,,,1,,0
+EX-RF-022,Secuencia de resistencia en plafón,Resistencia de fuerza,medio,GT-RF-008,,,1,,0
+EX-RF-023,Intervalos de bloque con pies obligatorios,Resistencia de fuerza,medio,GT-RF-009,,,1,,0
+EX-RF-024,Intervalos de bloque sin corte de pies,Resistencia de fuerza,medio,GT-RF-010,,,1,,0
+EX-RF-025,Circuito mixto agarres grandes,Resistencia de fuerza,alto,GT-RF-011,,,1,,0
+EX-RF-026,Circuito mixto agarres pequeños controlados,Resistencia de fuerza,medio,GT-RF-012,,,1,,0
+EX-RF-027,Escalada con cambio de ritmo,Resistencia de fuerza,medio,GT-RF-013,,,1,,0
+EX-RF-028,Escalada por tiempo objetivo,Resistencia de fuerza,medio,GT-RF-014,,,1,,0
+EX-RF-029,Escalada con pausa activa,Resistencia de fuerza,medio,GT-RF-001,,,1,,0
+EX-RF-030,Escalada con control de pump,Resistencia de fuerza,alto,GT-RF-002,,,1,,0
+EX-RF-031,Bloques al 70%,Resistencia de fuerza,medio,GT-RF-003,,,1,,0
+EX-RF-032,Bloques al 80%,Resistencia de fuerza,medio,GT-RF-004,,,1,,0
+EX-RF-033,Bloque-respiro-bloque,Resistencia de fuerza,medio,GT-RF-005,,,1,,0
+EX-RF-034,Volumen técnico resistente,Resistencia de fuerza,medio,GT-RF-006,,,1,,0
+EX-RF-035,Escalada en pirámide,Resistencia de fuerza,alto,GT-RF-007,,,1,,0
+EX-RF-036,Escalada en escalera de dificultad,Resistencia de fuerza,medio,GT-RF-008,,,1,,0
+EX-SCAP-001,Retracción escapular colgado en barra,Escápulas / Hombros,PR-SCAP-001,,,,0,,0
+EX-SCAP-002,Encogimiento escapular colgado,Escápulas / Hombros,PR-SCAP-001,,,,0,,0
+EX-SCAP-003,Depresión escapular con banda,Escápulas / Hombros,PR-SCAP-002,,,,0,,0
+EX-SCAP-004,Y-T-W en suelo o banco inclinado,Escápulas / Hombros,PR-SCAP-003,,,,0,,0
+EX-SHO-001,Rotación externa con banda pegada al cuerpo,Hombros / Manguito rotador,PR-SHO-001,,,,0,,0
+EX-SHO-002,Rotación externa a 90° de abducción,Hombros / Manguito rotador,PR-SHO-001,,,,0,,0
+EX-SHO-003,Face pull con banda,Hombros / Escápulas,PR-SCAP-003,,,,0,,0
+EX-SHO-004,Wall slides,Hombros / Movilidad activa,PR-SHO-002,,,,0,,0
+EX-SHO-005,Scapular push-up,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-006,Push-up plus,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-007,Plancha con protracción escapular,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-008,Bear crawl controlado,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-009,Farmer carry ligero,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-010,Bottom-up carry ligero,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-011,Press estricto ligero,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-012,Press unilateral con mancuerna,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-013,Elevación lateral ligera,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-014,Elevación posterior ligera,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-015,Remo alto con banda controlado,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-016,Remo bajo con pausa escapular,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-017,Straight-arm pulldown,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-018,Pullover ligero,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-019,Isométrico de rotación externa,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-020,Isométrico de rotación interna,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-021,Scaption ligera,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-022,Prone swimmer,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-023,Band pull-apart,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-024,Doorway pec stretch activo,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-025,Thoracic extension over roller,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-026,Shoulder CARs,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-027,Rotación cubana ligera,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-028,Dips asistidos,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-029,Fondos en banco,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-030,Flexiones inclinadas,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-031,Flexiones estrictas,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-032,Flexiones declinadas,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-033,Handstand lean asistido,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-034,Scapular wall handstand shrug,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-035,Suspensión activa en anillas asistida,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-SHO-036,Anillas soporte asistido,Hombros / Escápulas,PR-SHO-003,,,,0,,0
+EX-STR-001,Sentadilla goblet,Fuerza general / piernas / acondicionamiento,Bajo,,,,0,,0
+EX-STR-002,Sentadilla trasera,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-003,Sentadilla frontal,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-004,Peso muerto rumano,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-005,Peso muerto convencional,Fuerza general / piernas / acondicionamiento,Alto,,,,0,,0
+EX-STR-006,Hip thrust,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-007,Zancada atrás,Fuerza general / piernas / acondicionamiento,Bajo,,,,0,,0
+EX-STR-008,Bulgarian split squat,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-009,Step-up,Fuerza general / piernas / acondicionamiento,Bajo,,,,0,,0
+EX-STR-010,Cossack squat,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-011,Calf raise de pie,Fuerza general / piernas / acondicionamiento,Bajo,,,,0,,0
+EX-STR-012,Tibialis raise,Fuerza general / piernas / acondicionamiento,Bajo,,,,0,,0
+EX-STR-013,Push-up,Fuerza general / piernas / acondicionamiento,Bajo,,,,0,,0
+EX-STR-014,Push-up con pies elevados,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-015,Press de banca con mancuernas,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-016,Press militar estricto,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-017,Landmine press,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-018,Remo con mancuerna,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-019,Remo con barra,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-020,Face pull,Fuerza general / piernas / acondicionamiento,Bajo,,,,0,,0
+EX-STR-021,Band pull-apart,Fuerza general / piernas / acondicionamiento,Bajo,,,,0,,0
+EX-STR-022,Rotación externa con banda,Fuerza general / piernas / acondicionamiento,Bajo,,,,0,,0
+EX-STR-023,Rotación interna con banda,Fuerza general / piernas / acondicionamiento,Bajo,,,,0,,0
+EX-STR-024,Farmer carry bilateral,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-025,Sled push / empuje trineo,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-026,Caminata inclinada,Fuerza general / piernas / acondicionamiento,Bajo,,,,0,,0
+EX-STR-027,Bicicleta zona suave,Fuerza general / piernas / acondicionamiento,Bajo,,,,0,,0
+EX-STR-028,Circuito general bajo impacto,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-029,Circuito fuerza-resistencia general,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-030,Jump squat regresado,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-031,Box jump bajo,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-032,Single-leg RDL,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-033,Glute bridge unilateral,Fuerza general / piernas / acondicionamiento,Bajo,,,,0,,0
+EX-STR-034,Wall sit,Fuerza general / piernas / acondicionamiento,Bajo,,,,0,,0
+EX-STR-035,Turkish get-up parcial,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-STR-036,Carrera suave,Fuerza general / piernas / acondicionamiento,Medio,,,,0,,0
+EX-TEC-001,Silent feet,Técnica de escalada,medio,GT-TEC-001,,,1,,0
+EX-TEC-002,Precisión de pies,Técnica de escalada,medio,GT-TEC-002,,,1,,0
+EX-TEC-003,Cambio de peso,Técnica de escalada,medio,GT-TEC-003,,,1,,0
+EX-TEC-004,Bandera externa,Técnica de escalada,medio,GT-TEC-004,,,1,,0
+EX-TEC-005,Bandera interna,Técnica de escalada,alto,GT-TEC-005,,,1,,0
+EX-TEC-006,Drop knee,Técnica de escalada,medio,GT-TEC-006,,,1,,0
+EX-TEC-007,Backstep,Técnica de escalada,medio,GT-TEC-007,,,1,,0
+EX-TEC-008,Twist lock,Técnica de escalada,medio,GT-TEC-008,,,1,,0
+EX-TEC-009,Hip turn,Técnica de escalada,medio,GT-TEC-009,,,1,,0
+EX-TEC-010,Pies altos controlados,Técnica de escalada,alto,GT-TEC-010,,,1,,0
+EX-TEC-011,Flagging en vertical,Técnica de escalada,medio,GT-TEC-011,,,1,,0
+EX-TEC-012,Flagging en desplome,Técnica de escalada,medio,GT-TEC-012,,,1,,0
+EX-TEC-013,Lectura desde el suelo,Técnica de escalada,medio,GT-TEC-013,,,1,,0
+EX-TEC-014,Visualización de secuencia,Técnica de escalada,medio,GT-TEC-014,,,1,,0
+EX-TEC-015,Escalada lenta,Técnica de escalada,alto,GT-TEC-001,,,1,,0
+EX-TEC-016,Escalada fluida,Técnica de escalada,medio,GT-TEC-002,,,1,,0
+EX-TEC-017,Escalada sin reajustes,Técnica de escalada,medio,GT-TEC-003,,,1,,0
+EX-TEC-018,Escalada con manos abiertas,Técnica de escalada,medio,GT-TEC-004,,,1,,0
+EX-TEC-019,Escalada con pies obligatorios,Técnica de escalada,medio,GT-TEC-005,,,1,,0
+EX-TEC-020,Escalada con manos limitadas,Técnica de escalada,alto,GT-TEC-006,,,1,,0
+EX-TEC-021,Downclimbing,Técnica de escalada,medio,GT-TEC-007,,,1,,0
+EX-TEC-022,Climb-down de boulder fácil,Técnica de escalada,medio,GT-TEC-008,,,1,,0
+EX-TEC-023,Pausas de respiración en reposos,Técnica de escalada,medio,GT-TEC-009,,,1,,0
+EX-TEC-024,Reposos activos,Técnica de escalada,medio,GT-TEC-010,,,1,,0
+EX-TEC-025,Clip practice,Técnica de escalada,alto,GT-TEC-011,,,1,,0
+EX-TEC-026,Práctica de chapaje desde posición estable,Técnica de escalada,medio,GT-TEC-012,,,1,,0
+EX-TEC-027,Uso de rodillas y cadera,Técnica de escalada,medio,GT-TEC-013,,,1,,0
+EX-TEC-028,Talón técnico,Técnica de escalada,medio,GT-TEC-014,,,1,,0
+EX-TEC-029,Punta técnica,Técnica de escalada,medio,GT-TEC-001,,,1,,0
+EX-TEC-030,Toe hook básico,Técnica de escalada,alto,GT-TEC-002,,,1,,0
+EX-TEC-031,Heel hook básico,Técnica de escalada,medio,GT-TEC-003,,,1,,0
+EX-TEC-032,Rock-over,Técnica de escalada,medio,GT-TEC-004,,,1,,0
+EX-TEC-033,Mantle básico,Técnica de escalada,medio,GT-TEC-005,,,1,,0
+EX-TEC-034,Compresión básica,Técnica de escalada,medio,GT-TEC-006,,,1,,0
+EX-TEC-035,Coordinación de manos-pies,Técnica de escalada,alto,GT-TEC-007,,,1,,0
+EX-TEC-036,Movimiento dinámico controlado,Técnica de escalada,medio,GT-TEC-008,,,1,,0
+EX-TEC-037,Deadpoint técnico,Técnica de escalada,medio,GT-TEC-009,,,1,,0
+EX-TEC-038,Dyno progresivo,Técnica de escalada,medio,GT-TEC-010,,,1,,0
+EX-TEC-039,Lectura de beta alternativa,Técnica de escalada,medio,GT-TEC-011,,,1,,0
+EX-TEC-040,Exploración guiada,Técnica de escalada,alto,GT-TEC-012,,,1,,0
+EX-TEC-041,Escalada a vista técnica,Técnica de escalada,medio,,,,0,,0
+EX-TEC-042,Redpoint táctico,Técnica de escalada,medio,,,,0,,0
+EX-TEC-043,Memorización de secuencia,Técnica de escalada,medio,,,,0,,0
+EX-TEC-044,Ritmo de escalada,Técnica de escalada,medio,,,,0,,0
+EX-TEC-045,Economía de movimiento,Técnica de escalada,alto,,,,0,,0
+EX-TEC-046,Control de tensión corporal,Técnica de escalada,medio,,,,0,,0
+EX-WAR-001,Caminata o cardio suave,Calentamientos,medio,,,,0,GT-WAR-001,1
+EX-WAR-002,Movilidad articular general,Calentamientos,medio,,,,0,GT-WAR-002,1
+EX-WAR-003,CARs de hombro,Calentamientos,medio,,,,0,GT-WAR-003,1
+EX-WAR-004,CARs de muñeca,Calentamientos,medio,,,,0,GT-WAR-004,1
+EX-WAR-005,Rotaciones torácicas,Calentamientos,medio,,,,0,GT-WAR-005,1
+EX-WAR-006,Activación escapular,Calentamientos,medio,,,,0,GT-WAR-006,1
+EX-WAR-007,Scapular push-up,Calentamientos,medio,,,,0,GT-WAR-007,1
+EX-WAR-008,Band pull-apart,Calentamientos,medio,,,,0,GT-WAR-008,1
+EX-WAR-009,Rotación externa con banda,Calentamientos,medio,,,,0,GT-WAR-009,1
+EX-WAR-010,Y-T-W suave,Calentamientos,medio,,,,0,GT-WAR-010,1
+EX-WAR-011,Extensión de muñeca dinámica,Calentamientos,medio,,,,0,GT-WAR-011,1
+EX-WAR-012,Flexión de muñeca dinámica,Calentamientos,medio,,,,0,GT-WAR-012,1
+EX-WAR-013,Pulsos de dedos,Calentamientos,medio,,,,0,GT-WAR-013,1
+EX-WAR-014,Apertura y cierre de manos,Calentamientos,medio,,,,0,GT-WAR-014,1
+EX-WAR-015,Isométrico suave de dedos,Calentamientos,medio,,,,0,GT-WAR-015,1
+EX-WAR-016,Colgado asistido con pies,Calentamientos,medio,,,,0,GT-WAR-016,1
+EX-WAR-017,Recruitment hang submáximo,Calentamientos,medio,,,,0,GT-WAR-001,1
+EX-WAR-018,Travesía fácil,Calentamientos,medio,,,,0,GT-WAR-002,1
+EX-WAR-019,Boulder muy fácil,Calentamientos,medio,,,,0,GT-WAR-003,1
+EX-WAR-020,Escalada progresiva por grados,Calentamientos,medio,,,,0,GT-WAR-004,1
+EX-WAR-021,Activación de core,Calentamientos,medio,,,,0,GT-WAR-005,1
+EX-WAR-022,Dead bug de calentamiento,Calentamientos,medio,,,,0,GT-WAR-006,1
+EX-WAR-023,Sentadilla al aire,Calentamientos,medio,,,,0,GT-WAR-007,1
+EX-WAR-024,Zancada dinámica,Calentamientos,medio,,,,0,GT-WAR-008,1
+EX-WAR-025,Movilidad de cadera,Calentamientos,medio,,,,0,GT-WAR-009,1
+EX-WAR-026,Movilidad de tobillo,Calentamientos,medio,,,,0,GT-WAR-010,1
+EX-WAR-027,Respiración de preparación,Calentamientos,medio,,,,0,GT-WAR-011,1
+EX-WAR-028,Primer intento a baja intensidad,Calentamientos,medio,,,,0,GT-WAR-012,1
+EX-WAR-029,Calentamiento específico para ruta,Calentamientos,medio,,,,0,GT-WAR-013,1
+EX-WAR-030,Chequeo final de dolor,Calentamientos,medio,,,,0,GT-WAR-014,1
+INJ-EX-001,Chequeo corporal guiado,Prevención de lesiones general,Bajo,,INJ-GATE-001,,1,,0
+INJ-EX-002,Semáforo de dolor 0-10,Prevención de lesiones general,Bajo,,INJ-GATE-002,,1,,0
+INJ-EX-003,Registro de dolor por zona,Prevención de lesiones general,Bajo,,INJ-GATE-003,,1,,0
+INJ-EX-004,Chequeo de dedos y poleas,Prevención de lesiones general,Medio,,INJ-GATE-004,,1,,0
+INJ-EX-005,Chequeo de hombro y escápula,Prevención de lesiones general,Medio,,INJ-GATE-005,,1,,0
+INJ-EX-006,Chequeo de codo y muñeca,Prevención de lesiones general,Medio,,INJ-GATE-006,,1,,0
+INJ-EX-007,Chequeo lumbar y cadera,Prevención de lesiones general,Medio,,INJ-GATE-001,,1,,0
+INJ-EX-008,Escala de fatiga percibida,Prevención de lesiones general,Bajo,,INJ-GATE-002,,1,,0
+INJ-EX-009,Chequeo de sueño y recuperación,Prevención de lesiones general,Bajo,,INJ-GATE-003,,1,,0
+INJ-EX-010,Registro de carga semanal,Prevención de lesiones general,Bajo,,INJ-GATE-004,,1,,0
+INJ-EX-011,Deload automático por dolor,Prevención de lesiones general,Bajo,,INJ-GATE-005,,1,,0
+INJ-EX-012,Regresión técnica por fatiga,Prevención de lesiones general,Bajo,,INJ-GATE-006,,1,,0
+PER-EX-001,Plan semanal flexible,Periodización y programación,Bajo,,PER-GATE-001; PER-GATE-003; PER-GATE-005,,3,,0
+PER-EX-002,Bloque de descarga,Periodización y programación,Bajo,,PER-GATE-002; PER-GATE-004; PER-GATE-006,,3,,0
+PER-EX-003,Semana técnica,Periodización y programación,Bajo,,PER-GATE-001; PER-GATE-003; PER-GATE-005,,3,,0
+PER-EX-004,Semana de base aeróbica local,Periodización y programación,Bajo,,PER-GATE-002; PER-GATE-004; PER-GATE-006,,3,,0
+TST-EX-001,Preparación de test,Tests y evaluaciones integradas,Bajo,,TST-GATE-001,,1,,0
+TST-EX-002,Registro de contexto del test,Tests y evaluaciones integradas,Bajo,,TST-GATE-002,,1,,0
+TST-EX-003,Calentamiento previo al test,Tests y evaluaciones integradas,Bajo,,TST-GATE-003,,1,,0
+TST-EX-004,Retest controlado,Tests y evaluaciones integradas,Medio,,TST-GATE-004,,1,,0

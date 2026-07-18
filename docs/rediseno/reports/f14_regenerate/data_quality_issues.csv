@@ -1,96 +1,147 @@
 sheet,row_id,column,value,kind
-Exercises,EX-SCAP-001,equipment,"Fatiga leve/moderada en zona escapular, no dolor de hombro.",equipment_has_prose
-Exercises,EX-SCAP-001,risk_level,PR-SCAP-001,risk_level_has_id
-Exercises,EX-SCAP-001,app_status,Serrato anterior/rotadores,status_has_anatomy
-Exercises,EX-SCAP-002,risk_level,PR-SCAP-001,risk_level_has_id
-Exercises,EX-SCAP-002,app_status,Trapecio bajo,status_has_anatomy
-Exercises,EX-SCAP-003,risk_level,PR-SCAP-002,risk_level_has_id
-Exercises,EX-SCAP-003,app_status,Trapecio bajo/dorsal,status_has_anatomy
-Exercises,EX-SCAP-004,risk_level,PR-SCAP-003,risk_level_has_id
-Exercises,EX-SCAP-004,app_status,Trapecio medio/bajo,status_has_anatomy
-Exercises,EX-SHO-001,risk_level,PR-SHO-001,risk_level_has_id
-Exercises,EX-SHO-001,app_status,Infraespinoso/redondo menor,status_has_anatomy
-Exercises,EX-SHO-002,risk_level,PR-SHO-001,risk_level_has_id
-Exercises,EX-SHO-002,app_status,Manguito rotador,status_has_anatomy
-Exercises,EX-SHO-003,risk_level,PR-SCAP-003,risk_level_has_id
-Exercises,EX-SHO-003,app_status,Deltoides posterior/romboides,status_has_anatomy
-Exercises,EX-SHO-004,risk_level,PR-SHO-002,risk_level_has_id
-Exercises,EX-SHO-004,app_status,Serrato/trapecio bajo,status_has_anatomy
-Exercises,EX-SHO-005,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-005,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-005,app_status,Serrato anterior,status_has_anatomy
-Exercises,EX-SHO-006,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-006,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-006,app_status,Serrato anterior,status_has_anatomy
-Exercises,EX-SHO-007,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-007,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-007,app_status,Serrato/estabilidad,status_has_anatomy
-Exercises,EX-SHO-008,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-008,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-009,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-009,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-010,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-010,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-011,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-011,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-012,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-012,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-013,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-013,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-013,app_status,Deltoides medio,status_has_anatomy
-Exercises,EX-SHO-014,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-014,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-014,app_status,Deltoides posterior,status_has_anatomy
-Exercises,EX-SHO-015,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-015,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-015,app_status,Escápula/hombro posterior,status_has_anatomy
-Exercises,EX-SHO-016,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-016,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-017,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-017,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-017,app_status,Dorsal/escápula,status_has_anatomy
-Exercises,EX-SHO-018,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-018,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-019,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-019,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-019,app_status,Manguito rotador,status_has_anatomy
-Exercises,EX-SHO-020,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-020,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-020,app_status,Manguito rotador,status_has_anatomy
-Exercises,EX-SHO-021,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-021,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-022,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-022,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-023,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-023,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-024,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-024,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-025,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-025,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-026,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-026,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-027,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-027,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-027,app_status,Manguito/escápula,status_has_anatomy
-Exercises,EX-SHO-028,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-028,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-029,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-029,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-030,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-030,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-031,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-031,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-032,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-032,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-033,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-033,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-034,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-034,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-034,app_status,Escápula overhead,status_has_anatomy
-Exercises,EX-SHO-035,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-035,risk_level,PR-SHO-003,risk_level_has_id
-Exercises,EX-SHO-036,equipment,Activación muscular controlada; no dolor articular.,equipment_has_prose
-Exercises,EX-SHO-036,risk_level,PR-SHO-003,risk_level_has_id
+Exercises,EX-MOB-001,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-001,equipment,"En cuadrupedia, apoyar palmas, desplazar el peso adelante y atrás sin dolor. Mantener codos extendidos suaves y respirac",equipment_has_prose
+Exercises,EX-MOB-002,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-002,equipment,"Mover la muñeca lentamente en círculos completos, evitando compensar con antebrazo.",equipment_has_prose
+Exercises,EX-MOB-003,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-003,equipment,Realizar círculos lentos de hombro manteniendo costillas controladas y sin dolor.,equipment_has_prose
+Exercises,EX-MOB-004,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-004,equipment,"Antebrazos o manos en pared; mover escápulas en elevación, depresión, protracción y retracción con control.",equipment_has_prose
+Exercises,EX-MOB-005,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-005,equipment,"Mano detrás de cabeza, abrir codo hacia el techo y volver. Mantener pelvis estable.",equipment_has_prose
+Exercises,EX-MOB-006,level_max,Casa,level_has_environment
+Exercises,EX-MOB-006,equipment,"Acostado lateral, rodillas flexionadas; abrir brazo superior hacia atrás siguiendo con la mirada.",equipment_has_prose
+Exercises,EX-MOB-007,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-007,equipment,"En cuadrupedia, alternar flexión y extensión de columna intentando segmentar el movimiento.",equipment_has_prose
+Exercises,EX-MOB-008,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-008,equipment,"Sentado en 90/90, cambiar de lado de forma controlada sin colapsar torso.",equipment_has_prose
+Exercises,EX-MOB-009,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-009,equipment,"Desplazar peso a una pierna en sentadilla lateral, mantener talón apoyado si es posible.",equipment_has_prose
+Exercises,EX-MOB-010,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-010,equipment,"Mantener sentadilla profunda con apoyo si hace falta, columna larga y pies activos.",equipment_has_prose
+Exercises,EX-MOB-011,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-011,equipment,"Llevar rodilla hacia pared sin despegar talón, controlar alineación de rodilla.",equipment_has_prose
+Exercises,EX-MOB-012,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-012,equipment,"Desde zancada, apoyar mano y rotar el torso elevando brazo.",equipment_has_prose
+Exercises,EX-MOB-013,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-013,equipment,Deslizar brazos por pared manteniendo costillas abajo y sin dolor.,equipment_has_prose
+Exercises,EX-MOB-014,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-014,equipment,"En plancha o cuadrupedia, mover escápulas sin flexionar codos.",equipment_has_prose
+Exercises,EX-MOB-015,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-015,equipment,Apoyar dorsal sobre roller y extender suavemente con respiración.,equipment_has_prose
+Exercises,EX-MOB-016,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-016,equipment,"De pie sobre una pierna, abrir y cerrar pelvis con control usando apoyo.",equipment_has_prose
+Exercises,EX-MOB-017,level_max,Gimnasio/Casa,level_has_environment
+Exercises,EX-MOB-017,equipment,"Gatear lento con rodillas cerca del suelo, controlando hombros, cadera y respiración.",equipment_has_prose
+Exercises,EX-MOB-018,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-019,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-019,equipment,"Boca abajo, llevar brazos de overhead a espalda baja con control sin dolor.",equipment_has_prose
+Exercises,EX-MOB-020,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-020,equipment,"Tomar pies, bajar a sentadilla, luego elevar caderas extendiendo rodillas parcialmente.",equipment_has_prose
+Exercises,EX-MOB-021,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-021,equipment,"Zancada larga, codo hacia suelo y rotación de torso hacia pierna adelantada.",equipment_has_prose
+Exercises,EX-MOB-022,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-022,equipment,Palmas al suelo con dedos hacia rodillas; desplazar suavemente cadera atrás.,equipment_has_prose
+Exercises,EX-MOB-023,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-023,equipment,"Sentarse sobre talones con dedos extendidos, graduando presión.",equipment_has_prose
+Exercises,EX-MOB-024,level_max,Casa,level_has_environment
+Exercises,EX-MOB-024,equipment,"Movimientos lentos de flexión, extensión leve, inclinación y rotación sin forzar.",equipment_has_prose
+Exercises,EX-MOB-025,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-025,equipment,"Con agarre amplio, pasar banda/palo de frente a atrás sin dolor ni compensar lumbar.",equipment_has_prose
+Exercises,EX-MOB-026,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-026,equipment,"Acostado cerca de pared, elevar y bajar pierna con control dentro de rango cómodo.",equipment_has_prose
+Exercises,EX-MOB-027,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-027,equipment,Alternar zancada lateral de lado a lado con control y pies activos.,equipment_has_prose
+Exercises,EX-MOB-028,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-MOB-028,equipment,"Desde puente de glúteo, rotar y alcanzar con brazo hacia atrás sin dolor lumbar.",equipment_has_prose
+Exercises,EX-FLX-001,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-001,equipment,"Extender codo, llevar muñeca a extensión suave con ayuda de la otra mano sin dolor.",equipment_has_prose
+Exercises,EX-FLX-002,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-002,equipment,"Extender codo, flexionar muñeca suavemente con ayuda de la otra mano.",equipment_has_prose
+Exercises,EX-FLX-003,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-003,equipment,"Antebrazo en marco de puerta, girar torso suavemente hasta sentir tensión cómoda.",equipment_has_prose
+Exercises,EX-FLX-004,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-004,equipment,"Manos en pared, llevar cadera atrás y respirar en la espalda lateral.",equipment_has_prose
+Exercises,EX-FLX-005,level_max,Casa,level_has_environment
+Exercises,EX-FLX-005,equipment,"Desde postura del niño, caminar manos hacia un lado para sentir dorsal opuesto.",equipment_has_prose
+Exercises,EX-FLX-006,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-006,equipment,"Rodilla atrás apoyada, pelvis en retroversión suave y avanzar levemente.",equipment_has_prose
+Exercises,EX-FLX-007,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-007,equipment,"Rodilla cerca de pared, empeine atrás, tronco erguido sin compensar lumbar.",equipment_has_prose
+Exercises,EX-FLX-008,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-008,equipment,"Acostado, elevar pierna con banda manteniendo pelvis estable.",equipment_has_prose
+Exercises,EX-FLX-009,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-009,equipment,"Sentado o de pie, flexionar cadera manteniendo respiración y sin redondear agresivamente.",equipment_has_prose
+Exercises,EX-FLX-010,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-010,equipment,"Sentado con piernas abiertas, inclinar desde cadera dentro de rango cómodo.",equipment_has_prose
+Exercises,EX-FLX-011,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-011,equipment,"Rodillas separadas, cadera atrás, mantener tensión cómoda sin dolor.",equipment_has_prose
+Exercises,EX-FLX-012,level_max,Casa,level_has_environment
+Exercises,EX-FLX-012,equipment,"En supino, cruzar tobillo sobre rodilla y acercar pierna.",equipment_has_prose
+Exercises,EX-FLX-013,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-013,equipment,"Pie atrás, talón al suelo, inclinar cuerpo hacia pared.",equipment_has_prose
+Exercises,EX-FLX-014,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-014,equipment,Similar a pantorrilla pero con rodilla trasera flexionada.,equipment_has_prose
+Exercises,EX-FLX-015,level_max,Casa,level_has_environment
+Exercises,EX-FLX-015,equipment,"Inclinar cabeza suavemente, hombro opuesto relajado. Sin tirar fuerte.",equipment_has_prose
+Exercises,EX-FLX-016,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-016,equipment,"Desde cuadrupedia, pasar brazo bajo el cuerpo y apoyar hombro/cabeza suavemente.",equipment_has_prose
+Exercises,EX-FLX-017,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-017,equipment,"Brazo cruzado al frente, acercar suavemente con brazo contrario sin elevar hombro.",equipment_has_prose
+Exercises,EX-FLX-018,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-018,equipment,"Codo arriba, mano hacia espalda, asistir suavemente sin arquear lumbar.",equipment_has_prose
+Exercises,EX-FLX-019,level_max,Gimnasio,level_has_environment
+Exercises,EX-FLX-019,equipment,Flexión segmentada lenta desde cuello a lumbar con carga mínima o sin carga.,equipment_has_prose
+Exercises,EX-FLX-020,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-020,equipment,"En posición de estiramiento cómodo, intentar elevar pierna activamente pocos centímetros.",equipment_has_prose
+Exercises,EX-FLX-021,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-021,equipment,"Zancada larga, pelvis estable, mantener tensión anterior de cadera con glúteo activo.",equipment_has_prose
+Exercises,EX-FLX-022,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-022,equipment,"En cuadrupedia con pierna lateral extendida, llevar cadera atrás y sostener.",equipment_has_prose
+Exercises,EX-FLX-023,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-023,equipment,Zancada baja con brazo del lado posterior arriba e inclinación lateral suave.,equipment_has_prose
+Exercises,EX-FLX-024,level_max,Casa/Gimnasio,level_has_environment
+Exercises,EX-FLX-024,equipment,Rotar antebrazo suavemente hacia pronación/supinación con asistencia mínima.,equipment_has_prose
+Exercises,EX-ARC-001,level_max,Gimnasio,level_has_environment
+Exercises,EX-ARC-001,equipment,Escalar lateralmente en terreno fácil manteniendo respiración controlada y sin llegar a fallo.,equipment_has_prose
+Exercises,EX-ARC-002,level_max,Gimnasio/Roca,level_has_environment
+Exercises,EX-ARC-002,equipment,"Subir vías fáciles de forma continua, priorizando fluidez y bajo agarre.",equipment_has_prose
+Exercises,EX-ARC-003,level_max,Gimnasio,level_has_environment
+Exercises,EX-ARC-003,equipment,"Hacer vueltas en autobelay a intensidad baja, bajando con control y descansando según necesidad.",equipment_has_prose
+Exercises,EX-ARC-004,level_max,Gimnasio,level_has_environment
+Exercises,EX-ARC-004,equipment,"Repetir bloques muy fáciles sin caer ni llegar a fallo, descansando poco.",equipment_has_prose
+Exercises,EX-ARC-005,level_max,Gimnasio,level_has_environment
+Exercises,EX-ARC-005,equipment,"Crear circuito de movimientos fáciles en presas grandes, ritmo constante.",equipment_has_prose
+Exercises,EX-ARC-006,level_max,Gimnasio/Roca,level_has_environment
+Exercises,EX-ARC-006,equipment,Subir y bajar por terreno fácil para aumentar tiempo bajo tensión y técnica.,equipment_has_prose
+Exercises,EX-ARC-007,level_max,Gimnasio,level_has_environment
+Exercises,EX-ARC-007,equipment,Escalar fácil poniendo foco en pies precisos y silenciosos.,equipment_has_prose
+Exercises,EX-ARC-008,level_max,Gimnasio,level_has_environment
+Exercises,EX-ARC-008,equipment,Escalar fácil buscando usar la mínima fuerza de agarre necesaria.,equipment_has_prose
+Exercises,EX-ARC-009,level_max,Gimnasio,level_has_environment
+Exercises,EX-ARC-009,equipment,"Escalar circuito continuo por debajo del límite, sin caídas ni bloqueo excesivo.",equipment_has_prose
+Exercises,EX-ARC-010,level_max,Gimnasio,level_has_environment
+Exercises,EX-ARC-010,equipment,Escalar por un bloque de tiempo definido manteniendo intensidad baja.,equipment_has_prose
+Exercises,EX-ARC-011,level_max,Gimnasio,level_has_environment
+Exercises,EX-ARC-011,equipment,Usar respiración cómoda como regulador de intensidad en terreno fácil.,equipment_has_prose
+Exercises,EX-ARC-012,level_max,Gimnasio/Roca,level_has_environment
+Exercises,EX-ARC-012,equipment,Escalar terreno menos desplomado para sostener volumen con menor carga de dedos.,equipment_has_prose
+Exercises,EX-ARC-013,level_max,Gimnasio,level_has_environment
+Exercises,EX-ARC-013,equipment,Continuidad en desplome leve manteniendo intensidad submáxima y sin llegar a fallo.,equipment_has_prose
+Exercises,EX-ARC-014,level_max,Gimnasio/Roca,level_has_environment
+Exercises,EX-ARC-014,equipment,Repetir vías conocidas para reducir carga cognitiva y mejorar eficiencia.,equipment_has_prose
+Exercises,EX-ARC-015,level_max,Gimnasio,level_has_environment
+Exercises,EX-ARC-015,equipment,"Entre bloques duros, usar escalada muy fácil como recuperación activa solo si no aumenta fatiga.",equipment_has_prose
+Exercises,EX-ARC-016,level_max,Gimnasio,level_has_environment
+Exercises,EX-ARC-016,equipment,"Alternar tramos muy fáciles y fáciles, evitando pump alto.",equipment_has_prose
+Exercises,EX-ARC-017,level_max,Gimnasio,level_has_environment
+Exercises,EX-ARC-017,equipment,"Alternar bloques de escalada fácil con compañero, manteniendo descanso suficiente.",equipment_has_prose
+Exercises,EX-ARC-018,level_max,Gimnasio,level_has_environment
+Exercises,EX-ARC-018,equipment,"Tras proyecto, escalada muy fácil para soltar sin añadir fatiga.",equipment_has_prose
+Exercises,EX-ARC-019,level_max,Gimnasio,level_has_environment
+Exercises,EX-ARC-019,equipment,"Escalar fácil con microreposos programados, sin llegar a fallo.",equipment_has_prose
+Exercises,EX-ARC-020,level_max,Gimnasio,level_has_environment
+Exercises,EX-ARC-020,equipment,Escalar fácil anticipando los siguientes movimientos sin detenerse demasiado.,equipment_has_prose
 Gates,GT-PULL-001,action,Bloquear ejercicios altos y tests; ofrecer regresión o descanso técnico.,action_has_prose
 Gates,GT-PULL-002,action,Bloquear y pedir validación profesional.,action_has_prose
 Gates,GT-PULL-003,action,Usar jalón/remo/asistencia; no tests de suspensión.,action_has_prose

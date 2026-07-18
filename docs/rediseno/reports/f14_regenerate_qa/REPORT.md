@@ -7,8 +7,8 @@
 ## Resumen
 
 - Checks corridos: **15**
-- Errores totales: **182**
-- Warnings totales: **73**
+- Errores totales: **408**
+- Warnings totales: **205**
 - Categorías curadas (≥50% con gates): **0**
 
 ## Categorías curadas detectadas
@@ -35,11 +35,30 @@ Sample:
 - `kind=off_canon` · `sheet=Protocols` · `column=structure` · `value=Rehabilitación supervisada` · `count=1` · `example_ids=PR-FOR-015`
 - `kind=off_canon` · `sheet=Protocols` · `column=structure` · `value=Después de sesiones intensas` · `count=1` · `example_ids=PR-FOR-016`
 
-### domain_check_risk_level_exercises · error · ✅ OK
+### domain_check_risk_level_exercises · error · ❌ 30 findings
+
+Sample:
+
+- `kind=off_canon` · `sheet=Exercises` · `column=risk_level` · `value=Dolor anterior hombro` · `count=3` · `example_ids=EX-MOB-019, EX-FLX-003, EX-FLX-017`
+- `kind=off_canon` · `sheet=Exercises` · `column=risk_level` · `value=Dolor lumbar/cadera` · `count=2` · `example_ids=EX-MOB-012, EX-MOB-021`
+- `kind=off_canon` · `sheet=Exercises` · `column=risk_level` · `value=Dolor lumbar/rodilla` · `count=2` · `example_ids=EX-MOB-020, EX-FLX-006`
+- `kind=off_canon` · `sheet=Exercises` · `column=risk_level` · `value=Dolor ciático` · `count=2` · `example_ids=EX-MOB-026, EX-FLX-012`
+- `kind=off_canon` · `sheet=Exercises` · `column=risk_level` · `value=Dolor lumbar/hombro` · `count=2` · `example_ids=EX-MOB-028, EX-FLX-023`
+- `kind=off_canon` · `sheet=Exercises` · `column=risk_level` · `value=Hormigueo, dolor punzante` · `count=2` · `example_ids=EX-FLX-001, EX-FLX-002`
+- `kind=off_canon` · `sheet=Exercises` · `column=risk_level` · `value=Pinzamiento hombro` · `count=2` · `example_ids=EX-FLX-004, EX-FLX-018`
+- `kind=off_canon` · `sheet=Exercises` · `column=risk_level` · `value=Dolor rodilla/lumbar` · `count=2` · `example_ids=EX-FLX-007, EX-FLX-021`
+- `kind=off_canon` · `sheet=Exercises` · `column=risk_level` · `value=Dolor lumbar/ciático` · `count=2` · `example_ids=EX-FLX-009, EX-FLX-019`
+- `kind=off_canon` · `sheet=Exercises` · `column=risk_level` · `value=Dolor ingle/rodilla` · `count=2` · `example_ids=EX-FLX-011, EX-FLX-022`
+- `kind=off_canon` · `sheet=Exercises` · `column=risk_level` · `value=Dolor agudo, hormigueo, pérdida de fuerza` · `count=1` · `example_ids=EX-MOB-001`
+- `kind=off_canon` · `sheet=Exercises` · `column=risk_level` · `value=Dolor punzante` · `count=1` · `example_ids=EX-MOB-002`
+- `kind=off_canon` · `sheet=Exercises` · `column=risk_level` · `value=Dolor, chasquido doloroso` · `count=1` · `example_ids=EX-MOB-003`
+- `kind=off_canon` · `sheet=Exercises` · `column=risk_level` · `value=Dolor de hombro/cuello` · `count=1` · `example_ids=EX-MOB-004`
+- `kind=off_canon` · `sheet=Exercises` · `column=risk_level` · `value=Dolor lumbar o mareo` · `count=1` · `example_ids=EX-MOB-005`
+- ... y 15 más
 
 ### domain_check_risk_level_protocols · error · ✅ OK
 
-### domain_check_equipment · error · ❌ 22 findings
+### domain_check_equipment · error · ❌ 20 findings
 
 Sample:
 
@@ -48,8 +67,6 @@ Sample:
 - `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=dynamometer` · `off_token=dynamometer` · `row_id=EX-FIN-062`
 - `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Cuerda` · `off_token=cuerda` · `row_id=EX-PULL-028`
 - `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Escalera Bachar` · `off_token=escalera bachar` · `row_id=EX-PULL-029`
-- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Trabajo muscular alrededor de escápula.` · `off_token=trabajo muscular alrededor de escápula.` · `row_id=EX-SCAP-002`
-- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Activación suave bajo axila/escápula.` · `off_token=activación suave bajo axila` · `row_id=EX-SCAP-003`
 - `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Activación en espalda alta.` · `off_token=activación en espalda alta.` · `row_id=EX-SCAP-004`
 - `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Movilidad/activación suave.` · `off_token=movilidad` · `row_id=EX-SHO-004`
 - `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Cubeta con arroz` · `off_token=cubeta con arroz` · `row_id=EX-FOR-011`
@@ -58,7 +75,9 @@ Sample:
 - `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Pelota blanda` · `off_token=pelota blanda` · `row_id=EX-FOR-027`
 - `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=Mesa` · `off_token=mesa` · `row_id=EX-FOR-038`
 - `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=balón medicinal` · `off_token=balón medicinal` · `row_id=EX-CAMP-023`
-- ... y 7 más
+- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=balón medicinal` · `off_token=balón medicinal` · `row_id=EX-CAMP-024`
+- `kind=off_canon` · `sheet=Exercises` · `column=equipment` · `value=dynamometer` · `off_token=dynamometer` · `row_id=EX-CAMP-030`
+- ... y 5 más
 
 ### action_vocabulary_check · error · ❌ 4 findings
 
@@ -69,7 +88,7 @@ Sample:
 - `kind=action_off_vocab` · `sheet=Gates` · `column=action` · `value=Limitar volumen de fuerza; priorizar técnica en muro.` · `count=1`
 - `kind=action_off_vocab` · `sheet=Gates` · `column=action` · `value=Plan conservador; no máximos.` · `count=1`
 
-### cross_column_contamination · error · ❌ 150 findings
+### cross_column_contamination · error · ❌ 348 findings
 
 Sample:
 
@@ -88,23 +107,30 @@ Sample:
 - `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; hangboard` · `row_id=EX-FIN-013`
 - `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; hangboard` · `row_id=EX-FIN-014`
 - `kind=equipment_has_prose` · `sheet=Exercises` · `column=equipment` · `value=gym; hangboard` · `row_id=EX-FIN-015`
-- ... y 135 más
+- ... y 333 más
 
 ### gates_column_populated · error · ✅ OK
 
 **Pendientes (categorías no-curadas, info · no bloquean):**
 
+- `tecnica-escalada` · 66 ejercicios sin gate
 - `fuerza-dedos` · 62 ejercicios sin gate
+- `hombros-escapulas` · 52 ejercicios sin gate
+- `antebrazo-muneca-codo` · 44 ejercicios sin gate
 - `traccion` · 42 ejercicios sin gate
-- `hombros-escapulas` · 40 ejercicios sin gate
-- `antebrazo-muneca-codo` · 38 ejercicios sin gate
 - `fuerza-general` · 36 ejercicios sin gate
+- `resistencia-fuerza` · 36 ejercicios sin gate
+- `power-endurance` · 36 ejercicios sin gate
+- `movilidad` · 33 ejercicios sin gate
+- `mental` · 33 ejercicios sin gate
 - `core` · 32 ejercicios sin gate
 - `campus-potencia` · 30 ejercicios sin gate
+- `calentamiento` · 30 ejercicios sin gate
+- `recuperacion` · 30 ejercicios sin gate
 
 ### dosage_completeness · error · ✅ OK
 
-**Warnings (73):**
+**Warnings (205):**
 
 - `kind=partial_dosage` · `sheet=Protocols` · `row_id=PR-HB-001` · `populated=intensity` · `missing=work_interval, rest_interval, sets, reps`
 - `kind=partial_dosage` · `sheet=Protocols` · `row_id=PR-HB-002` · `populated=sets, reps, intensity` · `missing=work_interval, rest_interval`
@@ -116,7 +142,7 @@ Sample:
 - `kind=partial_dosage` · `sheet=Protocols` · `row_id=PR-HB-008` · `populated=reps, intensity` · `missing=work_interval, rest_interval, sets`
 - `kind=partial_dosage` · `sheet=Protocols` · `row_id=PR-HB-009` · `populated=sets, reps, intensity` · `missing=work_interval, rest_interval`
 - `kind=partial_dosage` · `sheet=Protocols` · `row_id=PR-HB-010` · `populated=sets, reps, intensity` · `missing=work_interval, rest_interval`
-- ... y 63 más
+- ... y 195 más
 
 ### relationships_orphans · error · ❌ 2 findings
 
