@@ -143,7 +143,7 @@ export function HoyView({ session, focusRule, streak, weekPath, error }: HoyView
               type="button"
               disabled={!session}
               onClick={() => router.push('/session')}
-              className="w-full h-touch-target bg-secondary text-on-primary font-bold text-headline-md-mobile rounded-full shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full h-touch-target bg-bil-red text-white font-bold text-headline-md-mobile rounded-full shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {session ? 'Empezar sesión' : 'Preparando...'}
               <span className="material-symbols-outlined">play_arrow</span>

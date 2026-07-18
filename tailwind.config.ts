@@ -25,6 +25,11 @@ const config: Config = {
         // Sistema de autenticación. Traducidos literal del code.html.
         'bil-cream': '#F2EDE3',
         'bil-green': '#2F7D63',
+        // bil-red es el ÚNICO token de rojo de acción (CTA principal).
+        // Todos los botones de "Empezar sesión", "Crear cuenta", etc.
+        // deben usar bg-bil-red text-white. NO usar `secondary` (#b12b23,
+        // MD3 legacy más oscuro), NO hardcodear #D6463A, NO tomar valores
+        // de screenshots. Un token, todas las pantallas.
         'bil-red': '#D6463A',
         'bil-ink': '#241F1C',
         // Ampliación aprobada por Giuliana 2026-07-17:
