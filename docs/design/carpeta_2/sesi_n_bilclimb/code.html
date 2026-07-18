@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BilClimb - En Sesión</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "on-primary-fixed": "#002116",
+                "tertiary": "#755000",
+                "primary": "#0a644b",
+                "on-primary-container": "#d2ffea",
+                "outline-variant": "#bec9c2",
+                "on-secondary-container": "#650003",
+                "primary-fixed": "#a5f2d2",
+                "on-primary-fixed-variant": "#00513c",
+                "on-error-container": "#93000a",
+                "on-tertiary": "#ffffff",
+                "surface-dim": "#dedad0",
+                "on-secondary-fixed": "#410001",
+                "on-secondary": "#ffffff",
+                "outline": "#6f7974",
+                "on-tertiary-container": "#fff3e5",
+                "surface-container-highest": "#e7e2d8",
+                "on-surface-variant": "#3f4944",
+                "on-background": "#1d1c16",
+                "secondary-fixed-dim": "#ffb4aa",
+                "on-error": "#ffffff",
+                "tertiary-fixed": "#ffdeac",
+                "inverse-on-surface": "#f5f0e6",
+                "primary-container": "#2f7d63",
+                "on-secondary-fixed-variant": "#8f100e",
+                "surface-bright": "#fef9ef",
+                "error-container": "#ffdad6",
+                "inverse-primary": "#89d6b7",
+                "on-primary": "#ffffff",
+                "error": "#ba1a1a",
+                "surface-container-low": "#f8f3e9",
+                "surface": "#fef9ef",
+                "on-tertiary-fixed-variant": "#604100",
+                "surface-variant": "#e7e2d8",
+                "on-surface": "#1d1c16",
+                "surface-container-high": "#ede8de",
+                "on-tertiary-fixed": "#281900",
+                "tertiary-fixed-dim": "#fcbb44",
+                "surface-container-lowest": "#ffffff",
+                "secondary-fixed": "#ffdad5",
+                "inverse-surface": "#32302a",
+                "surface-tint": "#176b52",
+                "background": "#fef9ef",
+                "primary-fixed-dim": "#89d6b7",
+                "surface-container": "#f2ede3",
+                "secondary": "#b12b23",
+                "tertiary-container": "#956700",
+                "secondary-container": "#fd6253"
+              },
+              borderRadius: {
+                "DEFAULT": "1rem",
+                "lg": "2rem",
+                "xl": "3rem",
+                "full": "9999px"
+              },
+              fontFamily: {
+                "headline": ["Nunito Sans"],
+                "display": ["Nunito Sans"],
+                "body": ["Nunito Sans"],
+                "label": ["Nunito Sans"]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        body {
+            font-family: 'Nunito Sans', sans-serif;
+            background-color: #fef9ef; /* Design System surface */
+        }
+        .safe-bottom {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .timer-circle {
+            transition: stroke-dashoffset 1s linear;
+        }
+    </style>
+</head>
+<body class="text-on-background min-h-screen selection:bg-primary-fixed">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full bg-surface-container-low z-50 shadow-sm flex justify-between items-center px-5 h-[48px] md:h-touch-target">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden border-2 border-primary">
+<img class="w-full h-full object-cover" data-alt="A clean, vibrant flat-vector illustration of Bill, a friendly male climbing coach wearing a green helmet with a golden emblem and a bright red hoodie against a simple circular green background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCAUS0_E4vwajRlsi_oJV_6-rr6EF2CmJzWxibbqyRL2T862nyZ1do7D5jqGmHLfG3WWwcKeO5Y005qp52-pNw2nzCBCS7GA1YFlaek4Fp4my0upuTwk0CUUtWELsUzsb3LvokavooEh0RQ9cciVdYg1HaPv7Cs022vhl-HqdAfN2-9aT1eb7kPsHsRHAPutiuD-xuw_1Qd2aR5vekFVGqXZ-kWHviuee1sX_R6SVozfzZWZZSIxZB"/>
+</div>
+<h1 class="font-headline text-[18px] md:text-headline-md font-bold text-primary truncate max-w-[200px]">Movilidad y Dedos Suaves</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant/50 active:scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined text-primary">settings</span>
+</button>
+</header>
+<main class="pt-16 pb-32 px-5 max-w-xl mx-auto space-y-6">
+<!-- Safety Line (Alert Style) -->
+<button class="w-full bg-error-container text-on-error-container p-4 rounded-lg flex items-center gap-3 active:scale-[0.98] transition-all duration-200 text-left">
+<div class="bg-error text-on-error w-8 h-8 rounded-full flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">medical_services</span>
+</div>
+<div class="flex-1">
+<p class="font-label text-sm font-bold leading-tight">¿Algo te duele hoy?</p>
+<p class="text-xs">Toca aquí y ajustamos tu entrenamiento en tiempo real.</p>
+</div>
+<span class="material-symbols-outlined text-error">chevron_right</span>
+</button>
+<!-- Status -->
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold tracking-widest uppercase text-outline">Estado</span>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<span class="font-label text-sm font-bold text-primary">EN PROGRESO · Bloque de Fuerza 2/5</span>
+</div>
+</div>
+<div class="text-right">
+<span class="text-[10px] font-bold tracking-widest uppercase text-outline">Total</span>
+<p class="font-headline text-lg font-bold text-on-surface">14:22</p>
+</div>
+</div>
+<!-- Exercise Card (Expanded - Current) -->
+<section class="bg-surface-container-lowest border-2 border-primary rounded-lg p-6 shadow-md">
+<div class="flex justify-between items-start mb-4">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider">RIESGO: BAJO</span>
+</div>
+<h2 class="font-headline text-2xl font-extrabold text-on-surface">Suspensiones suaves (25mm)</h2>
+</div>
+<span class="material-symbols-outlined text-primary text-3xl">exercise</span>
+</div>
+<!-- Stats Grid -->
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="bg-surface-container rounded-lg p-3 text-center border border-outline-variant/30">
+<p class="text-[10px] text-outline font-bold uppercase">Protocolo</p>
+<p class="font-headline text-lg font-bold text-primary">3 series × 10s</p>
+</div>
+<div class="bg-surface-container rounded-lg p-3 text-center border border-outline-variant/30">
+<p class="text-[10px] text-outline font-bold uppercase">Descanso</p>
+<p class="font-headline text-lg font-bold text-primary">2 min</p>
+</div>
+</div>
+<!-- Why Section -->
+<div class="mb-6">
+<h3 class="font-label text-sm font-bold text-on-surface flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary text-lg">info</span>
+                    ¿Por qué?
+                </h3>
+<p class="text-on-surface-variant text-sm leading-relaxed italic">
+                    "Para despertar los tendones sin estresarlos, preparando la polea para cargas mayores."
+                </p>
+</div>
+<!-- Pro-tip: Técnica -->
+<div class="mb-6 bg-primary-container/10 p-4 rounded-lg border-l-4 border-primary">
+<h3 class="font-label text-sm font-bold text-primary flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-lg fill-icon">emoji_objects</span>
+                    Pro-tip: Técnica
+                </h3>
+<ul class="space-y-2">
+<li class="flex items-start gap-2 text-sm text-on-surface-variant">
+<span class="text-primary mt-1">•</span>
+<span>Hombros activos</span>
+</li>
+<li class="flex items-start gap-2 text-sm text-on-surface-variant">
+<span class="text-primary mt-1">•</span>
+<span>Dedos en semi-arquero</span>
+</li>
+</ul>
+</div>
+<!-- Common Mistakes -->
+<div class="mb-6">
+<h3 class="font-label text-sm font-bold text-secondary flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-lg">warning</span>
+                    Errores comunes
+                </h3>
+<div class="flex flex-wrap gap-2">
+<span class="text-xs text-on-surface-variant bg-surface-container-high px-3 py-1.5 rounded-full">Arquear de más</span>
+<span class="text-xs text-on-surface-variant bg-surface-container-high px-3 py-1.5 rounded-full">Soltar la tabla de golpe</span>
+</div>
+</div>
+<!-- Alternative button -->
+<button class="w-full border-2 border-primary text-primary font-bold py-3 rounded-lg flex items-center justify-center gap-2 active:scale-95 transition-all duration-150">
+<span class="material-symbols-outlined">help_outline</span>
+                ¿Hoy no sale? Prueba la versión asistida
+            </button>
+</section>
+<!-- Exercise Card (Active Rest) -->
+<section class="bg-surface-container rounded-lg p-6 flex items-center justify-between border border-outline-variant shadow-sm overflow-hidden relative">
+<div class="space-y-1 z-10">
+<p class="text-[10px] text-primary font-bold uppercase tracking-widest">Siguiente</p>
+<h2 class="font-headline text-xl font-bold text-on-surface">Pull-ups explosivas</h2>
+</div>
+<div class="relative w-20 h-20 flex items-center justify-center z-10">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-outline-variant" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-primary timer-circle" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-width="4" style="stroke-dasharray: 213; stroke-dashoffset: 80;"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-headline text-sm font-black text-primary">01:44</span>
+</div>
+</div>
+<!-- Subtle background pattern for rest -->
+<div class="absolute -right-4 -bottom-4 opacity-10">
+<span class="material-symbols-outlined text-9xl text-primary transform rotate-12">timer</span>
+</div>
+</section>
+<!-- Exercise Card (Collapsed - Next) -->
+<section class="bg-surface-container-low rounded-lg p-6 flex items-center justify-between border border-outline-variant/30 opacity-60">
+<div class="space-y-1">
+<p class="text-[10px] text-outline font-bold uppercase tracking-widest">En cola</p>
+<h2 class="font-headline text-lg font-bold text-on-surface">Movilidad de Cadera (Frog Stretch)</h2>
+</div>
+<span class="material-symbols-outlined text-outline">lock</span>
+</section>
+</main>
+<!-- Sticky Bottom Navigation -->
+<div class="fixed bottom-0 left-0 w-full z-[60] bg-surface-container-high/90 backdrop-blur-md px-5 pt-4 pb-8 md:pb-margin-mobile safe-bottom border-t border-outline-variant/20">
+<div class="max-w-xl mx-auto flex gap-4">
+<!-- Back Arrow for session -->
+<button class="w-touch-target h-touch-target rounded-lg border-2 border-outline-variant text-outline flex items-center justify-center active:scale-90 transition-all">
+<span class="material-symbols-outlined">undo</span>
+</button>
+<button class="flex-1 bg-secondary text-on-secondary font-headline font-extrabold text-lg h-touch-target md:h-button-height rounded-lg shadow-lg active:scale-95 transition-all duration-150 flex items-center justify-center gap-3">
+<span>Siguiente ejercicio</span>
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- BottomNavBar (Hidden during session but maintained for semantic shell logic) -->
+<!-- Typically hidden on 'Task-Focused' sub-pages like current workout session -->
+<script>
+        // Micro-interaction for the timer
+        let timeLeft = 104; // 1:44 in seconds
+        const totalTime = 120; // 2 minutes
+        const timerText = document.querySelector('.timer-circle + div span');
+        const timerCircle = document.querySelector('.timer-circle');
+        const circumference = 2 * Math.PI * 34;
+
+        function updateTimer() {
+            if (timeLeft > 0) {
+                timeLeft--;
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                timerText.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                const offset = circumference - (timeLeft / totalTime) * circumference;
+                timerCircle.style.strokeDashoffset = offset;
+            }
+        }
+
+        setInterval(updateTimer, 1000);
+
+        // Simple feedback for safety button
+        document.querySelector('.bg-error-container').addEventListener('click', () => {
+            alert('Ajustando plan... Bill está recalculando el entrenamiento basándose en tu nivel de dolor.');
+        });
+    </script>
+</body></html>

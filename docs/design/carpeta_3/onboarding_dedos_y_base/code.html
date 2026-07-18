@@ -1,0 +1,239 @@
+<!DOCTYPE html><html lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BilClimb Onboarding - Paso 2</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#e7e2d8",
+                        "on-surface-variant": "#3f4944",
+                        "error-container": "#ffdad6",
+                        "on-primary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "outline": "#6f7974",
+                        "surface-tint": "#176b52",
+                        "surface-container-low": "#f8f3e9",
+                        "primary-container": "#2f7d63",
+                        "on-tertiary-container": "#fff3e5",
+                        "on-primary-container": "#d2ffea",
+                        "inverse-primary": "#89d6b7",
+                        "on-secondary-container": "#650003",
+                        "primary": "#0a644b",
+                        "inverse-on-surface": "#f5f0e6",
+                        "on-secondary": "#ffffff",
+                        "secondary-container": "#fd6253",
+                        "ink-text": "#241F1C",
+                        "primary-fixed": "#a5f2d2",
+                        "secondary": "#b12b23",
+                        "surface-dim": "#dedad0",
+                        "surface-container": "#f2ede3",
+                        "on-error": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-tertiary": "#ffffff",
+                        "outline-variant": "#bec9c2",
+                        "background": "#fef9ef",
+                        "tertiary-container": "#956700",
+                        "on-tertiary-fixed-variant": "#604100",
+                        "surface-bright": "#fef9ef",
+                        "tertiary-fixed": "#ffdeac",
+                        "on-secondary-fixed-variant": "#8f100e",
+                        "primary-fixed-dim": "#89d6b7",
+                        "on-primary-fixed-variant": "#00513c",
+                        "deep-forest": "#24614D",
+                        "surface": "#fef9ef",
+                        "secondary-fixed": "#ffdad5",
+                        "surface-container-highest": "#e7e2d8",
+                        "on-primary-fixed": "#002116",
+                        "senda-navy": "#21395A",
+                        "on-tertiary-fixed": "#281900",
+                        "secondary-fixed-dim": "#ffb4aa",
+                        "on-background": "#1d1c16",
+                        "inverse-surface": "#32302a",
+                        "on-secondary-fixed": "#410001",
+                        "tertiary-fixed-dim": "#fcbb44",
+                        "wood-tan": "#CDA96E",
+                        "surface-container-high": "#ede8de",
+                        "on-surface": "#1d1c16",
+                        "tertiary": "#755000",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "margin-mobile": "20px",
+                        "margin-desktop": "40px",
+                        "base": "8px",
+                        "touch-target": "48px",
+                        "card-padding": "24px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Nunito Sans"],
+                        "headline-md": ["Nunito Sans"],
+                        "headline-lg": ["Nunito Sans"],
+                        "label-lg": ["Nunito Sans"],
+                        "headline-lg-mobile": ["Nunito Sans"],
+                        "body-lg": ["Nunito Sans"],
+                        "body-md": ["Nunito Sans"],
+                        "display-lg": ["Nunito Sans"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "800" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Nunito Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .custom-shadow { box-shadow: 0 4px 12px rgba(36, 31, 28, 0.08); }
+        .active-tap:active { transform: scale(0.96); transition: transform 0.1s ease-out; }
+        .scroll-hide::-webkit-scrollbar { display: none; }
+        .transition-height { transition: max-height 0.3s ease-in-out, opacity 0.2s ease; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col items-center">
+<!-- Header / Progress Bar -->
+<header class="w-full max-w-md bg-surface sticky top-0 z-50 pt-base px-margin-mobile">
+<div class="flex items-center justify-between h-touch-target mb-2">
+<button class="w-touch-target h-touch-target flex items-center justify-start text-on-surface-variant active-tap">
+<span class="material-symbols-outlined text-[24px]">close</span>
+</button>
+<div class="flex-1 px-4">
+<div class="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary-container w-1/2 transition-all duration-500 ease-out"></div>
+</div>
+</div>
+<div class="text-label-lg font-label-lg text-on-surface-variant">2/4</div>
+</div>
+</header>
+<main class="w-full max-w-md px-margin-mobile pb-32 flex flex-col gap-8 mt-4 overflow-y-auto scroll-hide">
+<!-- Mascot Section -->
+<section class="flex items-start gap-4">
+<div class="shrink-0 w-20 h-20 rounded-full border-4 border-surface-container overflow-hidden custom-shadow">
+<img alt="Bill Mascot" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrydTDxsHbBiNgGZAOtLIHldndfzT9sAOAprmZ0ES0Rzjs4LUGbttTd9ATVs6U25x5Tez7ynsih8rp1wjYaR19jHmmZooMFVsY-umZxip2m7R8MTjXkmyVOTeqxQeTmz86NxccVsRCt1L8gcTeV-PaRox-KTk6dQL7FEQ_yfnhsLLjoLnnZ3bFCWEcLUf8JNGW96wGDlOh83YkTbpM4Pzq0KVXg7FW0UMoY_6Upd2aHjY0F5A3cxldQaTYRVlH6-YqsA">
+</div>
+<div class="relative bg-surface-container-high p-4 rounded-r-lg rounded-bl-lg custom-shadow">
+<p class="text-body-md font-body-md text-on-surface leading-snug italic">
+                    "¿Cómo están tus dedos y tu base? Sin examen, solo para no pedirte de más ni de menos."
+                </p>
+<!-- Chat bubble tail -->
+<div class="absolute top-0 -left-2 w-4 h-4 bg-surface-container-high" style="clip-path: polygon(100% 0, 100% 100%, 0 0);"></div>
+</div>
+</section>
+<!-- Input Section 1: Regleta -->
+<section class="flex flex-col gap-4">
+<div class="flex flex-col gap-1">
+<h2 class="text-headline-md font-headline-md text-ink-text">Colgado en regleta 25mm</h2>
+<p class="text-label-lg font-label-lg text-on-surface-variant">Tiempo máximo en segundos</p>
+</div>
+<div class="flex items-end gap-3 h-16">
+<input class="flex-1 h-full bg-surface-container-lowest border-2 border-outline-variant rounded-lg px-4 text-headline-md font-headline-md focus:border-primary-container focus:ring-0 transition-colors placeholder:text-surface-dim" placeholder="00" type="number">
+<span class="text-headline-md font-headline-md text-on-surface-variant pb-2">seg</span>
+</div>
+<div class="flex flex-wrap gap-2 items-center">
+<button class="px-6 py-2 rounded-full border-2 border-outline-variant text-label-lg font-label-lg active-tap transition-colors" onclick="this.classList.toggle('bg-primary-container'); this.classList.toggle('text-on-primary-container');">
+                    No sé
+                </button>
+<button class="flex items-center gap-2 px-6 py-2 rounded-full border-2 border-primary-container text-primary-container text-label-lg font-label-lg active-tap">
+<span class="material-symbols-outlined text-[18px]">timer</span>
+                    Guíame 2 min y lo medimos
+                </button>
+</div>
+</section>
+<!-- Input Section 2: Dominadas -->
+<section class="flex flex-col gap-4">
+<div class="flex flex-col gap-1">
+<h2 class="text-headline-md font-headline-md text-ink-text">Dominadas máximas</h2>
+<p class="text-label-lg font-label-lg text-on-surface-variant">En una sola serie (pull-ups)</p>
+</div>
+<div class="flex items-end gap-3 h-16">
+<input class="flex-1 h-full bg-surface-container-lowest border-2 border-outline-variant rounded-lg px-4 text-headline-md font-headline-md focus:border-primary-container focus:ring-0 transition-colors placeholder:text-surface-dim" placeholder="0" type="number">
+<span class="text-headline-md font-headline-md text-on-surface-variant pb-2">reps</span>
+</div>
+<div>
+<button class="px-6 py-2 rounded-full border-2 border-outline-variant text-label-lg font-label-lg active-tap transition-colors" onclick="this.classList.toggle('bg-primary-container'); this.classList.toggle('text-on-primary-container');">
+                    No sé
+                </button>
+</div>
+</section>
+<!-- Input Section 3: Lesiones -->
+<section class="flex flex-col gap-4">
+<div class="flex flex-col gap-1">
+<h2 class="text-headline-md font-headline-md text-ink-text">¿Tienes alguna lesión activa?</h2>
+<p class="text-label-lg font-label-lg text-on-surface-variant">Para adaptar tus ejercicios</p>
+</div>
+<div class="flex bg-surface-container-low rounded-lg p-1 w-full max-w-xs border border-outline-variant">
+<button class="flex-1 py-2 rounded-lg text-label-lg font-label-lg transition-all bg-primary-container text-on-primary-container" id="toggleNo" onclick="toggleLesion(false)">
+                    No
+                </button>
+<button class="flex-1 py-2 rounded-lg text-label-lg font-label-lg transition-all text-on-surface-variant" id="toggleSi" onclick="toggleLesion(true)">
+                    Sí
+                </button>
+</div>
+<div class="hidden flex-col gap-2 transition-height opacity-0 overflow-hidden" id="lesionField">
+<label class="text-label-lg font-label-lg text-on-surface-variant" for="zona">¿En qué zona?</label>
+<input class="w-full bg-surface-container-lowest border-2 border-outline-variant rounded-lg px-4 h-14 text-body-md font-body-md focus:border-primary-container focus:ring-0 transition-colors" id="zona" placeholder="ej. hombro derecho" type="text">
+</div>
+</section>
+</main>
+<!-- Footer Action -->
+<footer class="fixed bottom-0 left-0 w-full bg-gradient-to-t from-surface via-surface to-transparent pt-8 pb-margin-mobile px-margin-mobile z-50 flex justify-center">
+<button class="w-full max-w-md h-16 bg-primary-container text-on-primary-container rounded-full text-headline-md font-headline-md active-tap custom-shadow flex items-center justify-center">
+            Siguiente
+        </button>
+</footer>
+<script>
+        function toggleLesion(hasLesion) {
+            const field = document.getElementById('lesionField');
+            const toggleSi = document.getElementById('toggleSi');
+            const toggleNo = document.getElementById('toggleNo');
+
+            if (hasLesion) {
+                field.classList.remove('hidden');
+                setTimeout(() => {
+                    field.classList.remove('opacity-0');
+                    field.style.maxHeight = '100px';
+                }, 10);
+                toggleSi.classList.add('bg-primary-container', 'text-on-primary-container');
+                toggleSi.classList.remove('text-on-surface-variant');
+                toggleNo.classList.remove('bg-primary-container', 'text-on-primary-container');
+                toggleNo.classList.add('text-on-surface-variant');
+            } else {
+                field.classList.add('opacity-0');
+                field.style.maxHeight = '0px';
+                setTimeout(() => field.classList.add('hidden'), 300);
+                toggleNo.classList.add('bg-primary-container', 'text-on-primary-container');
+                toggleNo.classList.remove('text-on-surface-variant');
+                toggleSi.classList.remove('bg-primary-container', 'text-on-primary-container');
+                toggleSi.classList.add('text-on-surface-variant');
+            }
+        }
+
+        // Micro-interaction for inputs
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+    </script>
+</body></html>

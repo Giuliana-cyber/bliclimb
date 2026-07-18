@@ -20,10 +20,19 @@ const config: Config = {
           'mustard-soft': '#f4d06f',
           coral: '#ff7a59',
           ink: '#f7f7fb'
-        }
+        },
+        // Tokens del sistema Stitch para las pantallas de Fase 4.
+        // Traducidos literal del <script id="tailwind-config"> de cada
+        // code.html de docs/design/. NO renombrar sin actualizar Stitch.
+        'bil-cream': '#F2EDE3',
+        'bil-green': '#2F7D63',
+        'bil-red': '#D6463A',
+        'bil-ink': '#241F1C'
       },
       fontFamily: {
-        sans: ['var(--font-dm-sans)', 'system-ui', 'sans-serif']
+        sans: ['var(--font-dm-sans)', 'system-ui', 'sans-serif'],
+        // Nunito Sans para las pantallas de Stitch (Fase 4 UI).
+        nunito: ['var(--font-nunito-sans)', 'Nunito Sans', 'system-ui', 'sans-serif']
       },
       backgroundImage: {
         'gradient-glow':

@@ -1,0 +1,240 @@
+<!DOCTYPE html><html class="light" lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BilClimb Onboarding - Paso 4</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-high": "#ede8de",
+                    "outline": "#6f7974",
+                    "on-surface-variant": "#3f4944",
+                    "on-tertiary-fixed-variant": "#604100",
+                    "secondary-container": "#fd6253",
+                    "on-secondary-container": "#650003",
+                    "primary-fixed": "#a5f2d2",
+                    "surface-container": "#f2ede3",
+                    "secondary-fixed-dim": "#ffb4aa",
+                    "on-tertiary-fixed": "#281900",
+                    "on-primary": "#ffffff",
+                    "primary": "#0a644b",
+                    "inverse-surface": "#32302a",
+                    "outline-variant": "#bec9c2",
+                    "on-primary-container": "#d2ffea",
+                    "tertiary-fixed-dim": "#fcbb44",
+                    "surface-container-low": "#f8f3e9",
+                    "error-container": "#ffdad6",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-fixed-variant": "#00513c",
+                    "surface-dim": "#dedad0",
+                    "surface-container-highest": "#e7e2d8",
+                    "tertiary-container": "#956700",
+                    "on-secondary-fixed": "#410001",
+                    "senda-navy": "#21395A",
+                    "primary-fixed-dim": "#89d6b7",
+                    "on-error-container": "#93000a",
+                    "secondary": "#b12b23",
+                    "primary-container": "#2f7d63",
+                    "on-secondary-fixed-variant": "#8f100e",
+                    "on-background": "#1d1c16",
+                    "on-primary-fixed": "#002116",
+                    "deep-forest": "#24614D",
+                    "tertiary": "#755000",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-on-surface": "#f5f0e6",
+                    "surface": "#fef9ef",
+                    "on-surface": "#1d1c16",
+                    "on-secondary": "#ffffff",
+                    "inverse-primary": "#89d6b7",
+                    "surface-bright": "#fef9ef",
+                    "on-tertiary-container": "#fff3e5",
+                    "tertiary-fixed": "#ffdeac",
+                    "wood-tan": "#CDA96E",
+                    "on-error": "#ffffff",
+                    "surface-variant": "#e7e2d8",
+                    "surface-tint": "#176b52",
+                    "background": "#fef9ef",
+                    "ink-text": "#241F1C",
+                    "secondary-fixed": "#ffdad5",
+                    "error": "#ba1a1a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "40px",
+                    "gutter": "16px",
+                    "card-padding": "24px",
+                    "base": "8px",
+                    "margin-mobile": "20px",
+                    "touch-target": "48px"
+            },
+            "fontFamily": {
+                    "label-md": ["Nunito Sans"],
+                    "body-md": ["Nunito Sans"],
+                    "label-lg": ["Nunito Sans"],
+                    "headline-lg-mobile": ["Nunito Sans"],
+                    "headline-lg": ["Nunito Sans"],
+                    "body-lg": ["Nunito Sans"],
+                    "headline-md": ["Nunito Sans"],
+                    "display-lg": ["Nunito Sans"]
+            },
+            "fontSize": {
+                    "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "800"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 48;
+        }
+        .chip-selected {
+            background-color: #2f7d63 !important;
+            color: #d2ffea !important;
+            border-color: #2f7d63 !important;
+        }
+        .custom-shadow {
+            box-shadow: 0 4px 12px rgba(36, 31, 28, 0.08);
+        }
+        /* Bill's chat bubble tail */
+        .bubble-tail::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: -8px;
+            width: 16px;
+            height: 16px;
+            background-color: inherit;
+            clip-path: polygon(100% 0, 0 100%, 100% 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen font-body-md flex flex-col">
+<!-- Header: Onboarding TopAppBar -->
+<header class="w-full top-0 sticky z-50 bg-surface px-margin-mobile h-touch-target flex items-center justify-between">
+<button class="text-outline hover:bg-surface-container-low transition-colors p-2 rounded-full active:scale-90 transition-transform">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<div class="flex flex-col items-center flex-1 mx-4">
+<span class="font-label-lg text-label-lg text-primary uppercase tracking-widest">Paso 4 de 4</span>
+<div class="w-full max-w-[200px] h-1.5 bg-surface-container-highest rounded-full mt-1 overflow-hidden">
+<div class="h-full bg-primary-container w-full rounded-full transition-all duration-700 ease-out"></div>
+</div>
+</div>
+<button class="text-outline hover:bg-surface-container-low transition-colors p-2 rounded-full active:scale-90 transition-transform">
+<span class="material-symbols-outlined">close</span>
+</button>
+</header>
+<main class="flex-1 w-full max-w-md mx-auto px-margin-mobile py-8 flex flex-col gap-8">
+<!-- Coach Section -->
+<section class="flex flex-col items-start gap-4">
+<div class="flex items-end gap-3">
+<div class="relative w-20 h-20 rounded-full border-4 border-surface-container-high overflow-hidden custom-shadow">
+<img class="w-full h-full object-cover" data-alt="A professional digital illustration in a warm, sticker-like style of Coach Bill, a friendly male climber with short dark hair and slight stubble. He is wearing a bright green climbing helmet with a yellow logo and a vibrant red athletic hoodie. The style features bold ink-style outlines and a soft cream background, giving a tactile, approachable field journal feel." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRWhW5gwA8R7Mda9vT5IYtGoksKxUjrU5H1jaVlO-RKN6mS8Kcb2cpOdn3NcWg4aZe4Bfxy4KY1h7W4VHiyFudVAlGNy7ydAVXtkAt45nx7K2JrXeFBUJSHFdmRiX9uImRwVGovOaaPh17_sJzhTwrOnRja3_-dVzgL0BwYeck5G7wQnx-CcLG2qEllszJ7aygnkupCrmGF5HYW8SCv_TU3V46XkcLZTJVvASDV3BwXT538sy5oPR6">
+</div>
+<div class="relative bg-surface-container-highest text-on-surface-variant p-4 rounded-t-2xl rounded-br-2xl bubble-tail custom-shadow max-w-[240px]" style="transform: translateY(-2.94711px);">
+<p class="font-body-md text-body-md leading-relaxed">
+                        Última: tu equipo. Cuéntame qué tienes a la mano para ajustar tus ejercicios.
+                    </p>
+</div>
+</div>
+</section>
+<!-- Equipment Selection -->
+<section class="flex flex-col gap-6">
+<h2 class="font-headline-md text-headline-md text-ink-text">Tu equipo disponible</h2>
+<div class="flex flex-wrap gap-3" id="chip-container">
+<button class="px-5 py-3 rounded-full border-2 border-outline-variant text-on-surface-variant font-label-lg transition-all active:scale-95 flex items-center gap-2 hover:bg-surface-container-low" onclick="toggleChip(this)">
+<span class="material-symbols-outlined text-[18px]">fitness_center</span>
+                    Pesas
+                </button>
+<button class="px-5 py-3 rounded-full border-2 border-outline-variant text-on-surface-variant font-label-lg transition-all active:scale-95 flex items-center gap-2 hover:bg-surface-container-low" onclick="toggleChip(this)">
+<span class="material-symbols-outlined text-[18px]">rebase</span>
+                    Bandas
+                </button>
+<button class="px-5 py-3 rounded-full border-2 border-outline-variant text-on-surface-variant font-label-lg transition-all active:scale-95 flex items-center gap-2 hover:bg-surface-container-low" onclick="toggleChip(this)">
+<span class="material-symbols-outlined text-[18px]">horizontal_rule</span>
+                    Barra de dominadas
+                </button>
+<button class="px-5 py-3 rounded-full border-2 border-outline-variant text-on-surface-variant font-label-lg transition-all active:scale-95 flex items-center gap-2 hover:bg-surface-container-low" onclick="toggleChip(this)">
+<span class="material-symbols-outlined text-[18px]">grid_view</span>
+                    Campus
+                </button>
+<button class="px-5 py-3 rounded-full border-2 border-outline-variant text-on-surface-variant font-label-lg transition-all active:scale-95 flex items-center gap-2 hover:bg-surface-container-low" onclick="toggleChip(this)">
+<span class="material-symbols-outlined text-[18px]">legend_toggle</span>
+                    Hangboard
+                </button>
+<button class="px-5 py-3 rounded-full border-2 border-outline-variant text-on-surface-variant font-label-lg transition-all active:scale-95 flex items-center gap-2 hover:bg-surface-container-low" onclick="toggleChip(this)">
+<span class="material-symbols-outlined text-[18px]">all_inclusive</span>
+                    TRX
+                </button>
+</div>
+<!-- Optional Checkbox -->
+<label class="flex items-center gap-3 cursor-pointer group mt-2 select-none">
+<div class="relative flex items-center justify-center">
+<input class="peer appearance-none w-6 h-6 rounded border-2 border-outline-variant checked:bg-primary checked:border-primary transition-all" type="checkbox">
+<span class="material-symbols-outlined text-on-primary text-[18px] absolute opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none">check</span>
+</div>
+<span class="font-body-md text-on-surface-variant group-hover:text-on-surface transition-colors">Pronto tendré más equipo</span>
+</label>
+</section>
+<!-- Spacer for push to bottom if screen is tall -->
+<div class="flex-grow"></div>
+<!-- Footer Action -->
+<div class="pt-4 pb-8">
+<button class="w-full h-touch-target bg-primary-container text-on-primary-container rounded-full font-label-lg text-lg flex items-center justify-center gap-2 custom-shadow hover:brightness-110 active:scale-95 transition-all">
+                Finalizar perfil
+                <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+<p class="text-center text-outline font-label-md mt-4 px-4">
+                Podrás cambiar tu equipo disponible en cualquier momento desde tu perfil.
+            </p>
+</div>
+</main>
+<script>
+        function toggleChip(element) {
+            element.classList.toggle('chip-selected');
+            const icon = element.querySelector('.material-symbols-outlined');
+            if (element.classList.contains('chip-selected')) {
+                icon.style.fontVariationSettings = "'FILL' 1";
+            } else {
+                icon.style.fontVariationSettings = "'FILL' 0";
+            }
+        }
+
+        // Atmospheric micro-interaction: subtle floating for Bill's bubble
+        const bubble = document.querySelector('.bubble-tail');
+        if(bubble) {
+            let angle = 0;
+            function animate() {
+                angle += 0.05;
+                const yOffset = Math.sin(angle) * 3;
+                bubble.style.transform = `translateY(${yOffset}px)`;
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+    </script>
+</body></html>

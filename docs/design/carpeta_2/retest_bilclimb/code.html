@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>BilClimb - Retest de Fuerza</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary": "#b12b23",
+                      "outline-variant": "#bec9c2",
+                      "on-secondary-fixed": "#410001",
+                      "on-tertiary": "#ffffff",
+                      "on-surface-variant": "#3f4944",
+                      "tertiary": "#755000",
+                      "surface": "#fef9ef",
+                      "on-secondary": "#ffffff",
+                      "on-tertiary-fixed-variant": "#604100",
+                      "surface-container-high": "#ede8de",
+                      "background": "#fef9ef",
+                      "surface-container": "#f2ede3",
+                      "primary-fixed-dim": "#89d6b7",
+                      "inverse-primary": "#89d6b7",
+                      "primary-container": "#2f7d63",
+                      "on-tertiary-container": "#fff3e5",
+                      "error": "#ba1a1a",
+                      "secondary-fixed": "#ffdad5",
+                      "error-container": "#ffdad6",
+                      "surface-tint": "#176b52",
+                      "surface-dim": "#dedad0",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-container": "#d2ffea",
+                      "tertiary-container": "#956700",
+                      "on-primary-fixed-variant": "#00513c",
+                      "surface-variant": "#e7e2d8",
+                      "surface-bright": "#fef9ef",
+                      "on-error": "#ffffff",
+                      "on-surface": "#1d1c16",
+                      "surface-container-low": "#f8f3e9",
+                      "primary": "#0a644b",
+                      "on-primary-fixed": "#002116",
+                      "on-secondary-fixed-variant": "#8f100e",
+                      "on-error-container": "#93000a",
+                      "on-background": "#1d1c16",
+                      "inverse-surface": "#32302a",
+                      "surface-container-highest": "#e7e2d8",
+                      "on-secondary-container": "#650003",
+                      "on-primary": "#ffffff",
+                      "outline": "#6f7974",
+                      "tertiary-fixed-dim": "#fcbb44",
+                      "primary-fixed": "#a5f2d2",
+                      "secondary-fixed-dim": "#ffb4aa",
+                      "inverse-on-surface": "#f5f0e6",
+                      "secondary-container": "#fd6253",
+                      "on-tertiary-fixed": "#281900",
+                      "tertiary-fixed": "#ffdeac"
+              },
+              "borderRadius": {
+                      "DEFAULT": "1rem",
+                      "lg": "2rem",
+                      "xl": "3rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "headline": ["Nunito Sans"],
+                      "display": ["Nunito Sans"],
+                      "body": ["Nunito Sans"],
+                      "label": ["Nunito Sans"]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Nunito Sans', sans-serif;
+            background-color: #fef9ef;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .circular-progress {
+            background: conic-gradient(#F2B23C 100%, #e7e2d8 0);
+            mask: radial-gradient(farthest-side, transparent calc(100% - 12px), black 0);
+            -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 12px), black 0);
+        }
+        .celebration-shimmer {
+            background: linear-gradient(135deg, #F2B23C 0%, #ffdeac 50%, #F2B23C 100%);
+            background-size: 200% 200%;
+            animation: shimmer 3s infinite linear;
+        }
+        @keyframes shimmer {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 200% 200%; }
+        }
+        .active-nav-bg {
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+    </style>
+</head>
+<body class="text-on-surface min-h-screen flex flex-col pb-24">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-surface dark:bg-surface-dim border-b border-outline-variant flex justify-between items-center px-5 py-3 w-full">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary">
+<img alt="Bill Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjfu2eyxeJobN3kBeYdKhPpoPLRMD-6N8OGTYJew3gMPXlB0fNoJtmoV8jKArZel0bsUFPv8G0jeajw5J_LvqP2qfKjujl-DlmcWGpIZNL3if_1gWq23E6WQ7Z29pM1wRZyeaUwGzBk1vfqDERpi7pC0Hlab1cwxkwMIrqLYEq6QIspb-ICsR5KDJb1Jg69svjnT85yeX-4-LMX7naPrLejDCnCsMhqx6Cf-ZxIrvxB3FTxSwD3W26l5F-yqqeMkvspg"/>
+</div>
+<h1 class="text-headline-md font-headline font-extrabold text-primary">Retest de Fuerza</h1>
+</div>
+<button class="material-symbols-outlined text-primary hover:opacity-80 transition-opacity p-2">settings</button>
+</header>
+<main class="mt-20 px-5 flex-1 flex flex-col gap-6">
+<!-- Warmup Status -->
+<section class="bg-surface-container-low rounded-lg p-4 flex items-center justify-between border border-outline-variant/30 shadow-sm">
+<div class="flex items-center gap-3">
+<div class="bg-primary/10 text-primary rounded-full p-1">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<span class="text-label-lg font-bold text-on-surface">Calentamiento listo</span>
+</div>
+<span class="text-label-md text-on-surface-variant font-semibold">15 min completados</span>
+</section>
+<!-- Main Measurement (The Celebration Circle) -->
+<section class="relative py-8 flex flex-col items-center">
+<div class="relative w-64 h-64 flex items-center justify-center">
+<!-- Outer Progress Track -->
+<div class="absolute inset-0 circular-progress rounded-full opacity-30"></div>
+<!-- Progress Indicator -->
+<div class="absolute inset-0 circular-progress rounded-full shadow-[0_0_20px_rgba(242,178,60,0.4)]"></div>
+<!-- Inner Content -->
+<div class="flex flex-col items-center text-center">
+<span class="text-label-lg font-bold tracking-widest text-on-surface-variant mb-1 uppercase">COLGADO EN 25MM</span>
+<span class="text-[72px] font-extrabold text-on-surface leading-none tracking-tighter">11s</span>
+<div class="mt-2 px-4 py-1 bg-tertiary-container text-on-tertiary-container rounded-full flex items-center gap-2 animate-bounce">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">stars</span>
+<span class="text-label-md font-bold uppercase">¡NUEVO RÉCORD!</span>
+</div>
+</div>
+</div>
+<!-- Particle decoration (CSS only) -->
+<div class="absolute inset-0 pointer-events-none overflow-hidden">
+<div class="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-tertiary animate-ping"></div>
+<div class="absolute bottom-1/3 right-1/4 w-3 h-3 rounded-full bg-secondary animate-ping delay-700"></div>
+</div>
+</section>
+<!-- Comparison Stats Bento Grid -->
+<section class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container rounded-lg p-5 flex flex-col justify-between h-32">
+<span class="text-label-md font-semibold text-on-surface-variant">Inicio</span>
+<div class="flex flex-col">
+<span class="text-headline-lg font-bold">5s</span>
+<span class="text-label-sm text-on-surface-variant/70">Hace 4 semanas</span>
+</div>
+</div>
+<div class="bg-secondary-container text-on-secondary-container rounded-lg p-5 flex flex-col justify-between h-32 shadow-md ring-2 ring-secondary/20">
+<span class="text-label-md font-semibold">Resultado Actual</span>
+<div class="flex flex-col">
+<span class="text-headline-lg font-bold">11s</span>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span class="text-label-sm font-bold">+6s ganados</span>
+</div>
+</div>
+</div>
+<div class="col-span-2 bg-tertiary-container/20 border border-tertiary/20 rounded-lg p-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="bg-tertiary text-on-tertiary rounded-full w-10 h-10 flex items-center justify-center">
+<span class="material-symbols-outlined">rocket_launch</span>
+</div>
+<span class="text-body-md font-bold text-tertiary">Progreso general</span>
+</div>
+<span class="text-headline-md font-extrabold text-tertiary">+120% <span class="text-label-md">Mejora total</span></span>
+</div>
+</section>
+<!-- Coach Message Card -->
+<section class="bg-surface-container-high rounded-xl p-6 shadow-sm border border-outline-variant/30 flex gap-4 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-8 -mt-8"></div>
+<div class="shrink-0">
+<img alt="Bill Avatar" class="w-14 h-14 rounded-full border-2 border-white shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXbYX6Ign5ZMvzD8P5gvn18gUt1SvmKnbo8Yk2anQwZWnxTn_uS2bSoEW3K97YFp5GfPHrOvp5dYFg0PKJAySKvXEYXYRmTeoqeJDyMs8z6XdJOk53W6ResfuAmx0Fok3oF6-s-TQhoTKHlH0sruVP-SE-RgD5CdaGCfoqu8uQsWdxYN8zqMSb3dhpX7MfER5kZM1hUoY3MNovcGxiongSGjaWKSt7dhLlK9IlldAHm7YJdmqh9ODE46JEAc_wewY_0g"/>
+</div>
+<div class="flex flex-col gap-1 z-10">
+<span class="text-label-md font-bold text-primary">Bill dice:</span>
+<p class="text-body-md font-medium italic text-on-surface leading-relaxed">
+                    "¡Mira cuánto camino hiciste! Empezaste en 5s, hoy 11s. Esto es constancia pura."
+                </p>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation & Sticky Action -->
+<div class="fixed bottom-0 left-0 right-0 z-50">
+<!-- Main CTA -->
+<div class="px-5 pb-4">
+<button class="w-full h-[52px] bg-secondary text-on-secondary rounded-full font-bold text-body-lg shadow-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">save</span>
+                Guardar resultado
+            </button>
+</div>
+<!-- BottomNavBar -->
+<nav class="bg-surface-container dark:bg-surface-container-high shadow-lg rounded-t-lg flex justify-around items-center px-4 py-2 pb-safe border-t border-outline-variant/20">
+<!-- Hoy -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-inverse-surface transition-colors" href="#">
+<span class="material-symbols-outlined">today</span>
+<span class="text-label-md font-label font-semibold">Hoy</span>
+</a>
+<!-- Plan -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-inverse-surface transition-colors" href="#">
+<span class="material-symbols-outlined">terrain</span>
+<span class="text-label-md font-label font-semibold">Plan</span>
+</a>
+<!-- Progreso (ACTIVE) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-full px-4 py-1 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">insights</span>
+<span class="text-label-md font-label font-semibold">Progreso</span>
+</a>
+<!-- Chat -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-inverse-surface transition-colors" href="#">
+<span class="material-symbols-outlined">forum</span>
+<span class="text-label-md font-label font-semibold">Chat</span>
+</a>
+</nav>
+</div>
+<script>
+        // Simple interaction for the button and cards
+        document.querySelector('button').addEventListener('click', function() {
+            this.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Guardando...';
+            setTimeout(() => {
+                this.innerHTML = '<span class="material-symbols-outlined">check</span> ¡Guardado!';
+                this.classList.replace('bg-secondary', 'bg-primary');
+            }, 1200);
+        });
+
+        // Add a subtle entrance animation for the cards
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                    entry.target.style.transition = `all 0.6s cubic-bezier(0.23, 1, 0.32, 1) ${index * 0.1}s`;
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(20px)';
+            observer.observe(section);
+        });
+    </script>
+</body></html>

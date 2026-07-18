@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Onboarding - Grado Actual | BilClimb</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800;6..12,900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed-dim": "#ffb4aa",
+                        "surface-container-high": "#ede8de",
+                        "on-secondary-fixed": "#410001",
+                        "secondary-container": "#fd6253",
+                        "primary-fixed-dim": "#89d6b7",
+                        "on-surface-variant": "#3f4944",
+                        "surface-dim": "#dedad0",
+                        "on-tertiary-container": "#fff3e5",
+                        "primary-fixed": "#a5f2d2",
+                        "primary-container": "#2f7d63",
+                        "surface-tint": "#176b52",
+                        "on-tertiary-fixed": "#281900",
+                        "on-error-container": "#93000a",
+                        "surface-container-low": "#f8f3e9",
+                        "tertiary-fixed-dim": "#fcbb44",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#002116",
+                        "tertiary-container": "#956700",
+                        "inverse-primary": "#89d6b7",
+                        "surface-container-highest": "#e7e2d8",
+                        "on-tertiary-fixed-variant": "#604100",
+                        "tertiary-fixed": "#ffdeac",
+                        "on-background": "#1d1c16",
+                        "secondary-fixed": "#ffdad5",
+                        "on-secondary-container": "#650003",
+                        "on-error": "#ffffff",
+                        "background": "#fef9ef",
+                        "primary": "#0a644b",
+                        "outline": "#6f7974",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#f5f0e6",
+                        "on-primary-fixed-variant": "#00513c",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#32302a",
+                        "on-surface": "#1d1c16",
+                        "surface-variant": "#e7e2d8",
+                        "outline-variant": "#bec9c2",
+                        "on-secondary": "#ffffff",
+                        "surface-container": "#f2ede3",
+                        "secondary": "#b12b23",
+                        "error-container": "#ffdad6",
+                        "surface": "#fef9ef",
+                        "surface-bright": "#fef9ef",
+                        "on-primary-container": "#d2ffea",
+                        "tertiary": "#755000",
+                        "on-secondary-fixed-variant": "#8f100e",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "margin-mobile": "20px",
+                        "margin-desktop": "40px",
+                        "gutter": "16px",
+                        "card-padding": "24px",
+                        "touch-target": "48px",
+                        "button-height": "52px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Nunito Sans", "sans-serif"],
+                        "display": ["Nunito Sans", "sans-serif"],
+                        "body": ["Nunito Sans", "sans-serif"],
+                        "label": ["Nunito Sans", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Nunito Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .filled-icon {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Custom scrollbar for horizontal chip lists */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+<!-- Header (Linear/Transactional - Modified TopAppBar) -->
+<header class="w-full px-margin-mobile h-touch-target flex items-center justify-between bg-background z-10 sticky top-0">
+<button aria-label="Atrás" class="w-12 h-12 flex items-center justify-start text-on-surface-variant hover:text-primary transition-colors rounded-full">
+<span class="material-symbols-outlined text-2xl">arrow_back</span>
+</button>
+<!-- Progress Bar -->
+<div class="flex-1 max-w-[150px] mx-4 h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-300" style="width: 40%"></div>
+</div>
+<button aria-label="Cerrar" class="w-12 h-12 flex items-center justify-end text-on-surface-variant hover:text-primary transition-colors rounded-full">
+<span class="material-symbols-outlined text-2xl">close</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 px-margin-mobile py-6 flex flex-col gap-8 max-w-md mx-auto w-full pb-[100px]">
+<!-- Coach Bubble -->
+<div class="flex items-start gap-4">
+<div class="w-14 h-14 rounded-full overflow-hidden shrink-0 border-2 border-surface-container-highest bg-surface-container-low shadow-sm">
+<img alt="Coach Bill" class="w-full h-full object-cover" data-alt="Flat vector style illustration of Bill, a male climber mascot with a green helmet, golden circular badge, short beard, and red hoodie. Solid colors, bold dark outlines, warm and friendly expression, centered in a circle on a cream background. Mexican climbing coach persona." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdLXPMQwG1IAmCSqaE_2Z0eWRS9HfLapbs6tdKxf6QY278q2Q1H8N5p4nRNR6TBHdx7x_0O6hKkseEWl9Pb6Nu06z-wVgMHOMuHDhQ26XUae9FC6ehl_J8AdCeQDNLojVlZX7dSoSD2ub2hSIasZoN52cii_gs4wqBBqAbB6eN7xe0z8uEv5cYJrQMR370T3nCrMgI77mZWR2-1q-x2kGOtDQFEWc1kbzZf0PMkvLcXk7cl8lcBlC811EOmjvjfWOWdQ"/>
+</div>
+<div class="bg-surface-container-low p-4 rounded-2xl rounded-tl-none shadow-sm relative border border-surface-container">
+<p class="text-body-md text-on-surface">
+                    Cuéntame de tu escalada — la de ahora, no la de tus mejores tiempos.
+                </p>
+<!-- Little triangle tail -->
+<div class="absolute -left-2 top-0 w-4 h-4 bg-surface-container-low border-l border-t border-surface-container transform -skew-x-12 origin-top-right"></div>
+</div>
+</div>
+<!-- Title -->
+<div>
+<h1 class="text-headline-lg-mobile font-headline font-bold text-primary mb-2 leading-tight">
+                ¿Dónde estás parado hoy?
+            </h1>
+<p class="text-body-md text-on-surface-variant">
+                Selecciona la disciplina que más practicas actualmente.
+            </p>
+</div>
+<!-- Form Elements -->
+<div class="flex flex-col gap-8">
+<!-- Boulder/Ruta Toggle -->
+<div class="bg-surface-container p-1 rounded-full flex w-full relative shadow-inner">
+<div class="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] bg-primary rounded-full shadow-sm transition-transform duration-300 ease-in-out" id="toggle-bg"></div>
+<button class="flex-1 relative z-10 py-3 text-label-lg font-bold rounded-full transition-colors duration-300 text-on-primary" id="btn-boulder" type="button">
+                    Boulder
+                </button>
+<button class="flex-1 relative z-10 py-3 text-label-lg font-bold rounded-full transition-colors duration-300 text-on-surface-variant" id="btn-ruta" type="button">
+                    Ruta
+                </button>
+</div>
+<!-- Grade Selection (Boulder) -->
+<div class="space-y-4" id="section-boulder">
+<h3 class="text-label-lg font-bold text-on-surface uppercase tracking-wider text-sm">Tu nivel habitual</h3>
+<div class="flex flex-wrap gap-3">
+<button class="px-6 py-3 rounded-full border-2 border-outline-variant text-on-surface-variant font-semibold hover:border-primary hover:text-primary transition-colors focus:bg-primary-container focus:text-on-primary-container focus:border-primary-container" type="button">
+                        V0 – V3
+                    </button>
+<button class="px-6 py-3 rounded-full border-2 border-primary bg-primary-container text-on-primary-container font-semibold transition-colors" type="button">
+                        V4 – V6
+                    </button>
+<button class="px-6 py-3 rounded-full border-2 border-outline-variant text-on-surface-variant font-semibold hover:border-primary hover:text-primary transition-colors focus:bg-primary-container focus:text-on-primary-container focus:border-primary-container" type="button">
+                        V7+
+                    </button>
+<button class="px-6 py-3 rounded-full border-2 border-outline-variant text-on-surface-variant font-semibold hover:border-primary hover:text-primary transition-colors focus:bg-primary-container focus:text-on-primary-container focus:border-primary-container" type="button">
+                        No sé
+                    </button>
+</div>
+</div>
+<!-- Grade Selection (Ruta) - Hidden initially -->
+<div class="space-y-4 hidden" id="section-ruta">
+<h3 class="text-label-lg font-bold text-on-surface uppercase tracking-wider text-sm">Tu nivel habitual</h3>
+<div class="flex flex-wrap gap-3">
+<button class="px-6 py-3 rounded-full border-2 border-outline-variant text-on-surface-variant font-semibold hover:border-primary hover:text-primary transition-colors" type="button">
+                        5.9 o menos
+                    </button>
+<button class="px-6 py-3 rounded-full border-2 border-outline-variant text-on-surface-variant font-semibold hover:border-primary hover:text-primary transition-colors" type="button">
+                        5.10
+                    </button>
+<button class="px-6 py-3 rounded-full border-2 border-outline-variant text-on-surface-variant font-semibold hover:border-primary hover:text-primary transition-colors" type="button">
+                        5.11
+                    </button>
+<button class="px-6 py-3 rounded-full border-2 border-outline-variant text-on-surface-variant font-semibold hover:border-primary hover:text-primary transition-colors" type="button">
+                        5.12+
+                    </button>
+<button class="px-6 py-3 rounded-full border-2 border-outline-variant text-on-surface-variant font-semibold hover:border-primary hover:text-primary transition-colors" type="button">
+                        No sé
+                    </button>
+</div>
+</div>
+<!-- Current Status -->
+<div class="space-y-4">
+<h3 class="text-label-lg font-bold text-on-surface uppercase tracking-wider text-sm">Estado actual</h3>
+<div class="flex flex-wrap gap-3">
+<button class="px-5 py-2.5 rounded-xl border border-outline-variant bg-surface-container-low text-on-surface font-medium hover:bg-surface-container hover:border-outline transition-colors focus:bg-secondary-container focus:text-on-secondary-container focus:border-secondary flex items-center gap-2" type="button">
+<span class="material-symbols-outlined text-[20px]">fitness_center</span>
+                        Activo
+                    </button>
+<button class="px-5 py-2.5 rounded-xl border border-secondary bg-secondary-container text-on-secondary-container font-medium transition-colors flex items-center gap-2" type="button">
+<span class="material-symbols-outlined text-[20px]">pause_circle</span>
+                        Volviendo de parón
+                    </button>
+<button class="px-5 py-2.5 rounded-xl border border-outline-variant bg-surface-container-low text-on-surface font-medium hover:bg-surface-container hover:border-outline transition-colors focus:bg-secondary-container focus:text-on-secondary-container focus:border-secondary flex items-center gap-2" type="button">
+<span class="material-symbols-outlined text-[20px]">healing</span>
+                        Volviendo de lesión
+                    </button>
+<button class="px-5 py-2.5 rounded-xl border border-outline-variant bg-surface-container-low text-on-surface font-medium hover:bg-surface-container hover:border-outline transition-colors focus:bg-secondary-container focus:text-on-secondary-container focus:border-secondary flex items-center gap-2" type="button">
+<span class="material-symbols-outlined text-[20px]">cruelty_free</span>
+                        Empezando
+                    </button>
+</div>
+</div>
+<!-- Historical Peak (Optional Input) -->
+<div class="space-y-2">
+<label class="block text-label-md font-bold text-on-surface-variant" for="techo-historico">Techo histórico (Opcional)</label>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline">landscape</span>
+</div>
+<input class="w-full pl-12 pr-4 py-4 bg-surface-container-lowest border border-outline-variant rounded-2xl text-on-surface placeholder-on-surface-variant/50 focus:ring-2 focus:ring-primary focus:border-primary transition-shadow font-body" id="techo-historico" name="techo-historico" placeholder="Mi mejor grado fue..." type="text"/>
+</div>
+<p class="text-xs text-on-surface-variant mt-1 pl-1">Solo si sientes que es relevante para tu plan.</p>
+</div>
+</div>
+</main>
+<!-- Fixed Bottom Action (No navigation shell for transactional screens) -->
+<div class="fixed bottom-0 left-0 w-full bg-background px-margin-mobile py-4 border-t border-surface-variant z-50">
+<div class="max-w-md mx-auto">
+<button class="w-full h-button-height bg-[#D6463A] hover:bg-[#b13a30] text-on-secondary font-bold text-label-lg rounded-full flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
+                Siguiente
+                <span class="material-symbols-outlined text-[20px] font-bold">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Minimal JS for Toggle Interaction -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnBoulder = document.getElementById('btn-boulder');
+            const btnRuta = document.getElementById('btn-ruta');
+            const toggleBg = document.getElementById('toggle-bg');
+            const secBoulder = document.getElementById('section-boulder');
+            const secRuta = document.getElementById('section-ruta');
+
+            btnBoulder.addEventListener('click', () => {
+                toggleBg.style.transform = 'translateX(0)';
+                btnBoulder.classList.add('text-on-primary');
+                btnBoulder.classList.remove('text-on-surface-variant');
+                btnRuta.classList.remove('text-on-primary');
+                btnRuta.classList.add('text-on-surface-variant');
+                
+                secBoulder.classList.remove('hidden');
+                secRuta.classList.add('hidden');
+            });
+
+            btnRuta.addEventListener('click', () => {
+                toggleBg.style.transform = 'translateX(100%)';
+                btnRuta.classList.add('text-on-primary');
+                btnRuta.classList.remove('text-on-surface-variant');
+                btnBoulder.classList.remove('text-on-primary');
+                btnBoulder.classList.add('text-on-surface-variant');
+                
+                secRuta.classList.remove('hidden');
+                secBoulder.classList.add('hidden');
+            });
+            
+            // Simple generic chip selection logic for visual feedback
+            const chipGroups = document.querySelectorAll('.flex-wrap');
+            chipGroups.forEach(group => {
+                const buttons = group.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        // Deselect others in group
+                        buttons.forEach(b => {
+                            if(b.classList.contains('border-primary') && b.parentElement.id.includes('section')) {
+                                b.classList.remove('border-primary', 'bg-primary-container', 'text-on-primary-container');
+                                b.classList.add('border-outline-variant', 'text-on-surface-variant');
+                            }
+                            if(b.classList.contains('border-secondary')) {
+                                b.classList.remove('border-secondary', 'bg-secondary-container', 'text-on-secondary-container');
+                                b.classList.add('border-outline-variant', 'bg-surface-container-low', 'text-on-surface');
+                            }
+                        });
+                        
+                        // Select current
+                        if (this.closest('#section-boulder') || this.closest('#section-ruta')) {
+                            this.classList.remove('border-outline-variant', 'text-on-surface-variant');
+                            this.classList.add('border-2', 'border-primary', 'bg-primary-container', 'text-on-primary-container');
+                        } else {
+                            this.classList.remove('border-outline-variant', 'bg-surface-container-low', 'text-on-surface');
+                            this.classList.add('border-secondary', 'bg-secondary-container', 'text-on-secondary-container');
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body></html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>BilClimb - ¡Sesión Terminada!</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#fef9ef",
+                        "on-tertiary-fixed": "#281900",
+                        "on-secondary-fixed-variant": "#8f100e",
+                        "tertiary-fixed-dim": "#fcbb44",
+                        "surface-dim": "#dedad0",
+                        "primary-container": "#2f7d63",
+                        "inverse-surface": "#32302a",
+                        "on-secondary-fixed": "#410001",
+                        "surface-container-highest": "#e7e2d8",
+                        "error": "#ba1a1a",
+                        "on-error": "#ffffff",
+                        "secondary": "#b12b23",
+                        "outline": "#6f7974",
+                        "surface-container": "#f2ede3",
+                        "on-background": "#1d1c16",
+                        "inverse-on-surface": "#f5f0e6",
+                        "background": "#fef9ef",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#fd6253",
+                        "surface-variant": "#e7e2d8",
+                        "on-secondary-container": "#650003",
+                        "surface-container-high": "#ede8de",
+                        "on-surface": "#1d1c16",
+                        "secondary-fixed-dim": "#ffb4aa",
+                        "secondary-fixed": "#ffdad5",
+                        "primary": "#0a644b",
+                        "on-tertiary-fixed-variant": "#604100",
+                        "on-primary-fixed-variant": "#00513c",
+                        "on-primary-container": "#d2ffea",
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#bec9c2",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#f8f3e9",
+                        "on-surface-variant": "#3f4944",
+                        "error-container": "#ffdad6",
+                        "primary-fixed": "#a5f2d2",
+                        "on-tertiary-container": "#fff3e5",
+                        "tertiary": "#755000",
+                        "primary-fixed-dim": "#89d6b7",
+                        "on-primary-fixed": "#002116",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#89d6b7",
+                        "tertiary-container": "#956700",
+                        "tertiary-fixed": "#ffdeac",
+                        "surface-tint": "#176b52",
+                        "surface": "#fef9ef",
+                        "on-primary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Nunito Sans", "sans-serif"],
+                        "display": ["Nunito Sans", "sans-serif"],
+                        "body": ["Nunito Sans", "sans-serif"],
+                        "label": ["Nunito Sans", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Nunito Sans', sans-serif;
+            background-color: #fef9ef;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .achievement-glow {
+            box-shadow: 0 0 40px rgba(242, 178, 60, 0.2);
+        }
+        .path-dot::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            width: 100%;
+            height: 2px;
+            background: #bec9c2;
+            z-index: -1;
+        }
+        .path-dot:last-child::after {
+            display: none;
+        }
+        .path-dot-active::after {
+            background: #0a644b;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface-bright dark:bg-surface-dim h-14 flex items-center justify-between px-5">
+<div class="flex items-center gap-3 active:scale-95 transition-transform">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img alt="Bill Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjEo5WuTbf6lOqEMGHv2d-HHs7ZWEroak4cTw6LVgf0sFVmtCKjB30eYMv7OqtwGeeEZGIAtPvrOwg0z1EQlTRy0iv1txfK9J6LAPdyf7Ns2gREJmLinmSA4A_siQArXX9_UQ9zEaqxN3dSe6-14vdN6S4XmP6tcZBhBhsDA5PRSLiUv9K8MQGYJ4vr5KOqHJHUCCFhtSOHNIeCqRnL2YtSNnN1jxuvCkQAjaCyYmGe2PaHi1gjcoQRdjodrzvSskh8g"/>
+</div>
+</div>
+<h1 class="font-headline text-headline-md font-bold text-primary dark:text-primary-fixed">¡Sesión Terminada!</h1>
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed p-2 hover:bg-surface-container transition-colors rounded-full active:scale-95">
+            settings
+        </button>
+</header>
+<!-- Content Canvas -->
+<main class="flex-1 pt-20 pb-32 px-5 max-w-md mx-auto w-full space-y-8">
+<!-- Hero Section: Coach Speech -->
+<section class="flex gap-4 items-start animate-fade-in-up">
+<div class="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden">
+<img alt="Bill Coach" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCU6A4unfgeNBKW84chZtt4EHzedQd9cQKi1ZbtX_m_VMD2D6WPZmnQ9WLzq4a3oZBqRLNluDbb4xYhyUcyjDHFjOygLHAH3NjMYU5NIy-PJI68MfI1T8BuxQBt3BrGYzInlRZwWBZ1kZyHgv5Wsi2cxj-pRCr95Nao2SXpdmOif1KaeJ6jMqqjFMiiOFRRHGb1MYMpaXFJvFbsnR1P7P4xdF9lEdg-kncQ8xx2o5pQ986DZYTcYJmSDJew-yHQBlHxjQ"/>
+</div>
+<div class="relative bg-primary-container text-on-primary-container p-5 rounded-lg rounded-tl-none shadow-sm">
+<p class="text-body-lg font-semibold leading-snug">
+                    "Tres ejercicios, cero dolor de dedos. Eso es exactamente cómo se vuelve fuerte."
+                </p>
+<div class="absolute -left-2 top-0 w-0 h-0 border-t-[12px] border-t-primary-container border-l-[12px] border-l-transparent"></div>
+</div>
+</section>
+<!-- Achievement Section -->
+<section class="bg-surface-container-lowest rounded-lg p-6 flex flex-col items-center text-center achievement-glow border border-surface-container-high">
+<div class="w-24 h-24 bg-tertiary-container rounded-full flex items-center justify-center mb-4 relative overflow-hidden">
+<span class="material-symbols-outlined text-on-tertiary-container text-5xl" style="font-variation-settings: 'FILL' 1;">
+                    military_tech
+                </span>
+<div class="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent"></div>
+</div>
+<h2 class="text-headline-md font-bold text-on-surface">Constancia de Acero</h2>
+<p class="text-on-surface-variant mt-1">¡Has completado 3 sesiones esta semana!</p>
+</section>
+<!-- Mountain Path Progress -->
+<section class="bg-surface-container rounded-lg p-6 space-y-6">
+<div class="flex justify-between items-center">
+<div>
+<h3 class="text-label-lg uppercase tracking-wider text-outline">Capítulo de Montaña</h3>
+<p class="text-headline-sm font-bold text-primary">Entrada controlada</p>
+</div>
+<span class="material-symbols-outlined text-primary text-3xl">terrain</span>
+</div>
+<div class="relative flex justify-between items-center px-2 py-4">
+<!-- Step 1: Monday -->
+<div class="relative z-10 flex flex-col items-center gap-2">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center path-dot path-dot-active">
+<span class="material-symbols-outlined text-sm">check</span>
+</div>
+<span class="text-label-md font-bold">Lun</span>
+</div>
+<!-- Step 2: Wednesday -->
+<div class="relative z-10 flex flex-col items-center gap-2">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center path-dot path-dot-active">
+<span class="material-symbols-outlined text-sm">check</span>
+</div>
+<span class="text-label-md font-bold">Mié</span>
+</div>
+<!-- Step 3: Today -->
+<div class="relative z-10 flex flex-col items-center gap-2">
+<div class="w-12 h-12 rounded-full bg-tertiary text-on-tertiary flex items-center justify-center shadow-lg border-4 border-surface-container ring-2 ring-tertiary/20">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<span class="text-label-md font-black text-tertiary">Hoy</span>
+</div>
+<!-- Step 4: Next -->
+<div class="relative z-10 flex flex-col items-center gap-2">
+<div class="w-10 h-10 rounded-full bg-outline-variant flex items-center justify-center path-dot">
+</div>
+<span class="text-label-md text-outline">Sáb</span>
+</div>
+</div>
+</section>
+<!-- Check-in Section -->
+<section class="space-y-4">
+<h3 class="text-body-lg font-bold text-on-surface px-1">¿Cómo te sentiste?</h3>
+<div class="flex flex-wrap gap-3">
+<button class="flex-1 py-3 px-4 rounded-full border-2 border-outline-variant hover:border-primary hover:bg-primary-container/10 transition-all active:scale-95 font-semibold text-on-surface-variant flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-lg">sentiment_satisfied</span>
+                    Bien
+                </button>
+<button class="flex-1 py-3 px-4 rounded-full border-2 border-outline-variant hover:border-primary hover:bg-primary-container/10 transition-all active:scale-95 font-semibold text-on-surface-variant flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-lg">bolt</span>
+                    Cansancio
+                </button>
+<button class="flex-1 py-3 px-4 rounded-full border-2 border-outline-variant hover:border-secondary hover:bg-secondary-container/10 transition-all active:scale-95 font-semibold text-on-surface-variant flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-lg">error_outline</span>
+                    Algo me molestó
+                </button>
+</div>
+</section>
+</main>
+<!-- Bottom Action Area -->
+<footer class="fixed bottom-0 left-0 w-full bg-surface-bright/80 backdrop-blur-md p-5 pb-8 flex justify-center z-50">
+<button class="w-full max-w-md h-[52px] bg-secondary text-on-secondary rounded-full font-bold text-body-lg shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+            Cerrar sesión
+        </button>
+</footer>
+<script>
+        // Micro-interactions for chips
+        const chips = document.querySelectorAll('button[class*="border-outline-variant"]');
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                chips.forEach(c => {
+                    c.classList.remove('bg-primary-container', 'text-on-primary-container', 'border-primary');
+                    c.classList.add('border-outline-variant');
+                });
+                chip.classList.remove('border-outline-variant');
+                chip.classList.add('bg-primary-container', 'text-on-primary-container', 'border-primary');
+                
+                // Haptic feedback simulation
+                if ('vibrate' in navigator) {
+                    navigator.vibrate(10);
+                }
+            });
+        });
+
+        // Close session action
+        document.querySelector('footer button').addEventListener('click', () => {
+            // Add a temporary feedback animation
+            document.querySelector('footer button').innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Guardando...';
+            setTimeout(() => {
+                window.location.reload(); // Simple reset for demo
+            }, 1000);
+        });
+    </script>
+</body></html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BilClimb - Safe Climbing</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#e7e2d8",
+                        "inverse-surface": "#32302a",
+                        "on-error": "#ffffff",
+                        "primary-fixed-dim": "#89d6b7",
+                        "surface-bright": "#fef9ef",
+                        "on-primary-fixed": "#002116",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed": "#410001",
+                        "surface-container-highest": "#e7e2d8",
+                        "primary-fixed": "#a5f2d2",
+                        "on-background": "#1d1c16",
+                        "tertiary-fixed": "#ffdeac",
+                        "on-secondary-fixed-variant": "#8f100e",
+                        "on-primary-container": "#d2ffea",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#604100",
+                        "secondary-container": "#fd6253",
+                        "primary": "#0a644b",
+                        "outline-variant": "#bec9c2",
+                        "on-surface-variant": "#3f4944",
+                        "secondary-fixed-dim": "#ffb4aa",
+                        "on-primary-fixed-variant": "#00513c",
+                        "inverse-on-surface": "#f5f0e6",
+                        "surface": "#fef9ef",
+                        "surface-container-low": "#f8f3e9",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#ede8de",
+                        "secondary-fixed": "#ffdad5",
+                        "primary-container": "#2f7d63",
+                        "error": "#ba1a1a",
+                        "outline": "#6f7974",
+                        "surface-tint": "#176b52",
+                        "on-surface": "#1d1c16",
+                        "on-tertiary-container": "#fff3e5",
+                        "on-secondary-container": "#650003",
+                        "tertiary-fixed-dim": "#fcbb44",
+                        "surface-dim": "#dedad0",
+                        "secondary": "#b12b23",
+                        "tertiary": "#755000",
+                        "on-primary": "#ffffff",
+                        "background": "#fef9ef",
+                        "tertiary-container": "#956700",
+                        "surface-container": "#f2ede3",
+                        "inverse-primary": "#89d6b7",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed": "#281900",
+                        "on-secondary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Nunito Sans"],
+                        "display": ["Nunito Sans"],
+                        "body": ["Nunito Sans"],
+                        "label": ["Nunito Sans"]
+                    },
+                    "spacing": {
+                        "margin-mobile": "20px",
+                        "margin-desktop": "40px",
+                        "gutter": "16px",
+                        "card-padding": "24px",
+                        "touch-target": "48px",
+                        "button-height": "52px"
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Nunito Sans', sans-serif;
+            background-color: #fef9ef;
+            color: #1d1c16;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        .safe-area-bottom {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    </style>
+</head>
+<body class="antialiased overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="bg-surface shadow-sm fixed top-0 w-full z-50 h-16 flex items-center justify-between px-margin-mobile">
+<div class="flex items-center gap-4">
+<button aria-label="Go back" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<h1 class="font-display text-headline-md font-extrabold text-primary">Safe Climbing</h1>
+</div>
+<div class="w-10 h-10 bg-surface-container rounded-full overflow-hidden border-2 border-primary-fixed">
+<img alt="Coach Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQ5xEv72F_yDqPRL2UeSqbwUG1MtaBuzuGokd5AplBa9uT5LOrpGyAGCdOysFVI35laXee5yvFxmmuceyGo1oPxEGgHLir4hoUh9l06E3XuRA7iIBT8FRVwns8UGF1Z1jFPmRbwsyEf0dj_zYlUbVoXACwRC-Zbd8Yp-1N-eYIUhs2oaaZrOTV7sKA2_uo8wOcWxvLvbh3n1PIJo5Fcyq_7c8hhCo2leWXNsJCkhMCJJ49Rbpr851zpJyfQJ58ONF5Bw"/>
+</div>
+</header>
+<main class="pt-20 pb-32 px-margin-mobile max-w-2xl mx-auto space-y-8">
+<!-- Coach Section -->
+<section class="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+<div class="relative w-24 h-24 rounded-full border-4 border-primary-fixed overflow-hidden shadow-lg">
+<img alt="Bill the Coach" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPf2vCo3ElV61cwc71yHA2O0SJEO4BLS5gJTL_PBTAneewsB60WQLICbjhpJymAHeXpNIzmpWZHvXuf5HTOe2vFlVhlzhXbi5jQFXWtx_wfZDNHQUqUMSpr1JWxzttc_4Q27adOGsO88MbvY5HNFX1XkCG2T6t6ZQ3G7SWbQa4uwSA3k503HtHZtwnz0O-ltbMYxyIGmsgfmvme-2y9TukVNDYQcTup-ffMXKzgbNGF8sQVEWkvTl3hs05uH4iU-XDTw"/>
+</div>
+<div class="relative bg-white p-card-padding rounded-xl shadow-sm border border-surface-container-highest">
+<div class="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-t border-l border-surface-container-highest"></div>
+<p class="text-body-md text-on-surface leading-relaxed text-center italic">
+                    "Con dolor activo, lo correcto es ver a un profesional. No queremos que una molestia hoy te quite meses de roca después. Mientras tanto, trabajamos lo que no afecte la zona."
+                </p>
+<div class="mt-3 flex justify-center">
+<span class="inline-flex items-center gap-1 text-label-md font-bold text-primary uppercase tracking-wider">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">security</span>
+                        Seguridad Bill
+                    </span>
+</div>
+</div>
+</section>
+<!-- Professional Help Card -->
+<section class="animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
+<div class="bg-surface-container-low rounded-lg p-card-padding border-2 border-surface-container-highest shadow-sm overflow-hidden relative">
+<!-- Abstract Texture Decor -->
+<div class="absolute -right-12 -top-12 w-40 h-40 bg-primary opacity-5 rounded-full blur-3xl"></div>
+<div class="flex items-start gap-4 mb-4">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">medical_services</span>
+</div>
+<div>
+<h2 class="font-display text-headline-md font-bold text-on-surface">Ayuda Profesional</h2>
+<p class="text-body-md text-on-surface-variant mt-1">Conecta con fisioterapeutas especializados en escalada que entienden tu proceso.</p>
+</div>
+</div>
+<button class="w-full h-[52px] bg-secondary text-on-secondary rounded-full font-bold text-label-lg flex items-center justify-center gap-2 hover:opacity-90 transition-opacity active:scale-95 duration-150">
+                    Ver recursos
+                    <span class="material-symbols-outlined">open_in_new</span>
+</button>
+</div>
+</section>
+<!-- Safe Alternatives Section -->
+<section class="space-y-4 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+<div class="flex items-center justify-between">
+<h3 class="font-display text-headline-md font-bold text-primary">Alternativas seguras</h3>
+<span class="text-label-md font-semibold text-outline px-3 py-1 bg-surface-container rounded-full">Hoy sin riesgo</span>
+</div>
+<div class="space-y-4">
+<!-- Card 1 -->
+<div class="flex items-center gap-4 bg-white p-4 rounded-lg border border-surface-container-highest shadow-sm hover:border-primary-fixed-dim transition-colors cursor-pointer group">
+<div class="w-16 h-16 rounded-md overflow-hidden shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="A focused high-angle shot of a climber's legs performing hip mobility stretches on a warm cream-colored mat in a bright, modern indoor space. The lighting is soft and natural, emphasizing the professional, clean aesthetic of BilClimb with subtle green accents in the background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeSJuT_LmvMw_IBhKJc18dyDRPAhJgJ7CriDlmgLnyfNG-NzMxiRig-aCHcG0Olm4pej3KVNMvyrYBA5o2csYGGMVjP_-YiD8kteNMbsOIFSbs0d3dKLZ8l34SjRdvhqNJSftMuftK3ijdcu26P9_Fll--mKdqhu3xh6fqVYKBuD9nF9onOu5i9fti7dZ92pctWa5QRFmIOtcmT9njQKHKpRr7SScz4-L4zeYmLRMbOnQkVhJzBbRb"/>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-body-lg text-on-surface leading-tight">Movilidad de Cadera</h4>
+<p class="text-label-md text-on-surface-variant font-medium">(Sin manos) Flujo de suelo.</p>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<!-- Card 2 -->
+<div class="flex items-center gap-4 bg-white p-4 rounded-lg border border-surface-container-highest shadow-sm hover:border-primary-fixed-dim transition-colors cursor-pointer group">
+<div class="w-16 h-16 rounded-md overflow-hidden shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Close up of a core stability exercise featuring a person in a plank position on a wooden floor. The scene is minimalist and outdoorsy-modern, with a warm color palette of tan and green tones. Professional fitness photography style with high contrast and sharp focus on form and stability." src="https://lh3.googleusercontent.com/aida-public/AB6AXuByeQVYZLp0Uq0qO0V0nlqqd1PpWvKaXRj8tCQBydBym_FKRESKQ5g87BJXT0qBRVQrLV6X8fhyBp32CBddPVv4387g_FPFTWINxivLC_1qRPt9xljU7D21XFkWKLtamZKacen27IGitQppVQfCiUFgDFgejBJhWnWBqshBe9FQix4shvNgNMn47OcFcTe1HC1Qbd8PWH64UBo3MpECuPowVzcL4mX-vocI1nDtBgmnQRwcg5P80PR1"/>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-body-lg text-on-surface leading-tight">Core Antirrotacional</h4>
+<p class="text-label-md text-on-surface-variant font-medium">(Estabilidad) Sin agarre.</p>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Exit Action -->
+<section class="pt-4 flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300">
+<button class="w-full h-[52px] border-2 border-primary text-primary rounded-full font-bold text-label-lg flex items-center justify-center gap-2 hover:bg-primary-fixed/20 transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined">event_repeat</span>
+                Volver al plan
+            </button>
+<p class="text-center text-label-md text-outline px-6">
+                Tu seguridad es nuestra prioridad. Si el dolor persiste al reposar, por favor consulta a un médico.
+            </p>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-surface-container shadow-lg flex justify-around items-center px-2 py-3 safe-area-bottom">
+<!-- Hoy (Active) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-xl px-4 py-1 active:scale-90 duration-150 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">today</span>
+<span class="font-label text-label-md font-semibold">Hoy</span>
+</a>
+<!-- Plan -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-colors px-4 py-1 active:scale-90 duration-150 transition-transform" href="#">
+<span class="material-symbols-outlined">route</span>
+<span class="font-label text-label-md font-semibold">Plan</span>
+</a>
+<!-- Progreso -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-colors px-4 py-1 active:scale-90 duration-150 transition-transform" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label text-label-md font-semibold">Progreso</span>
+</a>
+<!-- Chat -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-colors px-4 py-1 active:scale-90 duration-150 transition-transform" href="#">
+<span class="material-symbols-outlined">chat_bubble</span>
+<span class="font-label text-label-md font-semibold">Chat</span>
+</a>
+</nav>
+<script>
+        // Simple micro-interactions for buttons
+        document.querySelectorAll('button, a').forEach(elem => {
+            elem.addEventListener('click', (e) => {
+                // Subtle haptic-like effect logic would go here if on mobile
+            });
+        });
+    </script>
+</body></html>

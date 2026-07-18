@@ -1,0 +1,294 @@
+<!DOCTYPE html><html class="light" lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BilClimb - Plan de Entrenamiento</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind Theme Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "wood-tan": "#CDA96E",
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#fff3e5",
+                    "tertiary-fixed": "#ffdeac",
+                    "secondary-fixed": "#ffdad5",
+                    "ink-text": "#241F1C",
+                    "error": "#ba1a1a",
+                    "surface-tint": "#176b52",
+                    "surface-variant": "#e7e2d8",
+                    "background": "#fef9ef",
+                    "on-primary-fixed": "#002116",
+                    "deep-forest": "#24614D",
+                    "on-background": "#1d1c16",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary": "#755000",
+                    "on-error-container": "#93000a",
+                    "senda-navy": "#21395A",
+                    "primary-fixed-dim": "#89d6b7",
+                    "secondary": "#b12b23",
+                    "primary-container": "#2f7d63",
+                    "on-secondary-fixed-variant": "#8f100e",
+                    "on-secondary": "#ffffff",
+                    "on-surface": "#1d1c16",
+                    "surface": "#fef9ef",
+                    "surface-bright": "#fef9ef",
+                    "inverse-primary": "#89d6b7",
+                    "inverse-on-surface": "#f5f0e6",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-low": "#f8f3e9",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed-variant": "#00513c",
+                    "tertiary-fixed-dim": "#fcbb44",
+                    "surface-container-highest": "#e7e2d8",
+                    "tertiary-container": "#956700",
+                    "on-secondary-fixed": "#410001",
+                    "surface-dim": "#dedad0",
+                    "primary-fixed": "#a5f2d2",
+                    "on-secondary-container": "#650003",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-fixed": "#281900",
+                    "surface-container": "#f2ede3",
+                    "secondary-fixed-dim": "#ffb4aa",
+                    "outline": "#6f7974",
+                    "surface-container-high": "#ede8de",
+                    "secondary-container": "#fd6253",
+                    "on-tertiary-fixed-variant": "#604100",
+                    "on-surface-variant": "#3f4944",
+                    "outline-variant": "#bec9c2",
+                    "inverse-surface": "#32302a",
+                    "on-primary-container": "#d2ffea",
+                    "primary": "#0a644b"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "20px",
+                    "touch-target": "48px",
+                    "margin-desktop": "40px",
+                    "gutter": "16px",
+                    "card-padding": "24px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "body-lg": ["Nunito Sans"],
+                    "headline-md": ["Nunito Sans"],
+                    "display-lg": ["Nunito Sans"],
+                    "label-lg": ["Nunito Sans"],
+                    "headline-lg-mobile": ["Nunito Sans"],
+                    "headline-lg": ["Nunito Sans"],
+                    "label-md": ["Nunito Sans"],
+                    "body-md": ["Nunito Sans"]
+            },
+            "fontSize": {
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-nav-interaction {
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .active-nav-interaction:active {
+            transform: scale(0.9);
+        }
+        .card-tap-feedback:active {
+            transform: scale(0.98);
+            transition: transform 0.1s ease;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Top App Bar -->
+<header class="bg-background dark:bg-background flex justify-between items-center px-margin-mobile h-touch-target w-full docked full-width top-0 z-50">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-fixed-dim">
+<img class="w-full h-full object-cover" data-alt="A portrait of a weathered, friendly-looking outdoor climber wearing a warm beanie and a tactical climbing vest. The lighting is soft morning sun, highlighting a face full of experience and kindness. The aesthetic follows the warm guidance philosophy with earthy tones and a grainy, film-like texture." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBggEe_9iQMFwiKIjoRK9u8_aAPlwUJ1Ami-VxXu1116gjHzq4JkR31IWdzxGKnmCc5ju0O29Qp0Eb0r35Thc3QHUXkfZbnKDIol-uGYRFqp8f43BnLNRR0mobbqUZaMrbh5yUV2D-u_epHiDjSHsEb92a5XIV7GLpEhxz2CGLtl_6EiKihMM8XuLMOUJJFditrdUSrVNgQhPWuTJrysWM4tZv5vUbzPDW_rSUYbYzwywxl2bPyO7jb">
+</div>
+<h1 class="font-display-lg text-headline-lg-mobile text-primary dark:text-primary-fixed-dim">BilClimb</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-primary">settings</span>
+</button>
+</header>
+<!-- Content Canvas -->
+<main class="px-margin-mobile pt-4 pb-32 max-w-2xl mx-auto">
+<!-- Mountain Chapter Header -->
+<section class="mb-8">
+<div class="flex items-end justify-between mb-2">
+<div>
+<span class="inline-block bg-wood-tan/20 text-tertiary-container font-label-lg px-3 py-1 rounded-full mb-2">Capítulo de Montaña</span>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-ink-text leading-tight">Semana 3: Entrada controlada</h2>
+<p class="font-body-md text-on-surface-variant mt-1">3 sesiones · tú eliges cuándo.</p>
+</div>
+<div class="hidden md:block">
+<span class="material-symbols-outlined text-wood-tan text-4xl">landscape</span>
+</div>
+</div>
+<!-- Progress Bar (Subtle) -->
+<div class="w-full h-2 bg-surface-container rounded-full overflow-hidden mt-4">
+<div class="bg-primary w-1/3 h-full rounded-full transition-all duration-1000 ease-out"></div>
+</div>
+</section>
+<!-- Senda's Advice Banner -->
+<div class="mb-6 bg-tertiary-fixed/30 border-l-4 border-wood-tan p-card-padding rounded-r-lg flex gap-4 items-start shadow-sm animate-pulse-slow">
+<div class="w-12 h-12 flex-shrink-0 bg-surface-container-highest rounded-full overflow-hidden border border-wood-tan">
+<img class="w-full h-full object-cover" data-alt="Close up illustration of a wise owl mascot named Senda wearing small glasses and a climbing harness. The art style is bold ink-style outlines with warm organic colors, reminiscent of a friendly field journal sketch. High legibility and charming personality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQy-q60sjDuyAEmEki16sH_lv_MP0e1EnjdBaB-OfYgsKZHeWF37I2YyHs9krHK_NyOecevu-U1M9_DC_9zfom6qGW22nNQH4Ktq1q-6SLK64AMjmpWfNUFR6YA_sFSSyk68PFA8e0zX4c9Yot18AlxOLXA-pbW2x8QJKEnYAYsfzbTL_exCLM5s2ulnw0txItK3YdR1Tsfj2ETR2hPy0Q2TaxsUzK5c5FJSFaeeYPnQ-keS8hk8MP">
+</div>
+<div>
+<h4 class="font-label-lg text-tertiary mb-1">Consejo de Senda</h4>
+<p class="font-body-md text-on-tertiary-fixed-variant leading-relaxed">
+                    Se puede entrenar diario, pero tus dedos rendirán menos mañana si no descansas hoy. ¿Seguro que quieres darle duro otra vez?
+                </p>
+<div class="mt-3 flex gap-3">
+<button class="bg-primary-container text-on-primary-container font-label-md px-4 py-2 rounded-full active:scale-95 transition-transform">Reagendar sesión</button>
+<button class="border-2 border-primary-container text-primary-container font-label-md px-4 py-2 rounded-full active:scale-95 transition-transform">Seguir igual</button>
+</div>
+</div>
+</div>
+<!-- Session List -->
+<div class="space-y-4">
+<!-- Session 1: DONE -->
+<div class="bg-surface-container-low rounded-lg p-card-padding flex items-center justify-between shadow-[0_4px_12px_rgba(36,31,28,0.04)] card-tap-feedback border border-surface-variant opacity-80">
+<div class="flex gap-4 items-center">
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">fitness_center</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="font-label-md text-primary bg-primary/10 px-2 py-0.5 rounded uppercase tracking-wider">Potencia</span>
+<span class="text-on-surface-variant font-label-md">45 min</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-ink-text">Potencia y dedos</h3>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<div class="w-10 h-10 rounded-full bg-deep-forest text-white flex items-center justify-center">
+<span class="material-symbols-outlined">check</span>
+</div>
+<span class="font-label-md text-deep-forest mt-1">Hecha</span>
+</div>
+</div>
+<!-- Session 2: NEXT -->
+<div class="bg-surface-container-lowest rounded-lg p-card-padding flex items-center justify-between shadow-[0_8px_24px_rgba(36,31,28,0.08)] card-tap-feedback border-2 border-primary relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+<div class="flex gap-4 items-center">
+<div class="w-12 h-12 rounded-full bg-secondary-container/20 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-3xl">self_improvement</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="font-label-md text-secondary bg-secondary-container/20 px-2 py-0.5 rounded uppercase tracking-wider">Movilidad</span>
+<span class="text-on-surface-variant font-label-md">30 min</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-ink-text">Movilidad suave</h3>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<button class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+<span class="font-label-md text-primary mt-1 font-bold">Empieza ya</span>
+</div>
+</div>
+<!-- Session 3: PENDING -->
+<div class="bg-surface-container-low rounded-lg p-card-padding flex items-center justify-between shadow-[0_4px_12px_rgba(36,31,28,0.04)] card-tap-feedback border border-surface-variant">
+<div class="flex gap-4 items-center">
+<div class="w-12 h-12 rounded-full bg-wood-tan/10 flex items-center justify-center text-wood-tan">
+<span class="material-symbols-outlined text-3xl">directions_run</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="font-label-md text-tertiary-container bg-wood-tan/20 px-2 py-0.5 rounded uppercase tracking-wider">Resistencia</span>
+<span class="text-on-surface-variant font-label-md">60 min</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-ink-text">Resistencia aeróbica</h3>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<div class="w-10 h-10 rounded-full border-2 border-outline-variant flex items-center justify-center text-outline">
+<span class="material-symbols-outlined">schedule</span>
+</div>
+<span class="font-label-md text-on-surface-variant mt-1">Pendiente</span>
+</div>
+</div>
+<!-- Empty State / Add Session -->
+<button class="w-full border-2 border-dashed border-outline-variant rounded-lg p-6 flex flex-col items-center justify-center gap-2 hover:bg-surface-container-low transition-colors group">
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors text-4xl">add_circle</span>
+<span class="font-label-lg text-on-surface-variant">¿Quieres añadir una sesión extra?</span>
+</button>
+</div>
+<!-- Bottom Guidance Message -->
+<footer class="mt-12 text-center">
+<p class="font-body-md text-on-surface-variant italic px-8">"La montaña no se mueve, tú eres el que fluye."</p>
+<div class="mt-4 flex justify-center gap-4">
+<span class="w-2 h-2 rounded-full bg-wood-tan"></span>
+<span class="w-2 h-2 rounded-full bg-wood-tan/40"></span>
+<span class="w-2 h-2 rounded-full bg-wood-tan/40"></span>
+</div>
+</footer>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center pt-2 pb-6 px-4 bg-surface-container-low dark:bg-surface-container-low shadow-[0_-4px_12px_rgba(36,31,28,0.04)] rounded-t-lg md:max-w-md md:left-1/2 md:-translate-x-1/2">
+<!-- Hoy -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-6 py-1 hover:bg-surface-variant transition-all active-nav-interaction" href="#">
+<span class="material-symbols-outlined text-2xl mb-1">calendar_today</span>
+<span class="font-label-md text-label-md">Hoy</span>
+</a>
+<!-- Plan (ACTIVE) -->
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-full px-6 py-1 active-nav-interaction scale-95 transition-all" href="#">
+<span class="material-symbols-outlined text-2xl mb-1" style="font-variation-settings: 'FILL' 1;">fitness_center</span>
+<span class="font-label-md text-label-md">Plan</span>
+</a>
+<!-- Progreso -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-6 py-1 hover:bg-surface-variant transition-all active-nav-interaction" href="#">
+<span class="material-symbols-outlined text-2xl mb-1">trending_up</span>
+<span class="font-label-md text-label-md">Progreso</span>
+</a>
+<!-- Chat -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-6 py-1 hover:bg-surface-variant transition-all active-nav-interaction" href="#">
+<span class="material-symbols-outlined text-2xl mb-1">chat_bubble</span>
+<span class="font-label-md text-label-md">Chat</span>
+</a>
+</nav>
+<script>
+        // Micro-interaction for session card scale
+        document.querySelectorAll('.card-tap-feedback').forEach(card => {
+            card.addEventListener('mousedown', () => {
+                card.style.transform = 'scale(0.98)';
+            });
+            card.addEventListener('mouseup', () => {
+                card.style.transform = 'scale(1)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body></html>

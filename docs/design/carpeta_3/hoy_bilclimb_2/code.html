@@ -1,0 +1,302 @@
+<!DOCTYPE html><html lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BilClimb - Hoy</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "tertiary-fixed": "#ffdeac",
+                        "inverse-surface": "#32302a",
+                        "surface-variant": "#e7e2d8",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#2f7d63",
+                        "error-container": "#ffdad6",
+                        "tertiary": "#755000",
+                        "on-secondary-fixed-variant": "#8f100e",
+                        "primary": "#0a644b",
+                        "surface-dim": "#dedad0",
+                        "on-primary-fixed": "#002116",
+                        "on-surface": "#1d1c16",
+                        "outline": "#6f7974",
+                        "inverse-primary": "#89d6b7",
+                        "surface-bright": "#fef9ef",
+                        "on-tertiary": "#ffffff",
+                        "deep-forest": "#24614D",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed": "#410001",
+                        "primary-fixed-dim": "#89d6b7",
+                        "surface-tint": "#176b52",
+                        "on-primary": "#ffffff",
+                        "inverse-on-surface": "#f5f0e6",
+                        "secondary-fixed": "#ffdad5",
+                        "tertiary-container": "#956700",
+                        "secondary-fixed-dim": "#ffb4aa",
+                        "ink-text": "#241F1C",
+                        "surface": "#fef9ef",
+                        "secondary": "#b12b23",
+                        "on-error": "#ffffff",
+                        "surface-container-low": "#f8f3e9",
+                        "on-tertiary-fixed-variant": "#604100",
+                        "surface-container": "#f2ede3",
+                        "surface-container-highest": "#e7e2d8",
+                        "background": "#fef9ef",
+                        "on-background": "#1d1c16",
+                        "on-surface-variant": "#3f4944",
+                        "wood-tan": "#CDA96E",
+                        "on-secondary-container": "#650003",
+                        "secondary-container": "#fd6253",
+                        "on-primary-fixed-variant": "#00513c",
+                        "on-primary-container": "#d2ffea",
+                        "tertiary-fixed-dim": "#fcbb44",
+                        "senda-navy": "#21395A",
+                        "primary-fixed": "#a5f2d2",
+                        "surface-container-high": "#ede8de",
+                        "outline-variant": "#bec9c2",
+                        "on-tertiary-fixed": "#281900",
+                        "on-tertiary-container": "#fff3e5"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "card-padding": "24px",
+                        "gutter": "16px",
+                        "margin-desktop": "40px",
+                        "touch-target": "48px",
+                        "margin-mobile": "20px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Nunito Sans"],
+                        "headline-md": ["Nunito Sans"],
+                        "label-lg": ["Nunito Sans"],
+                        "body-lg": ["Nunito Sans"],
+                        "display-lg": ["Nunito Sans"],
+                        "body-md": ["Nunito Sans"],
+                        "headline-lg-mobile": ["Nunito Sans"],
+                        "label-md": ["Nunito Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "headline-md-mobile": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "600"}]
+                    },
+                    "animation": {
+                        "slide-up": "slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+                        "fade-in": "fade-in 0.6s ease-out forwards",
+                        "pulse-soft": "pulse-soft 2.5s infinite ease-in-out",
+                        "glow": "glow 2s infinite alternate"
+                    },
+                    "keyframes": {
+                        "slide-up": {
+                            "0%": { transform: "translateY(20px)", opacity: "0" },
+                            "100%": { transform: "translateY(0)", opacity: "1" }
+                        },
+                        "fade-in": {
+                            "0%": { opacity: "0" },
+                            "100%": { opacity: "1" }
+                        },
+                        "pulse-soft": {
+                            "0%, 100%": { transform: "scale(1)", boxShadow: "0 8px 24px rgba(177, 43, 35, 0.2)" },
+                            "50%": { transform: "scale(1.02)", boxShadow: "0 12px 32px rgba(177, 43, 35, 0.4)" }
+                        },
+                        "glow": {
+                            "0%": { boxShadow: "0 0 5px rgba(177, 43, 35, 0.2), 0 0 10px rgba(177, 43, 35, 0.1)" },
+                            "100%": { boxShadow: "0 0 20px rgba(177, 43, 35, 0.4), 0 0 30px rgba(177, 43, 35, 0.2)" }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Nunito Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-nav-shadow {
+            box-shadow: 0 4px 12px rgba(47, 125, 99, 0.2);
+        }
+        .soft-card-shadow {
+            box-shadow: 0 8px 24px rgba(36, 31, 28, 0.08);
+        }
+        .mountain-path::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #bec9c2;
+            z-index: 0;
+            transform: translateY(-50%);
+        }
+        .streak-badge {
+            background: linear-gradient(135deg, #FFD93D 0%, #FF8400 100%);
+            box-shadow: 0 2px 8px rgba(255, 132, 0, 0.3);
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            .animate-slide-up, .animate-fade-in, .animate-pulse-soft, .animate-glow {
+                animation: none !important;
+                transform: none !important;
+                opacity: 1 !important;
+            }
+            .transition-all, .transition-transform, .transition-colors {
+                transition: none !important;
+            }
+        }
+
+        .stagger-1 { animation-delay: 0.1s; opacity: 0; }
+        .stagger-2 { animation-delay: 0.2s; opacity: 0; }
+        .stagger-3 { animation-delay: 0.3s; opacity: 0; }
+        .stagger-4 { animation-delay: 0.4s; opacity: 0; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen pb-24 overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-surface flex justify-between items-center px-margin-mobile h-touch-target w-full animate-fade-in">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container transition-transform hover:scale-110 duration-300">
+<img alt="Coach Bill" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOEJ8yefWgPG4gXukxXwTL1yct2nrOmHE9UvL50WdXxt9yJWSVKxbegh7vinte0hEIitxXfL9pD_gF3_W4wfw66Y1n4TCqQmz3XlYIcN8Y5lahuDslqRj-JWMR6kWCcA_GlUFCM_bnla_lyw3zJNVmqIT-A0HYe1p7h7Mntg-MAoc72SXUaZOgXS2QmOVFLk6nxIDnd6zQCtW_qtIfd4YjRl78XfslTZcYO0GQFNl5sUB3Jfh2-hRdiUOxUSBJPzj5-w">
+</div>
+<h1 class="text-headline-md-mobile font-headline-md-mobile font-bold text-primary">Entrada controlada</h1>
+</div>
+<div class="flex items-center gap-2 streak-badge px-3 py-1 rounded-full text-white font-bold text-sm transition-all hover:scale-105 cursor-pointer">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+<span>3</span>
+</div>
+</header>
+<main class="mt-16 px-margin-mobile space-y-6">
+<!-- Welcome Section with Coach Bill -->
+<section class="mt-8 animate-slide-up stagger-1">
+<div class="bg-surface-container-low rounded-lg p-card-padding soft-card-shadow relative overflow-hidden border border-surface-variant/50 transition-all hover:border-primary/20">
+<div class="flex gap-4 items-start relative z-10">
+<div class="flex-shrink-0">
+<img alt="Coach Bill sticker" class="w-20 h-20 rounded-full border-4 border-white shadow-md transform -rotate-3 transition-transform hover:rotate-0 duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBum3-1X-qKkWlUVBfa4q6KAnqMACn0tS9Bgkv6PcuX-_YU5illzBi6FvxbGZnaIqVqWLnZHzqXMudFWnGHWKwf8RGhAQO_lF16XeF9Y68m26tuLrqMXzAKyiD2ZAGO1zkjJgh8B64AGeJTRPVRFbxv8SwrmQliv75KpP-xm3WHtEpqRyJ-xeyck8VeBGBofKPKIb-xQ6oO9j-EUM74HsZzhK7Y3QH4LQGurAHGRaxHgbLl0tZhOqLgnBazf0TE8wLKqQ">
+</div>
+<div class="space-y-2">
+<p class="font-body-lg text-ink-text leading-relaxed">
+                        ¡Hola! Hoy vamos a cuidar esos dedos. Nada de intensidad máxima, solo movimiento fluido para construir base.
+                    </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Current Session Card -->
+<section class="animate-slide-up stagger-2">
+<div class="bg-white rounded-lg p-card-padding soft-card-shadow border-2 border-primary-container/10 transition-all hover:shadow-lg">
+<div class="mb-4">
+<span class="text-label-lg font-label-lg text-primary uppercase tracking-wider">Sesión de hoy</span>
+<h2 class="text-headline-lg-mobile font-headline-lg-mobile text-ink-text mt-1">Movilidad y Dedos Suaves</h2>
+</div>
+<div class="bg-surface-container rounded-md p-4 mb-6 border-l-4 border-wood-tan transition-colors hover:bg-surface-container-high">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-wood-tan mt-1">lightbulb</span>
+<div>
+<p class="text-label-lg font-label-lg text-on-surface-variant">¿Por qué esto hoy?</p>
+<p class="text-body-md text-on-surface-variant">Porque ayer escalaste duro y hoy necesitamos que tus tendones se recuperen sin perder el ritmo.</p>
+</div>
+</div>
+</div>
+<button class="w-full h-touch-target bg-secondary text-on-primary font-bold text-headline-md-mobile rounded-full shadow-lg active:scale-95 transition-all animate-pulse-soft flex items-center justify-center gap-2 group">
+                Empezar sesión
+                <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">play_arrow</span>
+</button>
+</div>
+</section>
+<!-- Progress Path -->
+<section class="py-4 animate-slide-up stagger-3">
+<h3 class="text-label-lg font-label-lg text-on-surface-variant uppercase mb-6">Tu camino esta semana</h3>
+<div class="relative flex justify-between items-center px-4 mountain-path">
+<!-- Step 1 (Completed) -->
+<div class="relative z-10 flex flex-col items-center group cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white ring-4 ring-surface transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<span class="text-label-md font-label-md text-primary mt-2">Lun</span>
+</div>
+<!-- Step 2 (Active/Today) -->
+<div class="relative z-10 flex flex-col items-center group cursor-pointer">
+<div class="w-12 h-12 rounded-full bg-white border-4 border-secondary flex items-center justify-center text-secondary ring-4 ring-surface shadow-md transition-all group-hover:scale-125 animate-glow">
+<span class="material-symbols-outlined text-[24px]">adjust</span>
+</div>
+<span class="text-label-md font-label-md text-secondary mt-2 font-bold group-hover:tracking-wider transition-all">Hoy</span>
+</div>
+<!-- Step 3 (Upcoming) -->
+<div class="relative z-10 flex flex-col items-center opacity-40 group hover:opacity-100 transition-opacity cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest border-2 border-outline flex items-center justify-center ring-4 ring-surface transition-transform group-hover:scale-110"></div>
+<span class="text-label-md font-label-md text-on-surface-variant mt-2">Jue</span>
+</div>
+<!-- Step 4 (Upcoming) -->
+<div class="relative z-10 flex flex-col items-center opacity-40 group hover:opacity-100 transition-opacity cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest border-2 border-outline flex items-center justify-center ring-4 ring-surface transition-transform group-hover:scale-110"></div>
+<span class="text-label-md font-label-md text-on-surface-variant mt-2">Sáb</span>
+</div>
+</div>
+</section>
+<!-- Micro-interaction / Quote -->
+<section class="text-center pb-8 opacity-60 italic text-body-md text-on-surface-variant animate-fade-in stagger-4">
+        "La constancia es la montaña más alta."
+    </section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-base pb-safe h-16 bg-surface-container dark:bg-surface-container-highest border-t-2 border-outline-variant shadow-sm rounded-t-lg">
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 active-nav-shadow scale-95 transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
+<span class="text-label-md font-label-md">Hoy</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high transition-all hover:scale-105 active:scale-95">
+<span class="material-symbols-outlined">map</span>
+<span class="text-label-md font-label-md">Plan</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high transition-all hover:scale-105 active:scale-95">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="text-label-md font-label-md">Progreso</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high transition-all hover:scale-105 active:scale-95">
+<span class="material-symbols-outlined">forum</span>
+<span class="text-label-md font-label-md">Chat</span>
+</button>
+</nav>
+<script>
+    // Interaction feedback
+    document.querySelectorAll('button').forEach(button => {
+        button.addEventListener('touchstart', function() {
+            this.classList.add('scale-95');
+        });
+        button.addEventListener('touchend', function() {
+            this.classList.remove('scale-95');
+        });
+    });
+
+    // Add specific interaction for the main action button
+    const startBtn = document.querySelector('button.bg-secondary');
+    if (startBtn) {
+        startBtn.addEventListener('click', function() {
+            this.style.animation = 'none';
+            this.classList.add('ring-4', 'ring-secondary/20');
+            setTimeout(() => {
+                this.classList.remove('ring-4', 'ring-secondary/20');
+                this.style.animation = '';
+            }, 300);
+        });
+    }
+</script>
+</body></html>

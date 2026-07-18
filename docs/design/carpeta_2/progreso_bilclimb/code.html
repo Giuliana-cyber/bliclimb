@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Tu Progreso | BilClimb</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-low": "#f8f3e9",
+                        "error-container": "#ffdad6",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed-variant": "#00513c",
+                        "tertiary-fixed-dim": "#fcbb44",
+                        "on-tertiary-container": "#fff3e5",
+                        "tertiary-fixed": "#ffdeac",
+                        "surface-container-highest": "#e7e2d8",
+                        "secondary-fixed": "#ffdad5",
+                        "tertiary-container": "#956700",
+                        "on-secondary-fixed": "#410001",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e7e2d8",
+                        "surface-dim": "#dedad0",
+                        "surface-tint": "#176b52",
+                        "background": "#fef9ef",
+                        "on-background": "#1d1c16",
+                        "on-secondary-container": "#650003",
+                        "primary-fixed": "#a5f2d2",
+                        "on-primary-fixed": "#002116",
+                        "tertiary": "#755000",
+                        "on-tertiary-fixed": "#281900",
+                        "surface-container": "#f2ede3",
+                        "secondary-fixed-dim": "#ffb4aa",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "surface-container-high": "#ede8de",
+                        "outline": "#6f7974",
+                        "on-error-container": "#93000a",
+                        "primary-fixed-dim": "#89d6b7",
+                        "on-tertiary-fixed-variant": "#604100",
+                        "on-surface-variant": "#3f4944",
+                        "secondary": "#b12b23",
+                        "primary-container": "#2f7d63",
+                        "on-secondary-fixed-variant": "#8f100e",
+                        "secondary-container": "#fd6253",
+                        "surface": "#fef9ef",
+                        "inverse-surface": "#32302a",
+                        "outline-variant": "#bec9c2",
+                        "on-secondary": "#ffffff",
+                        "on-surface": "#1d1c16",
+                        "on-primary-container": "#d2ffea",
+                        "inverse-primary": "#89d6b7",
+                        "surface-bright": "#fef9ef",
+                        "inverse-on-surface": "#f5f0e6",
+                        "primary": "#0a644b"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "margin-mobile": "20px",
+                        "margin-desktop": "40px",
+                        "touch-target": "48px",
+                        "button-height": "52px"
+                    },
+                    fontFamily: {
+                        "headline": ["Nunito Sans"],
+                        "display": ["Nunito Sans"],
+                        "body": ["Nunito Sans"],
+                        "label": ["Nunito Sans"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Nunito Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen">
+<!-- Top AppBar (Shared Component) -->
+<header class="w-full top-0 sticky z-50 bg-surface dark:bg-surface-dim shadow-[0_2px_4px_rgba(36,31,28,0.08)]">
+<div class="flex items-center justify-between px-margin-mobile h-touch-target w-full max-w-7xl mx-auto">
+<button class="active:scale-95 transition-transform duration-200 text-primary dark:text-primary-fixed">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-headline font-bold text-xl text-primary dark:text-primary-fixed">Tu Perfil</h1>
+<button class="active:scale-95 transition-transform duration-200 text-primary dark:text-primary-fixed">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-margin-mobile pt-6 pb-32 space-y-8">
+<!-- Coach Intro Section -->
+<section class="flex flex-col items-center text-center space-y-4">
+<div class="relative">
+<div class="w-24 h-24 rounded-full border-4 border-primary-fixed overflow-hidden bg-surface-container-high shadow-lg">
+<img class="w-full h-full object-cover" data-alt="A warm and friendly portrait of Coach Bill, a male climber in his 40s wearing a green helmet with a golden Belay Partners circular emblem. He has a kind expression, wearing a red hoodie, depicted in a clean, flat-vector illustration style with bold outlines and soft shading against a warm cream background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjJOqgldCPLEJSVebIm00qWvNVAb5XHrPN-jYihXrtp8xtTApGxkZ90nEwsVzYKBDtj_msu7ZHVNPciPiAUmrwigP8_CIcYKwUMYnK04jko96c68WoyPw1ZcZjsYq7LkKtujx4MpwQx4Xs2Y0OyuG4DvkKm433si-yUTFtkeQPMO3UbD-f3fOlgz13jXzxFss2pfIjfYLWXe05cgLh8H6rgWu8a50wIS3zUvZzvXdn997rgyrLOOj5"/>
+</div>
+<div class="absolute -bottom-1 -right-1 bg-tertiary rounded-full p-1.5 border-2 border-surface">
+<span class="material-symbols-outlined text-on-tertiary text-sm" style="font-variation-settings: 'FILL' 1;">forum</span>
+</div>
+</div>
+<div class="max-w-md bg-surface-container-low p-6 rounded-lg shadow-sm border border-outline-variant/30">
+<p class="text-on-surface-variant italic font-medium leading-relaxed">
+                    "Cada día que escalas con intención es una cumbre conquistada. Vas muy bien."
+                </p>
+<span class="block mt-2 text-primary font-bold text-sm uppercase tracking-wider">— Bill</span>
+</div>
+</section>
+<!-- Story Cards Section (Bento Grid) -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Constancia -->
+<div class="bg-surface-container-lowest p-6 rounded-lg border border-outline-variant/20 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">calendar_today</span>
+<h3 class="font-bold text-lg">Constancia</h3>
+</div>
+<p class="text-on-surface-variant text-body-md mb-6">Has seguido tu plan al 100% esta semana (el descanso también cuenta).</p>
+</div>
+<!-- Weekly Streak Visualization -->
+<div class="flex justify-between items-center bg-surface-container-low p-4 rounded-md">
+<div class="flex flex-col items-center gap-1">
+<span class="text-[10px] font-bold text-outline uppercase">L</span>
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-sm">check</span>
+</div>
+</div>
+<div class="flex flex-col items-center gap-1">
+<span class="text-[10px] font-bold text-outline uppercase">M</span>
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-sm">check</span>
+</div>
+</div>
+<div class="flex flex-col items-center gap-1">
+<span class="text-[10px] font-bold text-outline uppercase">X</span>
+<div class="w-8 h-8 rounded-full bg-primary-container/40 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm">bedtime</span>
+</div>
+</div>
+<div class="flex flex-col items-center gap-1">
+<span class="text-[10px] font-bold text-outline uppercase">J</span>
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-sm">check</span>
+</div>
+</div>
+<div class="flex flex-col items-center gap-1">
+<span class="text-[10px] font-bold text-outline uppercase">V</span>
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center border-2 border-primary">
+<span class="material-symbols-outlined text-white text-sm">check</span>
+</div>
+</div>
+<div class="flex flex-col items-center gap-1">
+<span class="text-[10px] font-bold text-outline uppercase">S</span>
+<div class="w-8 h-8 rounded-full border-2 border-outline-variant bg-transparent"></div>
+</div>
+<div class="flex flex-col items-center gap-1">
+<span class="text-[10px] font-bold text-outline uppercase">D</span>
+<div class="w-8 h-8 rounded-full border-2 border-outline-variant bg-transparent"></div>
+</div>
+</div>
+</div>
+<!-- Sesiones sin dolor -->
+<div class="bg-surface-container-lowest p-6 rounded-lg border border-outline-variant/20 shadow-sm flex items-start gap-4">
+<div class="w-14 h-14 bg-secondary-container/20 rounded-full flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-secondary text-3xl" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+</div>
+<div>
+<h3 class="font-bold text-lg mb-1">Sesiones sin dolor</h3>
+<p class="text-on-surface-variant text-body-md">12 sesiones escuchando a tu cuerpo. La salud es la base de todo.</p>
+</div>
+</div>
+<!-- Volumen que toleras -->
+<div class="bg-surface-container-lowest p-6 rounded-lg border border-outline-variant/20 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-bold text-lg">Volumen que toleras</h3>
+<span class="bg-primary-container text-on-primary-container text-xs font-bold px-2 py-1 rounded-full">+15%</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden mb-3">
+<div class="h-full bg-primary w-[85%] rounded-full"></div>
+</div>
+<p class="text-on-surface-variant text-body-md">Tus tendones se están adaptando con margen. Seguimos escalando de forma segura.</p>
+</div>
+<!-- Mejoras técnicas -->
+<div class="bg-surface-container-lowest p-6 rounded-lg border border-outline-variant/20 shadow-sm flex flex-col gap-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary">precision_manufacturing</span>
+<h3 class="font-bold text-lg">Mejoras técnicas</h3>
+</div>
+<div class="flex gap-4">
+<div class="flex-1">
+<p class="text-on-surface-variant text-body-md">Movimiento más fluido en placas. Bill nota que tus pies están más precisos.</p>
+</div>
+<div class="w-16 h-16 rounded-md bg-surface-container-high shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A close-up shot of a climber's foot in a high-performance rock shoe precisely edging on a tiny limestone foothold. The lighting is warm golden hour sun, highlighting the texture of the rock and the rubber of the shoe. The visual style is sharp and outdoorsy, reflecting technical precision in a modern climbing gym setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDCIai0wWXI1babRe0tguKvTA5TtMNDd3O3G36Xqa-aSBY108QgQMpcXyBxsMbr2H6O72rbKaQpeq_GANP9uIr1ik22RTqBCjGzjrHiPU16Gnuz-FUjKK4bihfCzTfEdcRvHVVBVQjx05rKhe3sDLKQYKFz2RTwZmDOA6F__3unaouu80ycCcq_F7RLbx4y1eLw-khVISzmoJgLK8cG9e1zD8ucy0Rz0Aor63q_PuOWcZlr981rfTEg"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Retest Milestone Card -->
+<section class="relative">
+<div class="absolute -top-3 left-6 z-10 bg-tertiary text-on-tertiary text-[10px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full shadow-md">
+                Hito desbloqueado
+            </div>
+<div class="bg-gradient-to-br from-tertiary-fixed to-tertiary-fixed-dim/40 border-2 border-tertiary p-8 rounded-lg shadow-lg">
+<div class="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
+<div class="w-20 h-20 bg-surface rounded-full flex items-center justify-center shadow-inner border border-tertiary/20">
+<span class="material-symbols-outlined text-tertiary text-4xl" style="font-variation-settings: 'FILL' 1;">celebration</span>
+</div>
+<div class="flex-1 space-y-3">
+<h2 class="font-display font-extrabold text-2xl text-on-tertiary-fixed">Semana 4 — Celebración de fuerza</h2>
+<p class="text-on-tertiary-fixed-variant text-body-lg">
+                            Volvemos a medir tu colgado, no para aprobar un examen, sino para celebrar cuánto camino hiciste.
+                        </p>
+<button class="mt-4 w-full md:w-auto h-button-height px-8 bg-on-tertiary-fixed text-tertiary-fixed font-bold rounded-full active:scale-95 transition-all shadow-md">
+                            Ver detalles del retest
+                        </button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation (Shared Component) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-2 pb-safe bg-surface-container dark:bg-surface-container-lowest shadow-[0_-4px_12px_rgba(36,31,28,0.08)]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-container-highest dark:hover:bg-surface-dim transition-colors active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">fitness_center</span>
+<span class="font-label text-[10px] font-semibold mt-1">Entrenar</span>
+</a>
+<!-- Active Tab: Progreso -->
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-xl px-4 py-1 active:scale-90 transition-all duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">altitude</span>
+<span class="font-label text-[10px] font-semibold mt-1">Progreso</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-container-highest dark:hover:bg-surface-dim transition-colors active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-label text-[10px] font-semibold mt-1">Comunidad</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-container-highest dark:hover:bg-surface-dim transition-colors active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label text-[10px] font-semibold mt-1">Perfil</span>
+</a>
+</nav>
+</body></html>

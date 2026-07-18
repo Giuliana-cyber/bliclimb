@@ -1,0 +1,248 @@
+<!DOCTYPE html><html class="light" lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .step-active {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .chip-selected {
+            background-color: #2f7d63 !important;
+            color: #ffffff !important;
+            border-color: #2f7d63 !important;
+            transform: scale(0.95);
+        }
+        .coach-bubble::after {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 20px;
+            width: 0;
+            height: 0;
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            border-right: 12px solid #ffffff;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#fff3e5",
+                        "tertiary-fixed": "#ffdeac",
+                        "wood-tan": "#CDA96E",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#176b52",
+                        "surface-variant": "#e7e2d8",
+                        "background": "#fef9ef",
+                        "secondary-fixed": "#ffdad5",
+                        "ink-text": "#241F1C",
+                        "error": "#ba1a1a",
+                        "on-error-container": "#93000a",
+                        "senda-navy": "#21395A",
+                        "primary-fixed-dim": "#89d6b7",
+                        "secondary": "#b12b23",
+                        "primary-container": "#2f7d63",
+                        "on-secondary-fixed-variant": "#8f100e",
+                        "on-primary-fixed": "#002116",
+                        "deep-forest": "#24614D",
+                        "on-background": "#1d1c16",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary": "#755000",
+                        "inverse-on-surface": "#f5f0e6",
+                        "on-secondary": "#ffffff",
+                        "on-surface": "#1d1c16",
+                        "surface": "#fef9ef",
+                        "surface-bright": "#fef9ef",
+                        "inverse-primary": "#89d6b7",
+                        "tertiary-fixed-dim": "#fcbb44",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-low": "#f8f3e9",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#00513c",
+                        "surface-dim": "#dedad0",
+                        "surface-container-highest": "#e7e2d8",
+                        "tertiary-container": "#956700",
+                        "on-secondary-fixed": "#410001",
+                        "outline": "#6f7974",
+                        "surface-container-high": "#ede8de",
+                        "secondary-container": "#fd6253",
+                        "on-tertiary-fixed-variant": "#604100",
+                        "on-surface-variant": "#3f4944",
+                        "primary-fixed": "#a5f2d2",
+                        "on-secondary-container": "#650003",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#281900",
+                        "surface-container": "#f2ede3",
+                        "secondary-fixed-dim": "#ffb4aa",
+                        "primary": "#0a644b",
+                        "outline-variant": "#bec9c2",
+                        "inverse-surface": "#32302a",
+                        "on-primary-container": "#d2ffea"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "40px",
+                        "gutter": "16px",
+                        "card-padding": "24px",
+                        "base": "8px",
+                        "margin-mobile": "20px",
+                        "touch-target": "48px"
+                    },
+                    "fontFamily": {
+                        "label-lg": ["Nunito Sans"],
+                        "headline-lg-mobile": ["Nunito Sans"],
+                        "headline-lg": ["Nunito Sans"],
+                        "body-lg": ["Nunito Sans"],
+                        "headline-md": ["Nunito Sans"],
+                        "display-lg": ["Nunito Sans"],
+                        "label-md": ["Nunito Sans"],
+                        "body-md": ["Nunito Sans"]
+                    },
+                    "fontSize": {
+                        "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-ink-text min-h-screen flex flex-col font-body-md overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="bg-surface sticky top-0 z-50 flex justify-between items-center px-margin-mobile h-touch-target w-full">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary cursor-pointer active:scale-95 transition-transform" data-icon="close">close</span>
+</div>
+<h1 class="text-headline-md-mobile font-headline-md-mobile font-bold text-primary">Onboarding</h1>
+<div class="w-10"></div> <!-- Spacer for centering -->
+</header>
+<!-- Progress Bar -->
+<div class="w-full px-margin-mobile mt-4">
+<div class="flex justify-between items-center mb-2">
+<span class="text-label-md font-label-md text-on-surface-variant">Paso 3 de 4</span>
+<span class="text-label-md font-label-md text-primary font-bold">75%</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary w-3/4 rounded-full step-active shadow-[0_0_8px_rgba(10,100,75,0.3)]"></div>
+</div>
+</div>
+<!-- Main Content Canvas -->
+<main class="flex-grow px-margin-mobile py-8 space-y-8 max-w-md mx-auto w-full pb-32">
+<!-- Coach Section -->
+<section class="flex items-start gap-4 animate-in fade-in slide-in-from-left duration-700">
+<div class="flex-shrink-0 w-16 h-16 rounded-full border-2 border-primary-container overflow-hidden bg-surface-container shadow-sm">
+<img alt="Bill Mascot" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARcM5wrdA8Cv2Zerzd0ANfwo8hBoyXfnG9UiR4LyX3-xFr4H0ZeeYD2sjYSDYmLHG3S5y3faIa9pZr2Zk1ki8Gx3q6Zd-_v2AHKvC7RQGW9zOQDCvgT-_4cdmUxih0Hg7SKfP47M2TTebUTznwyZDiZWqXvcFXlD29Oa5qonAIZZotgdGYFvj8oZQvE3FnQPEVc6qhHW0xLc9iKDePchJzzprerGrF_YCrZiiz3jNOd__qU_jASMsOVaDdlby_Dtvrmg">
+</div>
+<div class="relative bg-surface-container-lowest p-card-padding rounded-2xl shadow-sm coach-bubble border border-outline-variant/30">
+<p class="text-body-lg font-body-lg leading-relaxed italic">
+                    "Ahora lo bueno. ¿Qué escalas, qué estilo, y qué te gustaría lograr?"
+                </p>
+</div>
+</section>
+<!-- Climbing Styles Multi-select -->
+<section class="space-y-4">
+<h2 class="text-headline-md-mobile font-headline-md-mobile text-primary">Tus estilos favoritos</h2>
+<div class="flex flex-wrap gap-3">
+<button class="px-6 py-3 rounded-full bg-surface-container-low border-2 border-outline-variant text-on-surface-variant font-label-lg transition-all duration-200 hover:bg-surface-container-high active:scale-95" onclick="toggleChip(this)">
+                    Regletas (Crimps)
+                </button>
+<button class="px-6 py-3 rounded-full bg-surface-container-low border-2 border-outline-variant text-on-surface-variant font-label-lg transition-all duration-200 hover:bg-surface-container-high active:scale-95" onclick="toggleChip(this)">
+                    Romas (Slopers)
+                </button>
+<button class="px-6 py-3 rounded-full bg-surface-container-low border-2 border-outline-variant text-on-surface-variant font-label-lg transition-all duration-200 hover:bg-surface-container-high active:scale-95" onclick="toggleChip(this)">
+                    Desplome
+                </button>
+<button class="px-6 py-3 rounded-full bg-surface-container-low border-2 border-outline-variant text-on-surface-variant font-label-lg transition-all duration-200 hover:bg-surface-container-high active:scale-95" onclick="toggleChip(this)">
+                    Placa
+                </button>
+<button class="px-6 py-3 rounded-full bg-surface-container-low border-2 border-outline-variant text-on-surface-variant font-label-lg transition-all duration-200 hover:bg-surface-container-high active:scale-95" onclick="toggleChip(this)">
+                    Chorreras (Tufas)
+                </button>
+<button class="px-6 py-3 rounded-full bg-surface-container-low border-2 border-outline-variant text-on-surface-variant font-label-lg transition-all duration-200 hover:bg-surface-container-high active:scale-95" onclick="toggleChip(this)">
+                    Fisuras
+                </button>
+</div>
+</section>
+<!-- Goal Input -->
+<section class="space-y-4">
+<label class="block text-headline-md-mobile font-headline-md-mobile text-primary" for="goal">Tu objetivo principal</label>
+<div class="relative">
+<input class="w-full h-14 px-6 bg-surface-container-lowest border-2 border-outline-variant rounded-xl focus:border-primary focus:ring-0 text-body-lg font-body-lg transition-all placeholder:text-on-surface-variant/50" id="goal" placeholder="Ej: Encadenar mi primer 5.11" type="text">
+<span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline" data-icon="edit">edit</span>
+</div>
+</section>
+<!-- Sessions Stepper -->
+<section class="bg-surface-container-low p-6 rounded-lg border border-outline-variant/30 flex items-center justify-between shadow-sm">
+<div class="flex flex-col">
+<span class="text-headline-md-mobile font-headline-md-mobile text-primary">Frecuencia</span>
+<span class="text-label-md font-label-md text-on-surface-variant">Sesiones por semana</span>
+</div>
+<div class="flex items-center gap-4 bg-surface-container-lowest p-2 rounded-full border border-outline-variant shadow-inner">
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-primary-container text-on-primary-container hover:brightness-110 active:scale-90 transition-transform" onclick="adjustStepper(-1)">
+<span class="material-symbols-outlined" data-icon="remove">remove</span>
+</button>
+<span class="text-headline-md font-headline-md min-w-[32px] text-center" id="session-count">3</span>
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-primary-container text-on-primary-container hover:brightness-110 active:scale-90 transition-transform" onclick="adjustStepper(1)">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</button>
+</div>
+</section>
+</main>
+<!-- Fixed Bottom Action Bar -->
+<footer class="fixed bottom-0 left-0 right-0 p-margin-mobile bg-gradient-to-t from-background via-background/95 to-transparent pt-12">
+<div class="max-w-md mx-auto">
+<button class="w-full h-14 bg-primary-container text-on-primary-container rounded-full font-headline-md flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] transition-all hover:bg-deep-forest">
+                Siguiente
+                <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</footer>
+<script>
+        function toggleChip(btn) {
+            btn.classList.toggle('chip-selected');
+        }
+
+        function adjustStepper(val) {
+            const countEl = document.getElementById('session-count');
+            let current = parseInt(countEl.innerText);
+            let next = current + val;
+            if (next >= 1 && next <= 7) {
+                countEl.innerText = next;
+                countEl.classList.add('scale-110', 'text-primary');
+                setTimeout(() => {
+                    countEl.classList.remove('scale-110', 'text-primary');
+                }, 150);
+            }
+        }
+        
+        // Simple input focus interaction
+        const goalInput = document.getElementById('goal');
+        goalInput.addEventListener('focus', () => {
+            goalInput.parentElement.classList.add('scale-[1.02]');
+        });
+        goalInput.addEventListener('blur', () => {
+            goalInput.parentElement.classList.remove('scale-[1.02]');
+        });
+    </script>
+</body></html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BilClimb - Tu Perfil</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#176b52",
+                        "surface-container-low": "#f8f3e9",
+                        "primary-container": "#2f7d63",
+                        "surface": "#fef9ef",
+                        "secondary-fixed": "#ffdad5",
+                        "on-tertiary-container": "#fff3e5",
+                        "on-error-container": "#93000a",
+                        "outline": "#6f7974",
+                        "surface-bright": "#fef9ef",
+                        "tertiary-fixed": "#ffdeac",
+                        "on-secondary-fixed-variant": "#8f100e",
+                        "primary-fixed-dim": "#89d6b7",
+                        "on-primary-fixed-variant": "#00513c",
+                        "tertiary-container": "#956700",
+                        "on-tertiary-fixed-variant": "#604100",
+                        "on-primary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "surface-variant": "#e7e2d8",
+                        "outline-variant": "#bec9c2",
+                        "on-surface-variant": "#3f4944",
+                        "error-container": "#ffdad6",
+                        "background": "#fef9ef",
+                        "surface-dim": "#dedad0",
+                        "surface-container-high": "#ede8de",
+                        "on-surface": "#1d1c16",
+                        "tertiary": "#755000",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#f2ede3",
+                        "on-error": "#ffffff",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#fcbb44",
+                        "primary-fixed": "#a5f2d2",
+                        "secondary": "#b12b23",
+                        "inverse-on-surface": "#f5f0e6",
+                        "on-secondary": "#ffffff",
+                        "inverse-surface": "#32302a",
+                        "secondary-container": "#fd6253",
+                        "on-secondary-fixed": "#410001",
+                        "surface-container-highest": "#e7e2d8",
+                        "on-primary-fixed": "#002116",
+                        "on-primary-container": "#d2ffea",
+                        "inverse-primary": "#89d6b7",
+                        "on-secondary-container": "#650003",
+                        "primary": "#0a644b",
+                        "on-tertiary-fixed": "#281900",
+                        "secondary-fixed-dim": "#ffb4aa",
+                        "on-background": "#1d1c16",
+                        "custom-green-primary": "#2F7D63",
+                        "custom-red-energy": "#D6463A",
+                        "custom-amber-gold": "#F2B23C",
+                        "custom-cream-base": "#F2EDE3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Nunito Sans"],
+                        "display": ["Nunito Sans"],
+                        "body": ["Nunito Sans"],
+                        "label": ["Nunito Sans"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Nunito Sans', sans-serif;
+            background-color: #F2EDE3;
+            color: #1d1c16;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-tab-indicator {
+            font-variation-settings: 'FILL' 1;
+        }
+        .custom-shadow {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface flex items-center justify-between px-5 h-16 w-full max-w-screen-xl mx-auto">
+<div class="flex items-center gap-3">
+<button class="material-symbols-outlined text-primary active:scale-95 transition-transform" data-icon="arrow_back">arrow_back</button>
+<h1 class="font-headline text-headline-md font-extrabold text-primary">Tu Perfil</h1>
+</div>
+<button class="material-symbols-outlined text-primary transition-transform active:scale-90" data-icon="forum">forum</button>
+</header>
+<main class="pt-20 px-5 max-w-md mx-auto space-y-8">
+<!-- Header: Profile Section -->
+<section class="flex flex-col items-center text-center space-y-4">
+<div class="relative">
+<div class="w-32 h-32 rounded-full border-4 border-white custom-shadow overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A cinematic, warm-toned close-up portrait of a friendly young male climber named Mateo García. He has a kind expression, messy dark hair, and is wearing a high-quality red climbing hoodie. The lighting is soft morning sun, set against a blurred background of a warm-toned sandstone climbing wall. High detail, flat-vector illustration style with bold outlines and soft shading." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtuWNynzPmT9R7JWlSNe_IduWU3mqFG2I0lZDUW2s7PocAg7HIQfwg2dEqQFCsIgynujK_ACmSBOlbNXOE5l3Lt6MW202sCGqDqBnxLL0CaH8lI_4UlIoX8nXQo5_Guc0r02vrWdibABAHK9UubNs5wFGv4xUjb5ffxWwY8HEgrVvAY3QvippnXILu_bumWQNJ10jkwsDN5syglPXMVRuVbIyAq8gdyTbnBNelxOwubqwSnGyO7GnK"/>
+</div>
+<div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-custom-amber-gold text-white text-[10px] font-bold px-3 py-1 rounded-full border-2 border-surface uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+                    Intermedio
+                </div>
+</div>
+<div>
+<h2 class="text-2xl font-extrabold text-on-surface">Mateo García</h2>
+<p class="text-on-surface-variant text-sm font-medium">Escalando desde 2021 • CDMX</p>
+</div>
+</section>
+<!-- Section 1: Mi Coach -->
+<section class="space-y-4">
+<div class="flex items-center justify-between">
+<h3 class="text-lg font-bold text-on-surface">Mi Coach</h3>
+<span class="text-xs text-on-surface-variant font-medium">Cambia de guía cuando quieras</span>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<!-- Bill Selected -->
+<button class="relative bg-surface-container-lowest p-4 rounded-xl border-2 border-primary custom-shadow text-left transition-all active:scale-95">
+<div class="absolute top-2 right-2 bg-primary text-white rounded-full p-0.5">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</div>
+<div class="w-16 h-16 rounded-full overflow-hidden mx-auto mb-3">
+<img alt="Bill Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNSKAcfKapFEf-uQmYIIwt4T6eXhj_Zck_YZ8DNrj7ycl3oprfoMNrT1WNxzk1OnIGvPMePTawYK9QfmWFc5Z0IXSyHnzEL-nzT9tMkcw11NkqYfACAKFpCqbAa1ZGDlzalPKhZBXrXyddKiipoI_UmVe8km6IPKaXRqSDOoHd1BgcwQxjq4_XT2fW0XcCCzm40U7Q09rRszbE1KT5J4_iEH_ooNppTtL5F7BYci6IDaQjxiGKsmLOUNpi_UUaLPOcPA"/>
+</div>
+<div class="text-center">
+<p class="font-bold text-on-surface">Bill</p>
+<p class="text-[10px] text-on-surface-variant">Guía Directo</p>
+</div>
+</button>
+<!-- Senda Unselected -->
+<button class="bg-surface-container-high/50 p-4 rounded-xl border-2 border-transparent custom-shadow text-left transition-all hover:bg-surface-container-high active:scale-95">
+<div class="w-16 h-16 rounded-full overflow-hidden mx-auto mb-3 opacity-60">
+<img alt="Senda Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhXwwis688Pxab2SYD83LmMM3WcXXxNgawAXQ_xUUd5jc9egOfB0knfAk_txyZ6LYTnV3XnRYVFS_Gc99zpf61sCiml91ojGiPVEsHdAxkVQreketMCPh6V9XcNwvx9-rbOiAV73jmXTAxtqhGQBn9LDCObPpKW2FCCOFpiRt3jXClVNro0HGe9XLhrX9jfBYvYiKrzTT_lXyNbDn7k7Gd_80XrlBIZTClo_hJfM0efrBeTPgs46OUM9F4jRcZPWO0tQ"/>
+</div>
+<div class="text-center">
+<p class="font-bold text-on-surface-variant">Senda</p>
+<p class="text-[10px] text-on-surface-variant">Acompañante</p>
+</div>
+</button>
+</div>
+</section>
+<!-- Section 2: Mi Entrenamiento -->
+<section class="space-y-4">
+<h3 class="text-lg font-bold text-on-surface">Mi Entrenamiento</h3>
+<div class="space-y-3">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl custom-shadow flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="bg-primary-container/20 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary" data-icon="leaderboard">leaderboard</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant font-bold uppercase tracking-tight">Grado Actual</p>
+<p class="font-bold text-on-surface">V4 / 5.11b</p>
+</div>
+</div>
+<button class="text-primary text-xs font-bold px-4 py-1.5 rounded-full border border-primary/20 hover:bg-primary/5">Editar</button>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl custom-shadow flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="bg-primary-container/20 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary" data-icon="fitness_center">fitness_center</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant font-bold uppercase tracking-tight">Mi Equipo</p>
+<p class="font-bold text-on-surface">Hangboard, Pesas</p>
+</div>
+</div>
+<button class="text-primary text-xs font-bold px-4 py-1.5 rounded-full border border-primary/20 hover:bg-primary/5">Editar</button>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl custom-shadow flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="bg-primary-container/20 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary" data-icon="medical_services">medical_services</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant font-bold uppercase tracking-tight">Salud y Lesiones</p>
+<p class="font-bold text-on-surface">Sin lesiones activas</p>
+</div>
+</div>
+<button class="text-primary text-xs font-bold px-4 py-1.5 rounded-full border border-primary/20 hover:bg-primary/5">Editar</button>
+</div>
+</div>
+</section>
+<!-- Section 3: Preferencias -->
+<section class="space-y-4">
+<h3 class="text-lg font-bold text-on-surface">Preferencias</h3>
+<div class="bg-surface-container-lowest rounded-xl custom-shadow divide-y divide-surface-container overflow-hidden">
+<div class="p-4 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="notifications">notifications</span>
+<span class="font-bold text-on-surface">Notificaciones</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="p-4 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="download">download</span>
+<span class="font-bold text-on-surface">Descargar sesiones (Offline)</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- Section 4: Suscripción -->
+<section class="space-y-4">
+<h3 class="text-lg font-bold text-on-surface">Suscripción</h3>
+<div class="bg-gradient-to-r from-primary to-[#176b52] p-5 rounded-xl custom-shadow text-white relative overflow-hidden">
+<!-- Decorative background elements -->
+<div class="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+<div class="relative z-10 flex items-start justify-between">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-custom-amber-gold" style="font-variation-settings: 'FILL' 1;">stars</span>
+<p class="font-extrabold text-xl">BilClimb Pro</p>
+</div>
+<p class="text-sm opacity-90">Plan anual • Activo hasta Dic 2024</p>
+</div>
+<button class="bg-white/20 hover:bg-white/30 backdrop-blur-md text-[11px] font-bold px-3 py-1.5 rounded-lg border border-white/30 transition-colors uppercase">Gestionar</button>
+</div>
+</div>
+</section>
+<!-- Section 5: Cuenta -->
+<section class="space-y-4">
+<h3 class="text-lg font-bold text-on-surface">Cuenta</h3>
+<div class="space-y-2">
+<button class="w-full flex items-center gap-4 p-4 text-custom-red-energy font-bold bg-white rounded-xl custom-shadow active:scale-[0.98] transition-transform">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+                    Cerrar sesión
+                </button>
+<button class="w-full flex items-center gap-4 p-4 text-on-surface-variant font-bold bg-transparent rounded-xl border-2 border-surface-container hover:bg-surface-container active:scale-[0.98] transition-transform">
+<span class="material-symbols-outlined" data-icon="delete_forever">delete_forever</span>
+                    Eliminar cuenta
+                </button>
+</div>
+</section>
+<div class="text-center py-8">
+<p class="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest opacity-50">BilClimb v2.4.0 • Belay Partners</p>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pt-2 pb-6 bg-surface-container dark:bg-surface-container-high shadow-md rounded-t-lg">
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant/50 px-4 py-1 rounded-full active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[24px]" data-icon="today">today</span>
+<span class="font-label text-[10px] mt-0.5">Hoy</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant/50 px-4 py-1 rounded-full active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[24px]" data-icon="route">route</span>
+<span class="font-label text-[10px] mt-0.5">Plan</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant/50 px-4 py-1 rounded-full active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[24px]" data-icon="query_stats">query_stats</span>
+<span class="font-label text-[10px] mt-0.5">Progreso</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[24px] active-tab-indicator" data-icon="smart_toy">smart_toy</span>
+<span class="font-label text-[10px] mt-0.5 font-bold">Coach</span>
+</button>
+</nav>
+<script>
+        // Micro-interactions and Tab Switch Logic Simulation
+        document.querySelectorAll('nav button').forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active classes from all
+                document.querySelectorAll('nav button').forEach(btn => {
+                    btn.classList.remove('bg-primary-container', 'text-on-primary-container');
+                    btn.classList.add('text-on-surface-variant');
+                    btn.querySelector('.material-symbols-outlined').style.fontVariationSettings = "'FILL' 0";
+                });
+                // Add to current
+                this.classList.add('bg-primary-container', 'text-on-primary-container');
+                this.classList.remove('text-on-surface-variant');
+                this.querySelector('.material-symbols-outlined').style.fontVariationSettings = "'FILL' 1";
+            });
+        });
+    </script>
+</body></html>

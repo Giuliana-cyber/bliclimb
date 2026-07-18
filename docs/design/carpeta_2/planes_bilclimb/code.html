@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es-MX"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BilClimb - Planes</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#a5f2d2",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed": "#281900",
+                        "on-secondary-fixed": "#410001",
+                        "on-primary-fixed-variant": "#00513c",
+                        "tertiary-fixed-dim": "#fcbb44",
+                        "secondary-container": "#fd6253",
+                        "inverse-primary": "#89d6b7",
+                        "outline": "#6f7974",
+                        "surface-dim": "#dedad0",
+                        "secondary-fixed": "#ffdad5",
+                        "surface-tint": "#176b52",
+                        "outline-variant": "#bec9c2",
+                        "tertiary-container": "#956700",
+                        "secondary": "#b12b23",
+                        "on-secondary-fixed-variant": "#8f100e",
+                        "background": "#fef9ef",
+                        "surface-bright": "#fef9ef",
+                        "on-primary": "#ffffff",
+                        "surface-container-highest": "#e7e2d8",
+                        "tertiary": "#755000",
+                        "error-container": "#ffdad6",
+                        "primary-fixed-dim": "#89d6b7",
+                        "secondary-fixed-dim": "#ffb4aa",
+                        "on-tertiary-fixed-variant": "#604100",
+                        "on-error": "#ffffff",
+                        "primary-container": "#2f7d63",
+                        "on-primary-fixed": "#002116",
+                        "on-background": "#1d1c16",
+                        "surface-container-high": "#ede8de",
+                        "surface-container-low": "#f8f3e9",
+                        "primary": "#0a644b",
+                        "error": "#ba1a1a",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#f2ede3",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed": "#ffdeac",
+                        "on-surface": "#1d1c16",
+                        "surface": "#fef9ef",
+                        "surface-variant": "#e7e2d8",
+                        "on-surface-variant": "#3f4944",
+                        "inverse-surface": "#32302a",
+                        "on-primary-container": "#d2ffea",
+                        "inverse-on-surface": "#f5f0e6",
+                        "on-tertiary-container": "#fff3e5",
+                        "on-secondary-container": "#650003"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Nunito Sans"],
+                        "display": ["Nunito Sans"],
+                        "body": ["Nunito Sans"],
+                        "label": ["Nunito Sans"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .plan-card-active {
+            box-shadow: 0 10px 25px -5px rgba(10, 100, 75, 0.2);
+        }
+        body {
+            background-color: #fef9ef;
+            font-family: 'Nunito Sans', sans-serif;
+            color: #1d1c16;
+        }
+        .safe-area-pb {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface mb-24">
+<!-- TopAppBar Section -->
+<header class="flex justify-between items-center px-5 h-16 w-full z-50 bg-surface dark:bg-background docked full-width top-0">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden bg-primary-fixed flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="A stylized circular golden brain icon designed with circuit-board patterns, representing the BilClimb artificial intelligence mascot. The icon is rendered in a minimalist flat-vector style with bold gold colors against a soft cream background, maintaining the warm and technological theme of the mountain climbing app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCu89qCbhGuS98xYqHo1kXb46KRpDuGumgipG4aceH41MGaytGxuF5ATfV1A7H8JjT72mU6_IZ1GWqKshEQHKC8d0TTx9phDBSxYyR409VQrt2SMAuGMqTfzH3QY8hEHP438xzRp0Nj6JGfS-djlER1O1hQXqC-rXiGEKXwTnFe0lClEPbF08wTDuX0EORP02dSo5xp1-kg6KmuisOsggCaucLOEfWCtvMkF7n4Zn1aAUQjguTYWzLs"/>
+</div>
+<h1 class="font-headline text-headline-md font-bold text-primary dark:text-primary-fixed">BilClimb</h1>
+</div>
+<button class="text-on-surface-variant dark:text-outline-variant hover:opacity-80 transition-opacity active:scale-95 duration-100">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</header>
+<main class="max-w-md mx-auto px-5 pt-4">
+<!-- Hero Section -->
+<section class="text-center mb-8">
+<h2 class="font-headline text-3xl font-extrabold text-on-surface tracking-tight mb-3">Tu camino a la cima</h2>
+<div class="bg-surface-container-low rounded-lg p-4 flex gap-4 items-start border border-surface-container-high">
+<div class="flex-shrink-0 w-12 h-12 bg-primary-fixed rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close-up portrait of Bill, the climbing coach mascot. He is a friendly male character wearing a green climbing helmet with a golden emblem and a red hoodie. The illustration style is flat vector with clean dark outlines and soft shading, radiating warmth, honesty, and trustworthiness for the Spanish-speaking mountain climbing community." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHCSlWF4DBRHHjT0p8O3ZbmnHatoFjP8RsnBKDIfquIiqFGot15N3OaDbVYRPqBAj5h77CrDW0zNCW7c82wRB5r5oaQJEHLw4mN-VMV3i-JUmivyNT7xQQsqffXjNTgBCgw-2f6mmZg5L9bcgxBjlyTYqqlsEGPDH8X4uX7gcSH37iV2jCJ7ekJcwuwQTXLnTikCqQT4ra2BFgYAv1NHJHLxOj5kRD6D2lqgZlFXZdHhRb9a0SYOP7"/>
+</div>
+<div class="text-left">
+<p class="text-body-md text-on-surface-variant leading-snug italic">
+                        "Queremos que entrenes con seguridad. Empieza gratis, quédate si te sirve."
+                    </p>
+<span class="block mt-1 font-bold text-primary text-label-md">— Bill</span>
+</div>
+</div>
+</section>
+<!-- Toggle Pricing -->
+<section class="flex flex-col items-center mb-8" x-data="{ annual: true }">
+<div class="bg-surface-container-highest rounded-full p-1 flex items-center w-full max-w-[280px] mb-4">
+<button class="flex-1 py-2 px-4 rounded-full text-label-lg transition-all duration-300 font-bold bg-primary text-on-primary" onclick="document.querySelectorAll('.price-toggle').forEach(el =&gt; el.classList.toggle('hidden'))">
+                    Anual
+                </button>
+<button class="flex-1 py-2 px-4 rounded-full text-label-lg transition-all duration-300 font-semibold text-on-surface-variant hover:bg-surface-container-high" onclick="document.querySelectorAll('.price-toggle').forEach(el =&gt; el.classList.toggle('hidden'))">
+                    Mensual
+                </button>
+</div>
+<div class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-label-md font-bold animate-pulse">
+                Ahorra 20%
+            </div>
+</section>
+<!-- Plans Cards -->
+<section class="space-y-6">
+<!-- Plan Base -->
+<div class="bg-surface-container rounded-lg p-6 border border-outline-variant flex flex-col transition-all active:scale-[0.98]">
+<h3 class="font-headline text-xl font-bold text-on-surface mb-1">Plan Base</h3>
+<div class="flex items-baseline gap-1 mb-4">
+<span class="text-3xl font-extrabold">$0</span>
+<span class="text-on-surface-variant text-body-md">gratis</span>
+</div>
+<ul class="space-y-3 mb-8">
+<li class="flex items-center gap-3 text-body-md text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+                        Onboarding guiado
+                    </li>
+<li class="flex items-center gap-3 text-body-md text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+                        Plan inicial (2-3 semanas)
+                    </li>
+<li class="flex items-center gap-3 text-body-md text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-[20px]">lock</span>
+                        Retest de fuerza limitado
+                    </li>
+</ul>
+<button class="w-full h-[52px] border-2 border-primary text-primary font-bold rounded-full hover:bg-primary-fixed transition-colors active:scale-95">
+                    Seguir con Base
+                </button>
+</div>
+<!-- Plan Premium -->
+<div class="bg-surface-container-lowest rounded-lg p-6 border-2 border-primary plan-card-active relative overflow-hidden flex flex-col transition-all active:scale-[0.98]">
+<div class="absolute top-0 right-0 bg-primary text-on-primary px-4 py-1 rounded-bl-lg font-bold text-label-md">
+                    RECOMENDADO
+                </div>
+<h3 class="font-headline text-xl font-bold text-primary mb-1">BilClimb Premium</h3>
+<!-- Annual Prices -->
+<div class="price-toggle flex items-baseline gap-1 mb-4">
+<span class="text-3xl font-extrabold text-on-surface">$99</span>
+<span class="text-on-surface-variant text-body-md">/mes (anual)</span>
+</div>
+<!-- Monthly Prices (Hidden by default) -->
+<div class="price-toggle hidden flex items-baseline gap-1 mb-4">
+<span class="text-3xl font-extrabold text-on-surface">$199</span>
+<span class="text-on-surface-variant text-body-md">/mes</span>
+</div>
+<ul class="space-y-3 mb-8">
+<li class="flex items-center gap-3 text-body-md text-on-surface font-semibold">
+<span class="material-symbols-outlined text-secondary text-[22px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                        Acceso total e ilimitado
+                    </li>
+<li class="flex items-center gap-3 text-body-md text-on-surface">
+<span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+                        IA Coach ilimitado
+                    </li>
+<li class="flex items-center gap-3 text-body-md text-on-surface">
+<span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+                        Planes personalizados
+                    </li>
+<li class="flex items-center gap-3 text-body-md text-on-surface">
+<span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+                        Retest ilimitados
+                    </li>
+<li class="flex items-center gap-3 text-body-md text-on-surface">
+<span class="material-symbols-outlined text-primary text-[20px]">check_circle</span>
+                        Historia de progreso personalizada
+                    </li>
+</ul>
+<button class="w-full h-[52px] bg-secondary text-on-secondary font-bold rounded-full hover:bg-secondary-container transition-all shadow-md active:scale-95">
+                    Hazte Premium
+                </button>
+</div>
+</section>
+<!-- Footer Note -->
+<section class="mt-8 mb-12 text-center">
+<p class="text-body-md text-on-surface-variant font-medium">
+                "Es como una visita al gym al mes."
+            </p>
+<p class="mt-4 text-label-md text-outline italic">
+                Cancela cuando quieras desde tu perfil. Sin trucos.
+            </p>
+</section>
+</main>
+<!-- BottomNavBar Section -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 pb-safe px-4 bg-surface dark:bg-background border-t border-outline-variant dark:border-outline shadow-lg style_component_shape">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high transition-colors active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">fitness_center</span>
+<span class="font-label text-label-md font-semibold mt-1">Entrenar</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-container-high transition-colors active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">trending_up</span>
+<span class="font-label text-label-md font-semibold mt-1">Progreso</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">map</span>
+<span class="font-label text-label-md font-semibold mt-1">Planes</span>
+</a>
+</nav>
+<script>
+        // Micro-interaction: Active state visual feedback for buttons
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                const rect = btn.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const ripple = document.createElement('span');
+                ripple.style.position = 'absolute';
+                ripple.style.left = `${x}px`;
+                ripple.style.top = `${y}px`;
+                ripple.style.width = '0';
+                ripple.style.height = '0';
+                ripple.style.background = 'rgba(255, 255, 255, 0.3)';
+                ripple.style.borderRadius = '50%';
+                ripple.style.transform = 'translate(-50%, -50%)';
+                ripple.style.transition = 'width 0.4s ease-out, height 0.4s ease-out, opacity 0.4s ease-out';
+                ripple.style.pointerEvents = 'none';
+                
+                btn.style.position = 'relative';
+                btn.style.overflow = 'hidden';
+                btn.appendChild(ripple);
+                
+                requestAnimationFrame(() => {
+                    ripple.style.width = '300px';
+                    ripple.style.height = '300px';
+                    ripple.style.opacity = '0';
+                });
+                
+                setTimeout(() => ripple.remove(), 400);
+            });
+        });
+    </script>
+</body></html>

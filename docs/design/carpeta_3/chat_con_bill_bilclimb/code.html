@@ -1,0 +1,240 @@
+<!DOCTYPE html><html class="light" lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@0,200;0,300;0,400;0,600;0,700;0,800;0,900;1,200;1,300;1,400;1,600;1,700;1,800;1,900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Load Tailwind Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-on-surface": "#f5f0e6",
+                    "secondary-fixed-dim": "#ffb4aa",
+                    "primary-fixed": "#a5f2d2",
+                    "surface-container-low": "#f8f3e9",
+                    "primary": "#0a644b",
+                    "on-primary-fixed": "#002116",
+                    "deep-forest": "#24614D",
+                    "on-primary": "#ffffff",
+                    "surface-container-highest": "#e7e2d8",
+                    "on-background": "#1d1c16",
+                    "on-tertiary-container": "#fff3e5",
+                    "inverse-primary": "#89d6b7",
+                    "surface-container": "#f2ede3",
+                    "primary-fixed-dim": "#89d6b7",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#dedad0",
+                    "surface-tint": "#176b52",
+                    "ink-text": "#241F1C",
+                    "error-container": "#ffdad6",
+                    "error": "#ba1a1a",
+                    "surface": "#fef9ef",
+                    "outline-variant": "#bec9c2",
+                    "on-secondary-fixed": "#410001",
+                    "secondary": "#b12b23",
+                    "surface-container-high": "#ede8de",
+                    "tertiary-fixed-dim": "#fcbb44",
+                    "tertiary-fixed": "#ffdeac",
+                    "on-tertiary-fixed": "#281900",
+                    "secondary-container": "#fd6253",
+                    "on-secondary-fixed-variant": "#8f100e",
+                    "on-error-container": "#93000a",
+                    "on-surface": "#1d1c16",
+                    "surface-variant": "#e7e2d8",
+                    "surface-bright": "#fef9ef",
+                    "on-error": "#ffffff",
+                    "on-primary-fixed-variant": "#00513c",
+                    "tertiary-container": "#956700",
+                    "outline": "#6f7974",
+                    "on-secondary-container": "#650003",
+                    "inverse-surface": "#32302a",
+                    "primary-container": "#2f7d63",
+                    "senda-navy": "#21395A",
+                    "on-primary-container": "#d2ffea",
+                    "secondary-fixed": "#ffdad5",
+                    "tertiary": "#755000",
+                    "on-surface-variant": "#3f4944",
+                    "on-tertiary": "#ffffff",
+                    "wood-tan": "#CDA96E",
+                    "background": "#fef9ef",
+                    "on-tertiary-fixed-variant": "#604100",
+                    "on-secondary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "40px",
+                    "gutter": "16px",
+                    "base": "8px",
+                    "margin-mobile": "20px",
+                    "touch-target": "48px",
+                    "card-padding": "24px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Nunito Sans"],
+                    "headline-lg": ["Nunito Sans"],
+                    "label-md": ["Nunito Sans"],
+                    "label-lg": ["Nunito Sans"],
+                    "headline-lg-mobile": ["Nunito Sans"],
+                    "display-lg": ["Nunito Sans"],
+                    "body-lg": ["Nunito Sans"],
+                    "body-md": ["Nunito Sans"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #fef9ef; /* background token */
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .chat-container::-webkit-scrollbar {
+            display: none;
+        }
+        .chat-container {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .message-bubble-bill {
+            border-bottom-left-radius: 4px;
+        }
+        .message-bubble-user {
+            border-bottom-right-radius: 4px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-surface">
+<!-- TopAppBar (Mapped from JSON) -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim shadow-sm flex items-center justify-between px-margin-mobile h-touch-target">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="A friendly and professional digital illustration of Bill, a seasoned mountain guide mascot with a warm smile, wearing a forest green climber's vest and a small beanie. The art style features clean ink-style outlines and soft organic colors, following a warm light-mode aesthetic consistent with a climbing progress app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUcpL_9V6UwgvbE4qhciUXqqqrgwuhbtAo1fWbR0lqYb9ma_3dJhEuiXiRrRq2V4CLR3VRZVc6HzC8Qf-bl9cjSeXXum6Yhj9THG0B3dkw34g8X3mm2xxTljpi5PGNeWLKdShVJXw8Sox5_zToeb83Si0_11z5nacy1m7hIvp0eVbkXXvUbs_uYH_j8H3-P3JGMuJgpQrmeKGXl0GclSW3h2TMXkFFzvFY0afNrx5iBXzAkw2C04BR">
+</div>
+<h1 class="font-headline-md text-headline-md text-primary dark:text-primary-fixed">Chat con Bill</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed">settings</span>
+</button>
+</header>
+<!-- Chat Body -->
+<main class="pt-16 pb-48 px-margin-mobile chat-container overflow-y-auto h-screen flex flex-col gap-6">
+<!-- Date Divider -->
+<div class="flex justify-center my-4">
+<span class="bg-surface-container text-on-surface-variant px-4 py-1 rounded-full font-label-md text-label-md">Hoy</span>
+</div>
+<!-- Bill Message 1 -->
+<div class="flex flex-col items-start max-w-[85%] group">
+<div class="bg-surface-container-high text-on-surface p-card-padding rounded-lg message-bubble-bill shadow-sm transition-transform active:scale-[0.98]">
+<p class="font-body-md text-body-md leading-relaxed">
+                    ¡Hola! ¿Cómo te sientes hoy para la sesión de 'Dedos y Base'? Recuerda que no se trata de apretar al máximo, sino de ser constantes.
+                </p>
+</div>
+<span class="mt-2 ml-1 font-label-md text-label-md text-outline">10:02 AM</span>
+</div>
+<!-- User Message -->
+<div class="flex flex-col items-end self-end max-w-[85%]">
+<div class="bg-primary-container text-on-primary-container p-card-padding rounded-lg message-bubble-user shadow-sm transition-transform active:scale-[0.98]">
+<p class="font-body-md text-body-md leading-relaxed">
+                    Hola Bill, me siento bien, pero tengo una duda sobre el ejercicio de regleta.
+                </p>
+</div>
+<span class="mt-2 mr-1 font-label-md text-label-md text-outline text-right">10:05 AM</span>
+</div>
+<!-- Bill Message 2 -->
+<div class="flex flex-col items-start max-w-[85%]">
+<div class="bg-surface-container-high text-on-surface p-card-padding rounded-lg message-bubble-bill shadow-sm transition-transform active:scale-[0.98]">
+<p class="font-body-md text-body-md leading-relaxed">
+                    Claro, dime. ¿Es por la intensidad o por la postura? Recuerda que tus dedos necesitan tiempo para adaptarse.
+                </p>
+</div>
+<span class="mt-2 ml-1 font-label-md text-label-md text-outline">10:06 AM</span>
+</div>
+</main>
+<!-- Fixed Bottom Controls Area -->
+<div class="fixed bottom-[80px] left-0 w-full px-margin-mobile flex flex-col gap-4 z-40">
+<!-- Quick Reply Chips -->
+<div class="flex gap-2 overflow-x-auto pb-2 chat-container">
+<button class="whitespace-nowrap bg-surface-container-highest text-primary border border-outline-variant px-4 py-2 rounded-full font-label-lg text-label-lg shadow-sm hover:bg-primary-fixed transition-colors active:scale-95">
+                ¿Por qué esto hoy?
+            </button>
+<button class="whitespace-nowrap bg-surface-container-highest text-secondary border border-outline-variant px-4 py-2 rounded-full font-label-lg text-label-lg shadow-sm hover:bg-secondary-fixed transition-colors active:scale-95">
+                Me duele algo
+            </button>
+<button class="whitespace-nowrap bg-surface-container-highest text-primary border border-outline-variant px-4 py-2 rounded-full font-label-lg text-label-lg shadow-sm hover:bg-primary-fixed transition-colors active:scale-95">
+                Cámbiame el plan
+            </button>
+</div>
+<!-- Chat Input Bar -->
+<div class="bg-surface-container-low p-2 rounded-xl flex items-center gap-2 shadow-lg border border-surface-variant">
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high active:scale-90 transition-transform">
+<span class="material-symbols-outlined">mic</span>
+</button>
+<input class="flex-1 bg-transparent border-none focus:ring-0 text-on-surface font-body-md text-body-md py-2 px-1" placeholder="Escribe tu duda aquí..." type="text">
+<button class="bg-primary-container text-on-primary-container w-touch-target h-touch-target flex items-center justify-center rounded-full shadow-md active:scale-90 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+</div>
+<!-- BottomNavBar (Mapped from JSON) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 bg-surface-container dark:bg-surface-container-highest shadow-[0_-4px_12px_rgba(36,31,28,0.08)] rounded-t-lg">
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant transition-all duration-200 active:scale-90">
+<span class="material-symbols-outlined">today</span>
+<span class="font-label-md text-label-md">Hoy</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant transition-all duration-200 active:scale-90">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="font-label-md text-label-md">Plan</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant transition-all duration-200 active:scale-90">
+<span class="material-symbols-outlined">equalizer</span>
+<span class="font-label-md text-label-md">Progreso</span>
+</div>
+<!-- Active Tab: Chat -->
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container dark:bg-primary dark:text-on-primary rounded-xl px-4 py-1 transition-all duration-200 active:scale-90">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">forum</span>
+<span class="font-label-md text-label-md">Chat</span>
+</div>
+</nav>
+<script>
+        // Simple micro-interaction for chips
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const ripple = document.createElement('span');
+                ripple.classList.add('ripple');
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+        
+        // Auto-scroll to bottom of chat
+        const chatContainer = document.querySelector('main');
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    </script>
+</body></html>

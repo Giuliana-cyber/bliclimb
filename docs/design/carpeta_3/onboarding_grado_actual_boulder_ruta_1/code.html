@@ -1,0 +1,211 @@
+<!DOCTYPE html><html class="light" lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title>Senda - Onboarding</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@0,200;0,300;0,400;0,600;0,700;0,800;0,900;1,200;1,300;1,400;1,600;1,700;1,800;1,900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "senda-navy": "#21395A",
+                    "secondary-fixed-dim": "#ffb4aa",
+                    "primary-fixed": "#a5f2d2",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-container": "#650003",
+                    "error": "#ba1a1a",
+                    "on-primary-fixed-variant": "#00513c",
+                    "on-secondary-fixed-variant": "#8f100e",
+                    "outline-variant": "#bec9c2",
+                    "on-background": "#1d1c16",
+                    "outline": "#6f7974",
+                    "on-tertiary-fixed": "#281900",
+                    "on-error-container": "#93000a",
+                    "secondary-fixed": "#ffdad5",
+                    "primary": "#0a644b",
+                    "inverse-surface": "#32302a",
+                    "on-tertiary-fixed-variant": "#604100",
+                    "background": "#fef9ef",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-bright": "#fef9ef",
+                    "surface-container": "#f2ede3",
+                    "surface-container-high": "#ede8de",
+                    "primary-fixed-dim": "#89d6b7",
+                    "surface-tint": "#176b52",
+                    "on-secondary-fixed": "#410001",
+                    "surface-container-highest": "#e7e2d8",
+                    "on-primary-fixed": "#002116",
+                    "secondary": "#b12b23",
+                    "on-surface-variant": "#3f4944",
+                    "deep-forest": "#24614D",
+                    "on-tertiary-container": "#fff3e5",
+                    "on-primary-container": "#d2ffea",
+                    "tertiary-fixed": "#ffdeac",
+                    "surface-variant": "#e7e2d8",
+                    "tertiary-fixed-dim": "#fcbb44",
+                    "error-container": "#ffdad6",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-low": "#f8f3e9",
+                    "secondary-container": "#fd6253",
+                    "on-primary": "#ffffff",
+                    "surface-dim": "#dedad0",
+                    "tertiary-container": "#956700",
+                    "primary-container": "#2f7d63",
+                    "wood-tan": "#CDA96E",
+                    "on-error": "#ffffff",
+                    "surface": "#fef9ef",
+                    "inverse-on-surface": "#f5f0e6",
+                    "tertiary": "#755000",
+                    "inverse-primary": "#89d6b7",
+                    "ink-text": "#241F1C",
+                    "on-surface": "#1d1c16"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "16px",
+                    "base": "8px",
+                    "touch-target": "48px",
+                    "margin-mobile": "20px",
+                    "card-padding": "24px",
+                    "margin-desktop": "40px"
+            },
+            "fontFamily": {
+                    "label-lg": ["Nunito Sans"],
+                    "label-md": ["Nunito Sans"],
+                    "headline-md": ["Nunito Sans"],
+                    "headline-lg-mobile": ["Nunito Sans"],
+                    "body-lg": ["Nunito Sans"],
+                    "headline-lg": ["Nunito Sans"],
+                    "display-lg": ["Nunito Sans"],
+                    "body-md": ["Nunito Sans"]
+            },
+            "fontSize": {
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+        }
+        body {
+            background-color: #F2EDE3; /* Warm Cream explicitly asked */
+        }
+        .chat-bubble {
+            position: relative;
+        }
+        .chat-bubble::after {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 20px;
+            width: 0;
+            height: 0;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            border-right: 8px solid #ffffff;
+        }
+        .step-active { background-color: #2F7D63; }
+        .step-inactive { background-color: #bec9c2; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-body-md text-ink-text">
+<!-- Top Navigation Anchor (Manual construction based on JSON structure but task-specific) -->
+<header class="w-full top-0 sticky bg-background z-50 flex flex-col items-center pt-base pb-4">
+<div class="flex justify-between items-center px-margin-mobile h-touch-target w-full">
+<button class="material-symbols-outlined text-on-surface-variant hover:opacity-80 transition-opacity active:scale-95 duration-150">close</button>
+<h1 class="font-headline-md text-headline-md-mobile text-primary">Onboarding</h1>
+<div class="w-10"></div> <!-- Spacer for balance -->
+</div>
+<!-- Progress Indicator -->
+<div class="flex gap-2 mt-2">
+<div class="w-8 h-1.5 rounded-full step-active"></div>
+<div class="w-8 h-1.5 rounded-full step-inactive"></div>
+<div class="w-8 h-1.5 rounded-full step-inactive"></div>
+<div class="w-8 h-1.5 rounded-full step-inactive"></div>
+</div>
+</header>
+<main class="flex-1 flex flex-col px-margin-mobile pt-8 pb-32 max-w-lg mx-auto w-full">
+<!-- Conversation Section -->
+<div class="flex items-start gap-4 mb-8">
+<!-- Avatar Bill -->
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-primary shadow-sm flex-shrink-0 bg-white">
+<img alt="Bill mascot avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBX-CH4jkLsMWvhoOhQv9sTaIeYV8YaSUminUqQVr8Xub-P9DDDUt4oWykPV1eGje0dIsfAqkwDmujj3AidrjC2gm6zugyITtZ6jFJ7Rga1j3IU07U3O3p8uTKR2z02xdgaCmbU7HzsV0-WENWdPlbCf5uwk8q2GLI82e8S_ZeRAa2onakw8m6sb4u5nTPoQMxRQ8orjey5r6IluPu-Pnt3-KgIDRfVj3NmTj2V3Wh5m66zXYFhYP05cTm5QLahwQ2Mwg">
+</div>
+<!-- Chat Bubble -->
+<div class="chat-bubble bg-surface-container-lowest p-card-padding rounded-lg shadow-[0_4px_12px_rgba(36,31,28,0.08)]">
+<p class="font-body-lg text-ink-text leading-relaxed">
+                    Cuéntame de tu escalada — la de ahora, no la de tus mejores tiempos.
+                </p>
+</div>
+</div>
+<!-- Question Section -->
+<div class="mb-6">
+<h2 class="font-headline-md text-headline-md-mobile text-on-surface-variant mb-6 text-center sm:text-left">¿Cuál es tu grado actual?</h2>
+<!-- Grade Selection Grid (Bento-style chips) -->
+<div class="flex p-1 bg-surface-container rounded-full mb-6 w-full max-w-xs mx-auto sm:mx-0"><button class="flex-1 py-2 rounded-full text-label-lg transition-all bg-white text-primary shadow-sm" id="toggle-boulder" onclick="switchMode('boulder')">Boulder</button><button class="flex-1 py-2 rounded-full text-label-lg transition-all text-on-surface-variant" id="toggle-ruta" onclick="switchMode('ruta')">Ruta</button></div><div class="grid grid-cols-2 gap-4" id="grade-container"><button class="grade-chip h-touch-target px-6 flex items-center justify-center rounded-lg border-2 border-outline-variant bg-surface-container-low font-label-lg text-on-surface-variant hover:bg-surface-container transition-all active:scale-95" onclick="selectGrade(this)">5.9 o menos</button><button class="grade-chip h-touch-target px-6 flex items-center justify-center rounded-lg border-2 border-outline-variant bg-surface-container-low font-label-lg text-on-surface-variant hover:bg-surface-container transition-all active:scale-95" onclick="selectGrade(this)">5.10</button><button class="grade-chip h-touch-target px-6 flex items-center justify-center rounded-lg border-2 border-outline-variant bg-surface-container-low font-label-lg text-on-surface-variant hover:bg-surface-container transition-all active:scale-95" onclick="selectGrade(this)">5.11</button><button class="grade-chip h-touch-target px-6 flex items-center justify-center rounded-lg border-2 border-outline-variant bg-surface-container-low font-label-lg text-on-surface-variant hover:bg-surface-container transition-all active:scale-95" onclick="selectGrade(this)">5.12+</button><button class="col-span-2 h-touch-target px-6 flex items-center justify-center rounded-lg border-2 border-wood-tan bg-white font-label-lg text-tertiary-container hover:bg-surface-container-low transition-all active:scale-95" onclick="selectGrade(this)">No sé mi grado</button></div>
+</div>
+<!-- Feedback Card (Visible after selection) -->
+<div class="hidden animate-in fade-in slide-in-from-bottom-4 duration-500 mt-4 p-base bg-surface-container rounded-lg border-l-4 border-wood-tan" id="pro-tip">
+<div class="flex gap-3">
+<span class="material-symbols-outlined text-wood-tan">info</span>
+<p class="text-label-md text-on-surface-variant">Senda utiliza esta información para calibrar tus entrenamientos de fuerza y técnica.</p>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Shell (Action focused) -->
+<footer class="fixed bottom-0 left-0 w-full flex flex-col items-center px-margin-mobile py-8 pointer-events-none">
+<div class="w-full max-w-lg pointer-events-auto">
+<button class="w-full h-touch-target rounded-full bg-[#D6463A] text-white font-label-lg shadow-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2">
+                Siguiente
+                <span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</footer>
+<script>
+        function selectGrade(element) {
+            // Remove active classes from all chips
+            const chips = document.querySelectorAll('.grade-chip');
+            chips.forEach(chip => {
+                chip.classList.remove('border-primary-container', 'bg-primary-container', 'text-on-primary-container', 'shadow-md');
+                chip.classList.add('border-outline-variant', 'bg-surface-container-low', 'text-on-surface-variant');
+            });
+
+            // Specific styling for "No sé mi grado" which has a different base style
+            const allButtons = document.querySelectorAll('button');
+            allButtons.forEach(btn => {
+                if(btn.innerText === "No sé mi grado") {
+                    btn.classList.remove('bg-primary-container', 'text-on-primary-container');
+                    btn.classList.add('bg-white', 'text-tertiary-container');
+                }
+            });
+
+            // Add active state to selected chip
+            element.classList.remove('border-outline-variant', 'bg-surface-container-low', 'text-on-surface-variant', 'bg-white', 'text-tertiary-container');
+            element.classList.add('border-primary-container', 'bg-primary-container', 'text-on-primary-container', 'shadow-md');
+            
+            // Show pro-tip
+            document.getElementById('pro-tip').classList.remove('hidden');
+        }
+    </script>
+</body></html>

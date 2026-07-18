@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { DM_Sans } from 'next/font/google';
+import { DM_Sans, Nunito_Sans } from 'next/font/google';
 import { AppShell } from '@/components/AppShell';
 import { AppOpenPing } from '@/components/AppOpenPing';
 import { PWARegister } from '@/components/pwa/PWARegister';
@@ -10,6 +10,14 @@ const dmSans = DM_Sans({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-dm-sans'
+});
+
+// Nunito Sans para las pantallas Stitch de Fase 4.
+const nunitoSans = Nunito_Sans({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-nunito-sans',
+  weight: ['400', '600', '700', '800']
 });
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://bilclimb.vercel.app';
@@ -53,7 +61,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={dmSans.variable}>
+    <html lang="es" className={`${dmSans.variable} ${nunitoSans.variable}`}>
       <body className="font-sans antialiased">
         <AppShell>{children}</AppShell>
         <AppOpenPing />

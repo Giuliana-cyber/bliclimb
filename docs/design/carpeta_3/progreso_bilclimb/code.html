@@ -1,0 +1,306 @@
+<!DOCTYPE html><html class="light" lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BilClimb - Progreso</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface": "#fef9ef",
+                    "surface-container-lowest": "#ffffff",
+                    "outline-variant": "#bec9c2",
+                    "tertiary": "#755000",
+                    "inverse-on-surface": "#f5f0e6",
+                    "error-container": "#ffdad6",
+                    "error": "#ba1a1a",
+                    "on-primary-container": "#d2ffea",
+                    "primary": "#0a644b",
+                    "on-secondary-container": "#650003",
+                    "secondary": "#b12b23",
+                    "surface-tint": "#176b52",
+                    "senda-navy": "#21395A",
+                    "on-primary-fixed": "#002116",
+                    "tertiary-fixed-dim": "#fcbb44",
+                    "on-tertiary-container": "#fff3e5",
+                    "wood-tan": "#CDA96E",
+                    "on-primary": "#ffffff",
+                    "deep-forest": "#24614D",
+                    "on-tertiary-fixed": "#281900",
+                    "outline": "#6f7974",
+                    "surface-container-high": "#ede8de",
+                    "primary-fixed": "#a5f2d2",
+                    "on-primary-fixed-variant": "#00513c",
+                    "primary-fixed-dim": "#89d6b7",
+                    "surface-variant": "#e7e2d8",
+                    "surface-container-highest": "#e7e2d8",
+                    "surface-dim": "#dedad0",
+                    "on-surface-variant": "#3f4944",
+                    "surface-container": "#f2ede3",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-fixed": "#410001",
+                    "secondary-container": "#fd6253",
+                    "ink-text": "#241F1C",
+                    "tertiary-fixed": "#ffdeac",
+                    "on-surface": "#1d1c16",
+                    "secondary-fixed": "#ffdad5",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-fixed-variant": "#8f100e",
+                    "on-error-container": "#93000a",
+                    "on-background": "#1d1c16",
+                    "inverse-primary": "#89d6b7",
+                    "tertiary-container": "#956700",
+                    "on-error": "#ffffff",
+                    "secondary-fixed-dim": "#ffb4aa",
+                    "on-tertiary-fixed-variant": "#604100",
+                    "surface-bright": "#fef9ef",
+                    "surface-container-low": "#f8f3e9",
+                    "inverse-surface": "#32302a",
+                    "primary-container": "#2f7d63",
+                    "background": "#fef9ef"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "8px",
+                    "touch-target": "48px",
+                    "margin-mobile": "20px",
+                    "margin-desktop": "40px",
+                    "gutter": "16px",
+                    "card-padding": "24px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Nunito Sans"],
+                    "label-md": ["Nunito Sans"],
+                    "headline-lg-mobile": ["Nunito Sans"],
+                    "headline-lg": ["Nunito Sans"],
+                    "display-lg": ["Nunito Sans"],
+                    "label-lg": ["Nunito Sans"],
+                    "body-md": ["Nunito Sans"],
+                    "body-lg": ["Nunito Sans"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .mountain-path {
+            position: absolute;
+            left: 36px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: repeating-linear-gradient(
+                to bottom,
+                #bec9c2,
+                #bec9c2 10px,
+                transparent 10px,
+                transparent 20px
+            );
+            z-index: 0;
+        }
+        .node-completed {
+            background-color: #0a644b;
+            box-shadow: 0 0 0 4px #d2ffea;
+        }
+        .node-upcoming {
+            background-color: #fef9ef;
+            border: 2px solid #241F1C;
+        }
+        .custom-shadow {
+            box-shadow: 0 4px 12px rgba(36, 31, 28, 0.08);
+        }
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            left: 20px;
+            bottom: -12px;
+            border-width: 12px 12px 0 0;
+            border-color: #ffffff transparent transparent transparent;
+        }
+    </style>
+</head>
+<body class="bg-background text-ink-text font-body-md min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim shadow-sm w-full top-0 sticky z-50 flex items-center justify-between px-margin-mobile h-touch-target">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtZ8dYn4k3xd4mN_3HuX6ENn9Io_sTcE02eG1rE93Xlh6xT6ayus4uuxaEdgnUP8Bxj1tfLLcpyzB5L9p3oF1a22Zoolye9aeuqCzmN8dyX7vQiiHp3ff9VnGAgw2s0AK2s_TQAaU6UnPgH3ImuQZmcnBd5jx41CbiFnFhDhCP3sl8NZQUTzhTs9mdeH9AtOhmE-6UBLpIxpOwlclOzm9iQJ5A_WqVMYxZ1IzZdUMNm1bt_G2dqIYMQMLWA6wUHWe8dw">
+</div>
+<h1 class="font-display-lg text-[24px] leading-tight text-primary dark:text-primary-fixed">Tu Historia</h1>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-high transition-colors p-2 rounded-full active:scale-95 transition-transform" data-icon="settings">settings</button>
+</header>
+<main class="max-w-2xl mx-auto px-margin-mobile pt-8 space-y-8 relative">
+<!-- Bill's Encouragement -->
+<section class="flex gap-4 items-start animate-fade-in">
+<div class="w-12 h-12 flex-shrink-0 rounded-full bg-primary-container overflow-hidden border-2 border-white shadow-sm">
+<img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWHUIlYouFIDZaRQgLqiGvuC2wFmY_I_08QcDonnY_Lfqo_MGaDM0GFph_MdL2vPDULQlWK3h8gNsGeJTnP43I22c9v6Y8cEeqy1dtXvR05zfN33DBkLViTmG1SjrGLlxKT-rV7PPnAsgm74RoPKZyYFYra9ldJXGPRJM78APcQTk5dWzDAn7lPE_8DWc-LPFNcOHeiJQuTEX_YNjvRCThX07UbDtMHGAwHXMQcm2rtez1zodVPGDumYMeucV1-CZH_w">
+</div>
+<div class="bg-white p-5 rounded-2xl rounded-tl-none relative speech-bubble custom-shadow">
+<p class="font-body-lg text-ink-text italic">
+                    "Cada día que escalas con intención es una cumbre conquistada. Vas muy bien."
+                </p>
+</div>
+</section>
+<!-- Progress History Section -->
+<section class="relative pl-12 space-y-6">
+<!-- The Path -->
+<div class="mountain-path"></div>
+<!-- Card 1: Constancia (Highlighted) -->
+<div class="relative z-10 group">
+<div class="absolute -left-[20px] top-8 w-10 h-10 rounded-full node-completed flex items-center justify-center transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-white text-[20px]" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<div class="bg-white p-card-padding rounded-lg custom-shadow border-2 border-tertiary-fixed transition-transform active:scale-[0.98]">
+<div class="flex justify-between items-center mb-4">
+<span class="bg-tertiary-fixed text-on-tertiary-fixed px-3 py-1 rounded-full font-label-md">¡Imparable!</span>
+<div class="w-12 h-12 bg-tertiary-fixed rounded-full flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-tertiary text-[24px]" style="font-variation-settings: 'FILL' 1;">shield</span>
+</div>
+</div>
+<h3 class="font-headline-md text-primary mb-1">Constancia</h3>
+<p class="font-body-md text-on-surface-variant mb-4">Has mantenido el ritmo sin fallar ni un solo día de tu plan.</p>
+<div class="flex items-end gap-2">
+<span class="text-[40px] font-extrabold text-tertiary leading-none">12</span>
+<span class="font-headline-md text-tertiary pb-1">días seguidos</span>
+</div>
+</div>
+</div>
+<!-- Card 2: Sesiones sin dolor -->
+<div class="relative z-10 group">
+<div class="absolute -left-[20px] top-8 w-10 h-10 rounded-full node-completed flex items-center justify-center transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-white text-[20px]" style="font-variation-settings: 'FILL' 1;">volunteer_activism</span>
+</div>
+<div class="bg-white p-card-padding rounded-lg custom-shadow transition-transform active:scale-[0.98]">
+<div class="flex gap-4 items-center">
+<div class="w-12 h-12 bg-primary-fixed rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[24px]" style="font-variation-settings: 'FILL' 1;">health_and_safety</span>
+</div>
+<div>
+<h3 class="font-headline-md text-ink-text">Sesiones sin dolor</h3>
+<p class="font-body-md text-on-surface-variant">Tus articulaciones se sienten sólidas y recuperadas.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3: Volumen que toleras -->
+<div class="relative z-10 group">
+<div class="absolute -left-[20px] top-8 w-10 h-10 rounded-full node-completed flex items-center justify-center transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-white text-[20px]" style="font-variation-settings: 'FILL' 1;">fitness_center</span>
+</div>
+<div class="bg-white p-card-padding rounded-lg custom-shadow transition-transform active:scale-[0.98]">
+<div class="flex gap-4 items-center">
+<div class="w-12 h-12 bg-surface-container-highest rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-[24px]" style="font-variation-settings: 'FILL' 1;">trending_up</span>
+</div>
+<div>
+<h3 class="font-headline-md text-ink-text">Volumen que toleras</h3>
+<p class="font-body-md text-on-surface-variant">Has sumado +15% de tiempo efectivo en el muro esta semana.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 4: Mejoras técnicas -->
+<div class="relative z-10 group">
+<div class="absolute -left-[20px] top-8 w-10 h-10 rounded-full node-completed flex items-center justify-center transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-white text-[20px]" style="font-variation-settings: 'FILL' 1;">architecture</span>
+</div>
+<div class="bg-white p-card-padding rounded-lg custom-shadow transition-transform active:scale-[0.98]">
+<div class="flex gap-4 items-center">
+<div class="w-12 h-12 bg-secondary-fixed rounded-xl flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-[24px]" style="font-variation-settings: 'FILL' 1;">precision_manufacturing</span>
+</div>
+<div>
+<h3 class="font-headline-md text-ink-text">Mejoras técnicas</h3>
+<p class="font-body-md text-on-surface-variant">Tus pies están más precisos y silenciosos en cada pegue.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Upcoming Milestone (The Retest Celebration) -->
+<div class="relative z-10 pt-4">
+<div class="absolute -left-[20px] top-12 w-10 h-10 rounded-full node-upcoming flex items-center justify-center animate-pulse">
+<span class="material-symbols-outlined text-ink-text text-[20px]">flag</span>
+</div>
+<div class="bg-primary-container p-card-padding rounded-lg custom-shadow text-on-primary-container relative overflow-hidden group">
+<!-- Subtle pattern overlay -->
+<div class="absolute inset-0 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-700" style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 10px 10px;"></div>
+<div class="flex items-start justify-between relative z-10">
+<div class="space-y-2 max-w-[75%]">
+<h3 class="font-headline-lg-mobile text-white">Hito en camino: Semana 4</h3>
+<p class="font-body-lg text-primary-fixed">Vamos a volver a medir tu colgado — no para aprobar un examen, sino para celebrar cuánto camino has hecho.</p>
+</div>
+<div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md">
+<span class="material-symbols-outlined text-white text-[32px]" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+</div>
+</div>
+<button class="mt-6 w-full py-4 bg-white text-primary font-label-lg rounded-xl shadow-lg active:scale-95 transition-transform">
+                        VER DETALLES DEL RETEST
+                    </button>
+</div>
+</div>
+</section>
+<!-- Decorative Spacer -->
+<div class="h-8"></div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 bg-surface-container dark:bg-surface-container-highest shadow-[0_-4px_12px_rgba(36,31,28,0.08)] rounded-t-lg">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-highest transition-colors px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="today">today</span>
+<span class="font-label-md">Hoy</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-highest transition-colors px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+<span class="font-label-md">Plan</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container dark:bg-primary dark:text-on-primary rounded-xl px-4 py-1 active:scale-90 transition-all duration-200 shadow-md" href="#">
+<span class="material-symbols-outlined" data-icon="equalizer" style="font-variation-settings: 'FILL' 1;">equalizer</span>
+<span class="font-label-md">Progreso</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-highest transition-colors px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="forum">forum</span>
+<span class="font-label-md">Chat</span>
+</a>
+</nav>
+<script>
+        // Simple intersection observer to trigger entrance animations
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                    entry.target.classList.remove('opacity-0', 'translate-y-8');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.relative.z-10').forEach(el => {
+            el.classList.add('opacity-0', 'translate-y-8', 'transition-all', 'duration-500', 'ease-out');
+            observer.observe(el);
+        });
+    </script>
+</body></html>
