@@ -62,6 +62,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${dmSans.variable} ${nunitoSans.variable}`}>
+      <head>
+        {/*
+         * Material Symbols Outlined · usado por pantallas Stitch Fase 4
+         * (calendar_today, map, leaderboard, forum, lightbulb, play_arrow,
+         * check_circle, adjust, military_tech, etc.). Cargado como stylesheet
+         * porque el resto del proyecto sigue con lucide-react.
+         */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body className="font-sans antialiased">
         <AppShell>{children}</AppShell>
         <AppOpenPing />

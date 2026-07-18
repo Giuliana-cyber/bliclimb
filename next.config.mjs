@@ -25,7 +25,7 @@ const CSP_DIRECTIVES = [
   // Next 14 + Tailwind necesita unsafe-inline para hidratación e injection
   // de estilos. Stripe.js para Checkout JS.
   `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://checkout.stripe.com`,
-  `style-src 'self' 'unsafe-inline'`,
+  `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
   `img-src 'self' data: blob: https:`,
   `font-src 'self' data: https://fonts.gstatic.com`,
   `connect-src 'self' ${SUPABASE_HOST} ${SUPABASE_WS} https://api.stripe.com https://checkout.stripe.com https://api.openai.com`,

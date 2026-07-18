@@ -52,6 +52,10 @@ const routesWithoutShell = [
   // Welcome público de Fase 4 (Stitch design system). Sin AppShell —
   // estado no-autenticado. Tiene sus propios CTAs a sign-in/sign-up.
   '/welcome',
+  // Hoy piloto · Fase 4 UI. Trae su propia top bar + nav inferior
+  // Stitch (4 items). El resto del proyecto sigue con AppShell viejo
+  // hasta que las 15 pantallas restantes migren.
+  '/hoy',
   // Invitación de coach: el cliente típicamente abre el link sin sesión
   // todavía. La página ya maneja signed-in / not-signed-in internamente.
   '/invite',
