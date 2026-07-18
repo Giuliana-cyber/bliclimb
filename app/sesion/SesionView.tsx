@@ -96,18 +96,24 @@ export function SesionView({ session, currentIndex, restSeconds, error }: Sesion
         </Link>
       </header>
 
-      <main className="pt-16 px-margin-mobile max-w-lg mx-auto">
-        {/* Semáforo seguridad · rosa cálido bil-red/10 */}
-        <Link
-          href="/dolor"
-          className="mt-4 mb-6 w-full bg-bil-red/10 text-bil-red flex items-center justify-center gap-3 py-3 px-4 rounded-full active:scale-95 transition-transform"
-        >
-          <span className="material-symbols-outlined text-[20px]">health_and_safety</span>
-          <span className="font-bold text-sm text-center">
-            ¿Algo te duele hoy? Toca aquí y ajustamos
-          </span>
-        </Link>
+      {/* Semáforo seguridad · sticky bajo el header, siempre visible.
+          Cae en la banda 48-108px del viewport, bg-bil-cream para tapar
+          scroll detrás. Tappable como cualquier CTA, no bloquea foco. */}
+      <div className="fixed top-touch-target left-0 right-0 z-40 bg-bil-cream px-margin-mobile pt-3 pb-3">
+        <div className="max-w-lg mx-auto">
+          <Link
+            href="/dolor"
+            className="w-full bg-bil-red/10 text-bil-red flex items-center justify-center gap-3 py-3 px-4 rounded-full active:scale-95 transition-transform"
+          >
+            <span className="material-symbols-outlined text-[20px]">health_and_safety</span>
+            <span className="font-bold text-sm text-center">
+              ¿Algo te duele hoy? Toca aquí y ajustamos
+            </span>
+          </Link>
+        </div>
+      </div>
 
+      <main className="pt-36 px-margin-mobile max-w-lg mx-auto">
         {/* Header sesión · progreso 2/5 */}
         <div className="mb-6 flex items-end justify-between">
           <div>
