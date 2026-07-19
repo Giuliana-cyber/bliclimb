@@ -36,7 +36,13 @@ function isProtectedPath(pathname: string) {
   if (pathname === '/') {
     return true;
   }
-  return PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  // Match estricto: solo `/prefix` o `/prefix/…`. Antes `startsWith`
+  // capturaba también `/onboarding-v2` como si fuera `/onboarding`,
+  // bloqueando el piloto Fase 4. Con match delimitado por `/`, la ruta
+  // v2 queda pública (como /welcome, /hoy).
+  return PROTECTED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(prefix + '/'),
+  );
 }
 
 export async function middleware(request: NextRequest) {

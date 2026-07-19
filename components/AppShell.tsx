@@ -59,6 +59,10 @@ const routesWithoutShell = [
   // Sesión Fase 4 UI (Batch 1) · en curso + terminada. Pantallas
   // transaccionales — sin nav inferior; se sale por el CTA o el top bar.
   '/sesion',
+  // Onboarding v2 Fase 4 UI (Batch 2). Flow multi-step con su propio
+  // shell + progress dots. Sin AppShell. Cuando cutover se hace, el
+  // viejo /onboarding se retira.
+  '/onboarding-v2',
   // Invitación de coach: el cliente típicamente abre el link sin sesión
   // todavía. La página ya maneja signed-in / not-signed-in internamente.
   '/invite',
