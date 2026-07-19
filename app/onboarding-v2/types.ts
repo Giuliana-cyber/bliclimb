@@ -17,18 +17,23 @@ export type StepId =
   | 'salud'
   | 'resumen';
 
+// Orden aprobado por Giuliana 2026-07-19: Seguridad SEGUNDO, antes de
+// cualquier pregunta de rendimiento (grado/dedos/estilo). Cuidamos antes
+// de dosificar. Resultado (pasaporte) al final celebra el cierre.
 export const STEP_ORDER: StepId[] = [
   'coach',
+  'salud',
   'grado',
   'dedos',
   'estilo',
   'equipo',
-  'salud',
   'resumen',
 ];
 
 export type Character = 'bill' | 'senda';
-export type GradoDisciplina = 'boulder' | 'ruta';
+// "No sé" en el toggle de disciplina (Giuliana 2026-07-19): cambia
+// los chips por un mensaje "te guiamos las primeras semanas".
+export type GradoDisciplina = 'boulder' | 'ruta' | 'no-se';
 export type EstadoActual = 'activo' | 'volviendo-paron' | 'volviendo-lesion' | 'empezando';
 export type Edad = 'menor-16' | '16-35' | '36-50' | 'mas-50';
 export type DolorHoy = 'nada' | 'molestia' | 'dolor';

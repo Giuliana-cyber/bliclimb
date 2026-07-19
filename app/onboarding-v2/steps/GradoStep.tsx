@@ -36,7 +36,10 @@ export interface GradoStepProps {
 }
 
 export function GradoStep({ state, update }: GradoStepProps) {
-  const chips = state.disciplina === 'boulder' ? CHIPS_BOULDER : CHIPS_RUTA;
+  const chips =
+    state.disciplina === 'boulder' ? CHIPS_BOULDER
+    : state.disciplina === 'ruta' ? CHIPS_RUTA
+    : [];
 
   return (
     <div className="space-y-6">
@@ -44,15 +47,12 @@ export function GradoStep({ state, update }: GradoStepProps) {
         ¿Dónde estás parado hoy?
       </h2>
 
-      {/* Toggle Boulder / Ruta · segmentado */}
+      {/* Toggle Boulder / Ruta / No sé · segmentado 3-way */}
       <div className="bg-white p-1 rounded-full border border-bil-ink/10 flex">
         <DisciplinaTab
           active={state.disciplina === 'boulder'}
           onClick={() =>
-            update({
-              disciplina: 'boulder',
-              grado: null, // reset grado al cambiar disciplina
-            })
+            update({ disciplina: 'boulder', grado: null })
           }
         >
           Boulder
@@ -60,44 +60,49 @@ export function GradoStep({ state, update }: GradoStepProps) {
         <DisciplinaTab
           active={state.disciplina === 'ruta'}
           onClick={() =>
-            update({
-              disciplina: 'ruta',
-              grado: null,
-            })
+            update({ disciplina: 'ruta', grado: null })
           }
         >
           Ruta
         </DisciplinaTab>
+        <DisciplinaTab
+          active={state.disciplina === 'no-se'}
+          onClick={() =>
+            // Al elegir "No sé" seteamos grado='no-se' automáticamente
+            // para que canProceed pase — la duda ya es una respuesta.
+            update({ disciplina: 'no-se', grado: 'no-se' })
+          }
+        >
+          No sé
+        </DisciplinaTab>
       </div>
 
-      {/* Grado · chips que cambian */}
-      <div>
-        <p className="text-label-lg uppercase tracking-wider text-bil-ink/60 mb-3">
-          Tu nivel habitual
-        </p>
-        <div className="grid grid-cols-2 gap-3">
-          {chips.map((chip) => (
-            <ChipButton
-              key={chip.id}
-              active={state.grado === chip.id}
-              onClick={() => update({ grado: chip.id })}
-            >
-              {chip.label}
-            </ChipButton>
-          ))}
+      {/* Grado · chips que cambian (o mensaje cálido si "No sé") */}
+      {state.disciplina === 'no-se' ? (
+        <div className="bg-bil-cream border-l-4 border-bil-green p-4 rounded-DEFAULT">
+          <p className="text-body-md text-bil-ink/85">
+            No hace falta que lo sepas todavía. Te guiamos las primeras
+            semanas y descubrimos tu grado real juntos.
+          </p>
         </div>
-        <div className="mt-3">
-          <ChipButton
-            fullWidth
-            tone="gold"
-            active={state.grado === 'no-se'}
-            onClick={() => update({ grado: 'no-se' })}
-            icon="help"
-          >
-            No sé mi grado — guíame
-          </ChipButton>
+      ) : (
+        <div>
+          <p className="text-label-lg uppercase tracking-wider text-bil-ink/60 mb-3">
+            Tu nivel habitual
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {chips.map((chip) => (
+              <ChipButton
+                key={chip.id}
+                active={state.grado === chip.id}
+                onClick={() => update({ grado: chip.id })}
+              >
+                {chip.label}
+              </ChipButton>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Estado actual */}
       <div>

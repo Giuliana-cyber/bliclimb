@@ -28,21 +28,21 @@ import { INITIAL_STATE, STEP_ORDER, type OnboardingState, type StepId } from './
 
 const COACH_QUOTES: Record<StepId, string> = {
   coach: 'Elige quién quieres que te acompañe. Podés cambiarlo cuando quieras.',
+  salud: 'Antes que nada, cuidarnos. Unas preguntas rápidas para armar seguro.',
   grado: 'Cuéntame de tu escalada — la de ahora, no la de tus mejores tiempos.',
   dedos: 'Sin examen. Solo para no pedirte de más ni de menos.',
   estilo: 'Ahora lo bueno. ¿Qué escalas y qué te gustaría lograr?',
   equipo: 'Última: tu equipo. Con lo que tengas, armamos algo bueno.',
-  salud: 'Antes de arrancar, unas preguntas rápidas para cuidarte.',
   resumen: 'Esto es lo que sé de ti. Lo demás lo descubrimos juntos.',
 };
 
 const CTA_LABELS: Record<StepId, string> = {
   coach: 'Siguiente',
+  salud: 'Siguiente',
   grado: 'Siguiente',
   dedos: 'Siguiente',
   estilo: 'Siguiente',
-  equipo: 'Siguiente',
-  salud: 'Ver mi perfil',
+  equipo: 'Ver mi resultado',
   resumen: 'Ver mi plan',
 };
 
