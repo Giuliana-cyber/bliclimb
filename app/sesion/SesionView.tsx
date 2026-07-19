@@ -237,11 +237,11 @@ export function SesionView({ session, currentIndex, restSeconds, error }: Sesion
         )}
       </main>
 
-      {/* Timer descanso circular · fixed abajo-derecha con backdrop-blur.
-          En el MVP piloto es indicativo (visualiza el descanso entre series
-          del ejercicio actual). F4-UI.4 lo conecta al state de session live
-          y aparecerá solo cuando el usuario haya presionado "Iniciar serie". */}
-      {current && (
+      {/* Timer descanso circular · OCULTO hasta que exista state real
+          de "descansando" (F4-UI backend). Regla Giuliana 2026-07-18:
+          no mostrar UI que no funciona. El componente sigue vivo abajo
+          para conectarlo cuando el state esté listo — buscar "resting". */}
+      {false && current && (
         <div className="fixed bottom-24 right-margin-mobile z-40">
           <div className="relative w-20 h-20 flex items-center justify-center bg-white/95 backdrop-blur-sm rounded-full shadow-lg border-2 border-bil-green">
             <svg className="absolute top-0 left-0 w-full h-full -rotate-90" width="80" height="80">
@@ -316,17 +316,19 @@ function MetricTile({ label, value }: { label: string; value: string }) {
 }
 
 function RiskChip({ level }: { level: string | null | undefined }) {
-  // Semáforo cálido según DoD: verde / ámbar / rojo, tono suave.
-  // Mapea el risk_level del motor a un chip legible; oculto si no hay dato.
+  // Semáforo cálido según DoD (Giuliana 2026-07-18): NADA de "RIESGO: ALTO".
+  // Mapeamos el risk_level interno del motor a etiquetas cálidas:
+  //   low → "OK" (verde), medium/medium-high → "Ojo" (dorado), high → "Cuidado" (rojo).
+  // Oculto si no hay dato.
   if (!level) return null;
   const norm = level.toLowerCase();
   const map: Record<string, { label: string; cls: string }> = {
-    low: { label: 'Riesgo: bajo', cls: 'bg-bil-green/15 text-bil-green' },
-    medium: { label: 'Riesgo: medio', cls: 'bg-bil-gold/20 text-bil-gold' },
-    'medium-high': { label: 'Cuidado', cls: 'bg-bil-gold/20 text-bil-gold' },
+    low: { label: 'OK', cls: 'bg-bil-green/15 text-bil-green' },
+    medium: { label: 'Ojo', cls: 'bg-bil-gold/20 text-bil-gold' },
+    'medium-high': { label: 'Ojo', cls: 'bg-bil-gold/20 text-bil-gold' },
     high: { label: 'Cuidado', cls: 'bg-bil-red/10 text-bil-red' },
   };
-  const preset = map[norm] ?? { label: `Riesgo: ${norm}`, cls: 'bg-bil-gold/20 text-bil-gold' };
+  const preset = map[norm] ?? { label: 'Ojo', cls: 'bg-bil-gold/20 text-bil-gold' };
   return (
     <span
       className={`${preset.cls} text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide`}
