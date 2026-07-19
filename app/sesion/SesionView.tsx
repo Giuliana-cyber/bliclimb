@@ -22,6 +22,7 @@ import type { AssembledSession } from '@/lib/brain/motor-inverted/assembler';
 
 export interface SesionViewProps {
   session: AssembledSession | null;
+  character: 'bill' | 'senda';
   currentIndex: number;
   restSeconds: number;
   error: string | null;
@@ -29,7 +30,7 @@ export interface SesionViewProps {
 
 const SESSION_HEADLINE = 'Bloque de Fuerza';
 
-export function SesionView({ session, currentIndex, restSeconds, error }: SesionViewProps) {
+export function SesionView({ session, character, currentIndex, restSeconds, error }: SesionViewProps) {
   const router = useRouter();
   const exercises = session?.exercises ?? [];
   const total = exercises.length;
@@ -76,8 +77,8 @@ export function SesionView({ session, currentIndex, restSeconds, error }: Sesion
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-bil-green flex-shrink-0">
             <Image
-              src="/characters/bill-avatar.png"
-              alt="Coach Bill"
+              src={`/characters/${character}-avatar.png`}
+              alt={`Coach ${character === 'bill' ? 'Bill' : 'Senda'}`}
               width={40}
               height={40}
               className="w-full h-full object-cover"
@@ -224,6 +225,7 @@ export function SesionView({ session, currentIndex, restSeconds, error }: Sesion
                       <h4 className="font-bold text-sm text-bil-ink truncate">{ex.name}</h4>
                       <p className="text-label-md text-bil-ink/60 truncate">
                         {ex.sets} × {ex.reps}
+                        {ex.rest ? ` · Descanso ${ex.rest}` : ''}
                       </p>
                     </div>
                   </div>
@@ -316,16 +318,18 @@ function MetricTile({ label, value }: { label: string; value: string }) {
 }
 
 function RiskChip({ level }: { level: string | null | undefined }) {
-  // Semáforo cálido según DoD (Giuliana 2026-07-18): NADA de "RIESGO: ALTO".
-  // Mapeamos el risk_level interno del motor a etiquetas cálidas:
-  //   low → "OK" (verde), medium/medium-high → "Ojo" (dorado), high → "Cuidado" (rojo).
-  // Oculto si no hay dato.
+  // Semáforo cálido según DoD (Giuliana 2026-07-19):
+  //   low, low-medium   → "OK"       verde (bil-green)
+  //   medium            → "Ojo"      ámbar (bil-gold)
+  //   medium-high, high → "Cuidado"  rojo  (bil-red)
+  // El oro es SOLO para logro/pro-tip · nunca para "riesgo bajo".
   if (!level) return null;
   const norm = level.toLowerCase();
   const map: Record<string, { label: string; cls: string }> = {
     low: { label: 'OK', cls: 'bg-bil-green/15 text-bil-green' },
+    'low-medium': { label: 'OK', cls: 'bg-bil-green/15 text-bil-green' },
     medium: { label: 'Ojo', cls: 'bg-bil-gold/20 text-bil-gold' },
-    'medium-high': { label: 'Ojo', cls: 'bg-bil-gold/20 text-bil-gold' },
+    'medium-high': { label: 'Cuidado', cls: 'bg-bil-red/10 text-bil-red' },
     high: { label: 'Cuidado', cls: 'bg-bil-red/10 text-bil-red' },
   };
   const preset = map[norm] ?? { label: 'Ojo', cls: 'bg-bil-gold/20 text-bil-gold' };

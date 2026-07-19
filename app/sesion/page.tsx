@@ -54,6 +54,7 @@ export default async function SesionPage() {
   return (
     <SesionView
       session={sessionData?.session ?? null}
+      character={PILOT_PROFILE.character}
       currentIndex={0}
       restSeconds={91}
       error={errorMsg}

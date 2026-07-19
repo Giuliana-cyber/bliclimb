@@ -176,7 +176,7 @@ export function SesionTerminadaView({
                 Guardando…
               </>
             ) : (
-              'Cerrar sesión'
+              'Listo'
             )}
           </button>
         </div>
