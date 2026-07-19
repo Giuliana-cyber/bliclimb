@@ -184,8 +184,11 @@ EQUIPMENT_SUBSTRING_MAP: list[tuple[str, list[str]]] = [
     ("bloque de pinza", ["pinch_block"]),
     ("borde estable", ["hangboard"]),
     ("system wall", ["gym"]),
-    ("bloque/volumen", ["gym"]),
-    ("bloque / volumen", ["gym"]),
+    # curacion-dedos-v1 (Giuliana 2026-07-19): EX-FIN-033 "Bloque/volumen"
+    # es un bloque de pinza (misma familia que EX-FIN-031). No es system
+    # board — el regen v1 lo apuntaba a gym por error.
+    ("bloque/volumen", ["pinch_block"]),
+    ("bloque / volumen", ["pinch_block"]),
     ("board", ["gym"]),  # spray/moon/kilter boards
     ("liga elástica", ["bands"]),
     ("liga elastica", ["bands"]),
@@ -766,6 +769,10 @@ FORCED_MANUAL_REVIEW_IDS = {
     # dejarlas en manual_review hasta que Giuliana las revise en v3.0.
     "EX-FIN-030",  # Suspensión máxima full crimp (nombre autoproclamado máximo)
     "EX-FIN-040",  # Mono bloqueado en app (nombre autoproclamado)
+    # curacion-dedos-v1 (Giuliana 2026-07-19): EX-FIN-057 "Deload de dedos"
+    # tiene dosage_default = "GT-FIN-002" (ID de gate en campo de dosis).
+    # A manual_review hasta que se defina el protocolo canónico de deload.
+    "EX-FIN-057",
 }
 
 
