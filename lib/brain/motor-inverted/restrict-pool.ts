@@ -58,6 +58,15 @@ export function restrictPool(
   for (const ex of candidates) {
     const notes: string[] = [];
 
+    // 0. Hábitos (Giuliana 2026-07-20): excluidos del pool de /sesion
+    // por default. La rutina de cuidado (sueño, hidratación, registro
+    // de dolor, etc.) no es ejercicio programable con sets × reps ×
+    // timer — vive en su propia superficie /cuidado (feature futura).
+    if (ex.type === 'habit') {
+      notes.push('type=habit (reservado para /cuidado)');
+      reasons.set(ex.id, notes);
+      continue;
+    }
     // 1. Status
     if (ex.status !== 'active') {
       notes.push(`status=${ex.status}`);

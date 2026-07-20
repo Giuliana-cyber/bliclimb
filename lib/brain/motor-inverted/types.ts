@@ -66,6 +66,12 @@ export interface Exercise {
   sourceTrace: string;
   sprint: string;
   status: CatalogStatus | string;
+  // Flag para pilar "cuidado diario" (Giuliana 2026-07-20).
+  // Los "hábitos" (sueño, hidratación, cuidado piel, registro dolor/fatiga)
+  // NO son ejercicios programables con sets × reps × timer — son rutinas
+  // de cuidado. El motor de /sesion los excluye por default. Cuando
+  // exista /cuidado (feature futura) los va a consumir con su propia UI.
+  type?: 'habit' | '';
 }
 
 export interface Gate {

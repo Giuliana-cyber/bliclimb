@@ -62,6 +62,10 @@ function loadExercises(): Exercise[] {
     sourceTrace: r.source_trace,
     sprint: r.sprint,
     status: r.status,
+    // Flag "hábito diario" (2026-07-20) · vacío por default para
+    // ejercicios normales. Solo los ~9 EX-REC-* marcados como rutinas
+    // de cuidado traen "habit".
+    type: r.type === 'habit' ? 'habit' : '',
   }));
 }
 

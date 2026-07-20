@@ -802,6 +802,28 @@ RISK_LEVEL_OVERRIDES = {
 # Solo si no están en RISK_LEVEL_OVERRIDES ni en manual_review.
 RISK_LEVEL_LOW_PREFIXES = ("EX-WAR-", "EX-REC-")
 
+# Flag "hábito diario" · Giuliana 2026-07-20 (curación (B)).
+# Estos EX de recuperación NO son ejercicios programables con sets × reps ·
+# son rutinas de cuidado (sueño, hidratación, registro de dolor/fatiga,
+# cuidado de piel). El motor de /sesion los excluye por default en
+# restrict-pool.ts:0. Cuando exista /cuidado (feature futura) los va a
+# consumir con su propia UI de checklists.
+#
+# LISTA PROVISIONAL derivada por keyword-match sobre name_es. Pendiente
+# de confirmación editorial de Giuliana — ella pasa la lista final en un
+# rato (2026-07-20). Cuando llegue, editar este set y re-correr.
+RECOVERY_HABIT_IDS = {
+    "EX-REC-011",  # Registro de dolor post sesión
+    "EX-REC-012",  # Registro de fatiga post sesión
+    "EX-REC-013",  # Diario de sueño
+    "EX-REC-014",  # Plan de descanso entre sesiones
+    "EX-REC-018",  # Hidratación post sesión
+    "EX-REC-020",  # Cuidado de piel
+    "EX-REC-023",  # Sueño como recuperación
+    "EX-REC-028",  # Retorno tras fatiga alta
+    "EX-REC-029",  # Reducción de volumen por dolor
+}
+
 
 def flatten_exercise_row(
     row: dict, unmapped: dict, contamination: list, auto_fix_stats: dict
@@ -875,6 +897,10 @@ def flatten_exercise_row(
         "sprint": _sprint_from_row(row),
         "status": status,
         "validation_status": row.get("validation_note", ""),
+        # Flag "hábito diario" (Giuliana 2026-07-20 · curación B).
+        # Vacío para 553 EX · "habit" para los ~9 EX-REC-* de rutinas
+        # de cuidado. El motor de /sesion excluye habits del pool.
+        "type": "habit" if ex_id in RECOVERY_HABIT_IDS else "",
     }
 
 
