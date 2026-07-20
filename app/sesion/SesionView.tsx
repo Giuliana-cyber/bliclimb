@@ -26,11 +26,13 @@ export interface SesionViewProps {
   currentIndex: number;
   restSeconds: number;
   error: string | null;
+  focusRule?: string | null;
 }
 
 const SESSION_HEADLINE = 'Bloque de Fuerza';
 
 export function SesionView({ session, character, currentIndex, restSeconds, error }: SesionViewProps) {
+  // focusRule prop reservada para debug — SesionView actual no la muestra.
   const router = useRouter();
   const exercises = session?.exercises ?? [];
   const total = exercises.length;
