@@ -1,17 +1,6 @@
 vocabulary,raw_value,count
-equipment,Cubeta con arroz,2
-equipment,balón medicinal,2
-equipment,Cuerda,1
-equipment,Escalera Bachar,1
 equipment,Activación en espalda alta.,1
 equipment,Movilidad/activación suave.,1
-equipment,Pelota blanda,1
-equipment,Mesa,1
-equipment,fitball,1
-equipment,trineo,1
-equipment,caminadora/terreno,1
-equipment,bicicleta,1
-equipment,exterior/caminadora,1
 equipment,"En cuadrupedia, apoyar palmas, desplazar el peso adelante y atrás sin dolor. Mantener codos extendidos suaves y respiración controlada.",1
 equipment,"Mover la muñeca lentamente en círculos completos, evitando compensar con antebrazo.",1
 equipment,Realizar círculos lentos de hombro manteniendo costillas controladas y sin dolor.,1
@@ -99,67 +88,67 @@ status,Empuje avanzado,1
 status,Soporte overhead,1
 status,Estabilidad hombro,1
 status,Estabilidad empuje,1
-risk_level,Dolor anterior hombro,3
-risk_level,Dolor lumbar/cadera,2
-risk_level,Dolor lumbar/rodilla,2
-risk_level,Dolor ciático,2
-risk_level,Dolor lumbar/hombro,2
-risk_level,"Hormigueo, dolor punzante",2
-risk_level,Pinzamiento hombro,2
-risk_level,Dolor rodilla/lumbar,2
-risk_level,Dolor lumbar/ciático,2
-risk_level,Dolor ingle/rodilla,2
-risk_level,"Dolor agudo, hormigueo, pérdida de fuerza",1
-risk_level,Dolor punzante,1
-risk_level,"Dolor, chasquido doloroso",1
-risk_level,Dolor de hombro/cuello,1
-risk_level,Dolor lumbar o mareo,1
-risk_level,Dolor irradiado,1
-risk_level,Dolor lumbar,1
-risk_level,Dolor de cadera/rodilla,1
-risk_level,Dolor de rodilla/cadera,1
-risk_level,Dolor rodilla/cadera/lumbar,1
-risk_level,Dolor anterior de tobillo,1
-risk_level,Pinzamiento o dolor,1
-risk_level,Dolor hombro/muñeca,1
-risk_level,Dolor cervical/lumbar,1
-risk_level,Dolor cadera/rodilla,1
-risk_level,Dolor muñeca/hombro/lumbar,1
-risk_level,Dolor muñeca/hombro,1
-risk_level,"Dolor nervioso, hormigueo",1
-risk_level,Dolor agudo pie,1
-risk_level,"Mareo, hormigueo, dolor irradiado",1
-risk_level,"Pinzamiento, dolor anterior",1
-risk_level,Dolor rodilla/aductor,1
-risk_level,Dolor hombro/lumbar,1
-risk_level,Dolor ciático/hormigueo,1
-risk_level,Dolor aductor/rodilla,1
-risk_level,Dolor Aquiles,1
-risk_level,Dolor tendón,1
-risk_level,Mareo/hormigueo,1
-risk_level,Dolor cuello/hombro,1
-risk_level,Calambre/dolor neural,1
-risk_level,Dolor codo/muñeca,1
-risk_level,"Pump alto, técnica rota, dolor dedos/codo/hombro",1
-risk_level,Pump alto o miedo excesivo,1
-risk_level,"Fatiga técnica, dolor",1
-risk_level,"Caídas frecuentes, técnica rota",1
-risk_level,"Pump alto, dolor dedos",1
-risk_level,"Miedo, fatiga excesiva",1
-risk_level,Técnica se degrada,1
-risk_level,Pump alto o dolor dedos,1
-risk_level,"Pump alto, fallos repetidos",1
-risk_level,RPE alto o pump alto,1
-risk_level,"Ahogo, mareo",1
-risk_level,Dolor pies/rodilla/dedos,1
-risk_level,"Pump alto, fallo",1
-risk_level,Fatiga técnica,1
-risk_level,Fatiga acumulada,1
-risk_level,Pump alto,1
-risk_level,Fatiga excesiva,1
-risk_level,Pump residual alto,1
-risk_level,Fallos o pump alto,1
-risk_level,Tensión mental alta,1
+risk_level,"Dolor agudo, hormigueo, pérdida de fuerza",0
+risk_level,Dolor punzante,0
+risk_level,"Dolor, chasquido doloroso",0
+risk_level,Dolor de hombro/cuello,0
+risk_level,Dolor lumbar o mareo,0
+risk_level,Dolor irradiado,0
+risk_level,Dolor lumbar,0
+risk_level,Dolor de cadera/rodilla,0
+risk_level,Dolor de rodilla/cadera,0
+risk_level,Dolor rodilla/cadera/lumbar,0
+risk_level,Dolor anterior de tobillo,0
+risk_level,Dolor lumbar/cadera,0
+risk_level,Pinzamiento o dolor,0
+risk_level,Dolor hombro/muñeca,0
+risk_level,Dolor cervical/lumbar,0
+risk_level,Dolor cadera/rodilla,0
+risk_level,Dolor muñeca/hombro/lumbar,0
+risk_level,Dolor muñeca/hombro,0
+risk_level,Dolor anterior hombro,0
+risk_level,Dolor lumbar/rodilla,0
+risk_level,"Dolor nervioso, hormigueo",0
+risk_level,Dolor agudo pie,0
+risk_level,"Mareo, hormigueo, dolor irradiado",0
+risk_level,"Pinzamiento, dolor anterior",0
+risk_level,Dolor ciático,0
+risk_level,Dolor rodilla/aductor,0
+risk_level,Dolor lumbar/hombro,0
+risk_level,"Hormigueo, dolor punzante",0
+risk_level,Pinzamiento hombro,0
+risk_level,Dolor hombro/lumbar,0
+risk_level,Dolor rodilla/lumbar,0
+risk_level,Dolor ciático/hormigueo,0
+risk_level,Dolor lumbar/ciático,0
+risk_level,Dolor aductor/rodilla,0
+risk_level,Dolor ingle/rodilla,0
+risk_level,Dolor Aquiles,0
+risk_level,Dolor tendón,0
+risk_level,Mareo/hormigueo,0
+risk_level,Dolor cuello/hombro,0
+risk_level,Calambre/dolor neural,0
+risk_level,Dolor codo/muñeca,0
+risk_level,"Pump alto, técnica rota, dolor dedos/codo/hombro",0
+risk_level,Pump alto o miedo excesivo,0
+risk_level,"Fatiga técnica, dolor",0
+risk_level,"Caídas frecuentes, técnica rota",0
+risk_level,"Pump alto, dolor dedos",0
+risk_level,"Miedo, fatiga excesiva",0
+risk_level,Técnica se degrada,0
+risk_level,Pump alto o dolor dedos,0
+risk_level,"Pump alto, fallos repetidos",0
+risk_level,RPE alto o pump alto,0
+risk_level,"Ahogo, mareo",0
+risk_level,Dolor pies/rodilla/dedos,0
+risk_level,"Pump alto, fallo",0
+risk_level,Fatiga técnica,0
+risk_level,Fatiga acumulada,0
+risk_level,Pump alto,0
+risk_level,Fatiga excesiva,0
+risk_level,Pump residual alto,0
+risk_level,Fallos o pump alto,0
+risk_level,Tensión mental alta,0
 structure,Inicio específico o test ligero,1
 structure,Rehabilitación general no diagnóstica,1
 structure,Rehabilitación supervisada,1

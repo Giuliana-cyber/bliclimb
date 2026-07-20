@@ -69,6 +69,9 @@ CANON_EQUIPMENT_TOKENS = {
     "home", "bands", "pullup_bar", "trx",
     # +2 tokens aprobados por Giuliana 2026-07-16 (F1.5)
     "dynamometer", "pinch_block",
+    # +2 tokens aprobados por Giuliana 2026-07-20 (curacion-bulk-11cat-v1)
+    "campus_board",  # escalera bachar · campus específico como equipo
+    "ball",          # balón medicinal / pelota blanda / fitball
 }
 
 CANON_CATEGORY = {
@@ -184,6 +187,24 @@ EQUIPMENT_SUBSTRING_MAP: list[tuple[str, list[str]]] = [
     ("bloque de pinza", ["pinch_block"]),
     ("borde estable", ["hangboard"]),
     ("system wall", ["gym"]),
+    # Curacion-bulk-11cat-v1 (Giuliana 2026-07-20) · REGLA C1.
+    # Mapear herramientas reales fuera de catálogo a canon.
+    ("escalera bachar", ["campus_board"]),
+    ("campus board", ["campus_board"]),
+    ("campus", ["campus_board"]),  # colapsa "campus" crudo → equipo específico
+    ("balón medicinal", ["ball"]),
+    ("balon medicinal", ["ball"]),
+    ("pelota blanda", ["ball"]),
+    ("fitball", ["ball"]),
+    ("pelota", ["ball"]),          # genérico al final para no capturar antes
+    ("cubeta con arroz", ["home"]),
+    ("mesa", ["home"]),
+    ("trineo", ["gym"]),
+    ("bicicleta", ["gym"]),
+    ("caminadora", ["gym"]),
+    ("terreno", ["gym"]),
+    ("exterior", ["gym"]),
+    ("cuerda", ["gym"]),
     # curacion-dedos-v1 (Giuliana 2026-07-19): EX-FIN-033 "Bloque/volumen"
     # es un bloque de pinza (misma familia que EX-FIN-031). No es system
     # board — el regen v1 lo apuntaba a gym por error.
@@ -802,6 +823,36 @@ RISK_LEVEL_OVERRIDES = {
 # Solo si no están en RISK_LEVEL_OVERRIDES ni en manual_review.
 RISK_LEVEL_LOW_PREFIXES = ("EX-WAR-", "EX-REC-")
 
+# curacion-bulk-11cat-v1 (Giuliana 2026-07-20) · REGLA A.
+# Default risk_level por categoría cuando el original está contaminado
+# (texto de dolor/parada en vez de nivel). Aplicado solo si el crudo
+# NO está en CANON_RISK_LEVEL. La contaminación se mueve a stop_signals
+# antes de reasignar (si stop_signals estaba vacío).
+CATEGORY_RISK_DEFAULT = {
+    "movilidad": "low",
+    "mental": "low",
+    "tecnica-escalada": "low-medium",
+    "hombros-escapulas": "medium",
+    "antebrazo-muneca-codo": "medium",
+}
+
+# curacion-bulk-11cat-v1 (Giuliana 2026-07-20) · REGLA B.
+# 19 IDs cuyo status v3.0 tiene un patrón de movimiento en vez de un
+# estado válido — forzar a `active` post-canon. La prosa contaminada
+# no se recupera (los patrones anatómicos no aportan info nueva; están
+# implícitos en category + objective).
+STATUS_FORCE_ACTIVE_IDS = {
+    # 17 hombros con patrón de movimiento en status
+    "EX-SHO-008", "EX-SHO-010", "EX-SHO-011", "EX-SHO-012",
+    "EX-SHO-018", "EX-SHO-023", "EX-SHO-024", "EX-SHO-025",
+    "EX-SHO-026", "EX-SHO-028", "EX-SHO-029", "EX-SHO-030",
+    "EX-SHO-031", "EX-SHO-032", "EX-SHO-033", "EX-SHO-035",
+    "EX-SHO-036",
+    # 2 en draft de movilidad simple
+    "EX-MOB-018",  # Downward dog dinámico
+    "EX-FLX-013",  # Estiramiento de pantorrilla
+}
+
 # Flag "hábito diario" · Giuliana 2026-07-20 (curación (B)).
 # Estos EX de recuperación NO son ejercicios programables con sets × reps ·
 # son rutinas de cuidado (sueño, hidratación, registro de dolor/fatiga,
@@ -877,6 +928,29 @@ def flatten_exercise_row(
     if ex_id in FORCED_MANUAL_REVIEW_IDS:
         status = "manual_review"
 
+    # curacion-bulk-11cat-v1 (Giuliana 2026-07-20) · REGLA B.
+    # 19 IDs con patrón de movimiento en status → forzar active.
+    # Corre DESPUÉS de FORCED_MANUAL_REVIEW · si un ID cae en ambos,
+    # gana manual_review (ninguno se solapa hoy pero futura-proof).
+    if ex_id in STATUS_FORCE_ACTIVE_IDS and status != "manual_review":
+        status = "active"
+
+    # curacion-bulk-11cat-v1 (Giuliana 2026-07-20) · REGLA A.
+    # risk_level contaminado con prosa (dolor / parada) → mover a
+    # stop_signals si estaba vacío, luego asignar default por categoría.
+    # 72 filas afectadas: movilidad 33 · técnica 20 · hombros 12 ·
+    # antebrazo 6 · mental 1. `risk_ok` es False cuando canon_risk_level
+    # no matcheó → el `risk` var contiene el crudo (texto contaminado).
+    if not risk_ok and cat_ok:
+        raw_risk = row.get("risk_level", "").strip()
+        if raw_risk and not row.get("stop_signals", "").strip():
+            row["stop_signals"] = raw_risk  # promovido a stop_signals
+        default_risk = CATEGORY_RISK_DEFAULT.get(cat)
+        if default_risk:
+            risk = default_risk
+            # Quitar del contador de unmapped: ya lo resolvimos.
+            unmapped["risk_level"][row.get("risk_level", "")] -= 1
+
     # curacion calentamiento-recuperacion v1 · risk_level overrides.
     # Solo aplica a activos (los manual_review ya salieron del pool).
     if status == "active":
@@ -895,7 +969,11 @@ def flatten_exercise_row(
         "level_min": "",
         "level_max": "",
         "environment": row.get("subcategory", ""),  # placeholder heurístico
-        "equipment": "; ".join(equip_tokens) if equip_tokens else row.get("equipment", ""),
+        # curacion-bulk-11cat-v1 · REGLA C2. Si tras canonicalizar no
+        # queda ningún token en canon, emitir vacío (blanqueo). Antes se
+        # preservaba el crudo (~130 tokens de prosa filtrados aquí).
+        # `equipmentOk` en restrict-pool trata equip vacío como "pasa".
+        "equipment": "; ".join(equip_tokens),
         "execution_summary": row.get("execution_summary", ""),
         "dosage_default": row.get("dosage_link", ""),  # se enlaza a protocolo
         "progression": row.get("progression", ""),

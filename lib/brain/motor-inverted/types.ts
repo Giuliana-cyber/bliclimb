@@ -28,7 +28,9 @@ export type CategoryToken =
 export type EquipmentToken =
   | 'gym' | 'hangboard' | 'campus' | 'weights' | 'rock'
   | 'home' | 'bands' | 'pullup_bar' | 'trx'
-  | 'dynamometer' | 'pinch_block';
+  | 'dynamometer' | 'pinch_block'
+  // +2 tokens Giuliana 2026-07-20 (curacion-bulk-11cat-v1)
+  | 'campus_board' | 'ball';
 
 export type RiskLevel =
   | 'low' | 'low-medium' | 'medium' | 'medium-high' | 'high';

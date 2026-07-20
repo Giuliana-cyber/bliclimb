@@ -45,6 +45,10 @@ from typing import Any
 CANON_EQUIPMENT_TOKENS = {
     "gym", "hangboard", "campus", "weights", "rock",
     "home", "bands", "pullup_bar", "trx",
+    # +2 tokens Giuliana 2026-07-16 (F1.5)
+    "dynamometer", "pinch_block",
+    # +2 tokens Giuliana 2026-07-20 (curacion-bulk-11cat-v1)
+    "campus_board", "ball",
 }
 
 CANON_CATEGORY = {

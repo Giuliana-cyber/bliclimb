@@ -21,6 +21,8 @@ const EQUIPMENT_TOKENS = new Set<string>([
   'gym', 'hangboard', 'campus', 'weights', 'rock',
   'home', 'bands', 'pullup_bar', 'trx',
   'dynamometer', 'pinch_block',
+  // +2 tokens Giuliana 2026-07-20 (curacion-bulk-11cat-v1)
+  'campus_board', 'ball',
 ]);
 
 function parseEquipment(raw: string): EquipmentToken[] {
