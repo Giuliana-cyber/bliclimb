@@ -12579,7 +12579,7 @@
       "sprint": "",
       "status": "active",
       "validation_status": "",
-      "type": ""
+      "type": "habit"
     },
     {
       "exercise_id": "EX-REC-016",
@@ -12602,7 +12602,7 @@
       "sprint": "",
       "status": "active",
       "validation_status": "",
-      "type": ""
+      "type": "habit"
     },
     {
       "exercise_id": "EX-REC-017",
@@ -12671,7 +12671,7 @@
       "sprint": "",
       "status": "active",
       "validation_status": "",
-      "type": ""
+      "type": "habit"
     },
     {
       "exercise_id": "EX-REC-020",
@@ -12717,7 +12717,7 @@
       "sprint": "",
       "status": "active",
       "validation_status": "",
-      "type": ""
+      "type": "habit"
     },
     {
       "exercise_id": "EX-REC-022",
@@ -12740,7 +12740,7 @@
       "sprint": "",
       "status": "active",
       "validation_status": "",
-      "type": ""
+      "type": "habit"
     },
     {
       "exercise_id": "EX-REC-023",
@@ -12786,7 +12786,7 @@
       "sprint": "",
       "status": "active",
       "validation_status": "",
-      "type": ""
+      "type": "habit"
     },
     {
       "exercise_id": "EX-REC-025",
@@ -12855,7 +12855,7 @@
       "sprint": "",
       "status": "active",
       "validation_status": "",
-      "type": ""
+      "type": "habit"
     },
     {
       "exercise_id": "EX-REC-028",
@@ -12924,7 +12924,7 @@
       "sprint": "",
       "status": "active",
       "validation_status": "",
-      "type": ""
+      "type": "habit"
     }
   ],
   "APP_ProtocolCatalog": [

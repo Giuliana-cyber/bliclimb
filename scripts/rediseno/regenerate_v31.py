@@ -809,19 +809,30 @@ RISK_LEVEL_LOW_PREFIXES = ("EX-WAR-", "EX-REC-")
 # restrict-pool.ts:0. Cuando exista /cuidado (feature futura) los va a
 # consumir con su propia UI de checklists.
 #
-# LISTA PROVISIONAL derivada por keyword-match sobre name_es. Pendiente
-# de confirmación editorial de Giuliana — ella pasa la lista final en un
-# rato (2026-07-20). Cuando llegue, editar este set y re-correr.
+# LISTA FINAL confirmada por Giuliana 2026-07-20 · 17 IDs.
+# Deltas vs provisional (+8): 015, 016, 019, 021, 022, 024, 027, 030.
+# Los 13 físicos que quedan en pool /sesion: REC-001-010, 017, 025, 026.
+# (Ver docs/rediseno/curacion/recuperacion-habits-v1.md para el mapping
+# completo. Copy genérico de las 30 EX-REC-* pendiente de re-escritura
+# editorial · no bloquea el mini-test.)
 RECOVERY_HABIT_IDS = {
     "EX-REC-011",  # Registro de dolor post sesión
     "EX-REC-012",  # Registro de fatiga post sesión
     "EX-REC-013",  # Diario de sueño
     "EX-REC-014",  # Plan de descanso entre sesiones
+    "EX-REC-015",  # Día de descarga
+    "EX-REC-016",  # Semana de descarga
     "EX-REC-018",  # Hidratación post sesión
+    "EX-REC-019",  # Comida post sesión
     "EX-REC-020",  # Cuidado de piel
+    "EX-REC-021",  # Manejo de flapper
+    "EX-REC-022",  # Lima suave de callos
     "EX-REC-023",  # Sueño como recuperación
+    "EX-REC-024",  # Siesta corta
+    "EX-REC-027",  # Chequeo de readiness al día siguiente
     "EX-REC-028",  # Retorno tras fatiga alta
     "EX-REC-029",  # Reducción de volumen por dolor
+    "EX-REC-030",  # Cierre de sesión con aprendizaje
 }
 
 
