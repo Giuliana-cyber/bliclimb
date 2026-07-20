@@ -773,7 +773,34 @@ FORCED_MANUAL_REVIEW_IDS = {
     # tiene dosage_default = "GT-FIN-002" (ID de gate en campo de dosis).
     # A manual_review hasta que se defina el protocolo canónico de deload.
     "EX-FIN-057",
+    # curacion calentamiento-recuperacion v1 (Giuliana 2026-07-20):
+    # EX-WAR-017 "Recruitment hang submáximo" fuera del pool default de
+    # calentamiento — es cargador de dedos, no calentamiento neutro.
+    "EX-WAR-017",
 }
+
+# Override explícito de risk_level por ID (aplicado post-canonicalize).
+# curacion calentamiento-recuperacion v1 (Giuliana 2026-07-20):
+# el v3.0 los tenía como "medium" — al revés de lo que debe pasar. Estas
+# 60 filas son lo MÁS disponible del catálogo · deben pasar el filtro
+# maxRiskLevel=low que se aplica para condición baja / reconstrucción /
+# novato. Sin este override, calentamiento + recuperación se bloquean
+# para el grupo que MÁS los necesita.
+RISK_LEVEL_OVERRIDES = {
+    # Calentamiento · las 5 que cargan dedos o muro suben a low-medium
+    "EX-WAR-016": "low-medium",
+    "EX-WAR-019": "low-medium",
+    "EX-WAR-020": "low-medium",
+    "EX-WAR-028": "low-medium",
+    "EX-WAR-029": "low-medium",
+    # (EX-WAR-017 va a manual_review vía FORCED_MANUAL_REVIEW_IDS)
+    # El resto de calentamiento (24 filas) y recuperación (30 filas) → low
+    # se aplica por prefijo abajo con la regla del catch-all.
+}
+
+# Prefijos que van a `low` por default (post-canonicalize).
+# Solo si no están en RISK_LEVEL_OVERRIDES ni en manual_review.
+RISK_LEVEL_LOW_PREFIXES = ("EX-WAR-", "EX-REC-")
 
 
 def flatten_exercise_row(
@@ -816,6 +843,14 @@ def flatten_exercise_row(
     # F4.0b · Findings editoriales F2.4 → force manual_review por ID.
     if ex_id in FORCED_MANUAL_REVIEW_IDS:
         status = "manual_review"
+
+    # curacion calentamiento-recuperacion v1 · risk_level overrides.
+    # Solo aplica a activos (los manual_review ya salieron del pool).
+    if status == "active":
+        if ex_id in RISK_LEVEL_OVERRIDES:
+            risk = RISK_LEVEL_OVERRIDES[ex_id]
+        elif any(ex_id.startswith(p) for p in RISK_LEVEL_LOW_PREFIXES):
+            risk = "low"
 
     return {
         "exercise_id": ex_id,
