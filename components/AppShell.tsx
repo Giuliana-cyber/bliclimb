@@ -63,6 +63,11 @@ const routesWithoutShell = [
   // shell + progress dots. Sin AppShell. Cuando cutover se hace, el
   // viejo /onboarding se retira.
   '/onboarding-v2',
+  // Plan y Progreso v2 · Fase 4 UI · Batch 2 · Batch 2 (F4-UI.6). Traen
+  // su propia top bar + nav inferior Stitch (4 items). El legacy
+  // /plan y /progress sigue hasta el cutover.
+  '/plan-v2',
+  '/progress-v2',
   // Invitación de coach: el cliente típicamente abre el link sin sesión
   // todavía. La página ya maneja signed-in / not-signed-in internamente.
   '/invite',
