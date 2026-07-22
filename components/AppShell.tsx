@@ -68,6 +68,13 @@ const routesWithoutShell = [
   // /plan y /progress sigue hasta el cutover.
   '/plan-v2',
   '/progress-v2',
+  // Batch 4 · seguridad + interacción · Fase 4 UI (F4-UI.7).
+  //   /dolor y /dolor/derivacion · pantallas de dolor, sin nav
+  //   /chat-v2 · Chat con nav de 4 (Chat activo)
+  //   /perfil · Perfil desde engrane, con back button
+  '/dolor',
+  '/chat-v2',
+  '/perfil',
   // Invitación de coach: el cliente típicamente abre el link sin sesión
   // todavía. La página ya maneja signed-in / not-signed-in internamente.
   '/invite',
