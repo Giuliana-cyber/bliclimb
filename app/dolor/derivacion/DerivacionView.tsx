@@ -40,7 +40,12 @@ const ZONA_LABEL: Record<string, string> = {
   rodilla: 'rodilla',
 };
 
-export function DerivacionView({ character, zonas, alternativas }: DerivacionViewProps) {
+export function DerivacionView({
+  character,
+  zonas,
+  intensidad,
+  alternativas,
+}: DerivacionViewProps) {
   const router = useRouter();
   const zonaFrase =
     zonas.length === 0
@@ -142,14 +147,18 @@ export function DerivacionView({ character, zonas, alternativas }: DerivacionVie
           </Link>
         </section>
 
-        {/* Encuadre honesto · abajo · nunca reemplazar profesional */}
+        {/* Encuadre honesto · sensible a intensidad (Giuliana 2026-07-21).
+            Umbral 7 alinea con el trigger que hace escalar #16 → #17.
+            Dolor agudo (≥7): urgencia sin alarmar · "revísalo pronto".
+            Dolor moderado (<7): patrón conservador · "si sigue en 48h". */}
         <div className="bg-bil-cream border-l-4 border-bil-ink/30 rounded-DEFAULT p-4">
           <p className="text-label-md text-bil-ink/70 leading-relaxed">
             <strong className="text-bil-ink font-bold">
               Bill no diagnostica ni trata.
             </strong>{' '}
-            Si el dolor persiste más de 48 horas o interfiere con actividades
-            diarias, consulta a un profesional de salud.
+            {intensidad >= 7
+              ? 'Un dolor así merece que lo revise un profesional pronto. Mientras tanto, nada que cargue la zona.'
+              : 'Si sigue molestando en 48 horas, consulta a un profesional de salud.'}
           </p>
         </div>
       </main>
