@@ -1,44 +1,46 @@
 /**
- * Hoy · Fase 4 UI piloto #2.
+ * Hoy · Fase 4 UI · pantalla principal · P0 backend integrado.
  *
  * Server component que:
- *   1. Deriva focus + genera sesión con motor invertido (Fase 3).
- *   2. Renderiza `HoyView` (client) con el diseño Stitch de
- *      docs/design/carpeta_3/hoy_bilclimb_1/code.html.
+ *   1. Requiere sesión Supabase autenticada · sin sesión → /sign-in
+ *   2. Requiere onboarding completado · sin onboarded_at → /onboarding-v2
+ *   3. Deriva focus + genera sesión con motor invertido usando el
+ *      profile real del user.
+ *   4. Renderiza HoyView.
  *
- * Perfil: GC-001 Giuliana hardcoded para el piloto. Fase 4b conecta
- * con Supabase auth + perfil real del usuario.
- *
- * Costo por render: ~$0.0005 con gpt-4o-mini (~1000-2500 tokens).
- * TODO Fase 4c: cache por (user_id, date) en Supabase para reusar la
- * sesión del día. Por ahora se regenera cada request.
+ * TODO F4-UI.4: cache por (user_id, date) en sessions_cache · evita
+ * regenerar y pagar LLM en cada visita del mismo día.
  */
 
+import { redirect } from 'next/navigation';
 import { loadCatalog } from '@/lib/brain/motor-inverted/catalog-loader';
 import { generateSession } from '@/lib/brain/motor-inverted/plan-generator';
-import type { Profile } from '@/lib/brain/motor-inverted/types';
+import { createClient } from '@/lib/supabase/server';
+import {
+  getServerProfileV2,
+  profileRowToMotorProfile,
+} from '@/lib/db/onboarding-v2';
 import { HoyView } from './HoyView';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-// El motor puede tardar 5-8s con gpt-4o-mini. Vercel Pro permite 60s.
 export const maxDuration = 60;
 
-// Perfil GC-001 hardcoded · Fase 4b lo trae de Supabase auth.
-const PILOT_PROFILE: Profile = {
-  age: 'adult',
-  climbingTime: 'more3',
-  hang25mmSeconds: 5,
-  maxPullupReps: 3,
-  currentFingerPain: 0,
-  currentShoulderPain: 0,
-  currentElbowPain: 0,
-  injuries: [],
-  equipment: ['gym', 'hangboard', 'home', 'bands', 'weights', 'pullup_bar'],
-  character: 'bill',
-};
-
 export default async function HoyPage() {
+  const supabase = createClient();
+  const { userId, profile, isOnboarded } = await getServerProfileV2(supabase);
+
+  // Auth gate · sin sesión → sign-in
+  if (!userId) {
+    redirect('/sign-in?next=/hoy');
+  }
+
+  // Onboarding gate · sin flow completado → onboarding-v2
+  if (!isOnboarded || !profile) {
+    redirect('/onboarding-v2');
+  }
+
+  const motorProfile = profileRowToMotorProfile(profile);
   const catalog = loadCatalog();
 
   let sessionData: Awaited<ReturnType<typeof generateSession>> | null = null;
@@ -47,7 +49,7 @@ export default async function HoyPage() {
   try {
     sessionData = await generateSession({
       catalog,
-      profile: PILOT_PROFILE,
+      profile: motorProfile,
       options: {
         category: 'fuerza-dedos',
         nExercises: 4,

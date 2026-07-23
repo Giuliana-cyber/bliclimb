@@ -32,7 +32,11 @@ const COPY: Record<AuthMode, { title: string; subtitle: string; switchLabel: str
 export function AuthCard({ mode }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') ?? (mode === 'sign-up' ? '/onboarding' : '/');
+  // v1 · defaults post-auth (Giuliana 2026-07-21):
+  //   sign-up nuevos → /onboarding-v2 (flow rediseñado)
+  //   sign-in existentes → /hoy (server component decide si redirect
+  //     a /onboarding-v2 cuando profile.onboarded_at IS NULL)
+  const next = searchParams.get('next') ?? (mode === 'sign-up' ? '/onboarding-v2' : '/hoy');
   const initialError = searchParams.get('error');
 
   const [email, setEmail] = useState('');

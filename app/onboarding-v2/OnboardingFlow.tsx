@@ -50,6 +50,8 @@ export function OnboardingFlow() {
   const router = useRouter();
   const [step, setStep] = useState<StepId>('coach');
   const [state, setState] = useState<OnboardingState>(INITIAL_STATE);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const update = (partial: Partial<OnboardingState>) => {
     setState((s) => ({ ...s, ...partial }));
@@ -59,11 +61,35 @@ export function OnboardingFlow() {
 
   const canProceed = useMemo(() => canProceedFor(step, state), [step, state]);
 
-  const handleNext = () => {
+  // Bloqueo v1 · menores de 16 (Giuliana 2026-07-21). Al elegir esa
+  // edad en Salud, no permitimos avanzar y mostramos card cálida.
+  const isMinorBlocked = state.edad === 'menor-16';
+
+  const handleNext = async () => {
     if (step === 'resumen') {
-      // TODO F4-UI backend: POST /api/onboarding con state → guarda profile
-      //  en Supabase, luego redirige a /hoy.
-      router.push('/hoy');
+      // Cierra el flow · POST /api/onboarding → /hoy
+      setSubmitting(true);
+      setSubmitError(null);
+      try {
+        const res = await fetch('/api/onboarding', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(state),
+        });
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as {
+            message?: string;
+            error?: string;
+          };
+          setSubmitError(body.message ?? body.error ?? 'No pudimos guardar tu perfil.');
+          setSubmitting(false);
+          return;
+        }
+        router.push('/hoy');
+      } catch {
+        setSubmitError('Sin conexión. Intenta de nuevo.');
+        setSubmitting(false);
+      }
       return;
     }
     const next = STEP_ORDER[currentIndex + 1];
@@ -77,16 +103,77 @@ export function OnboardingFlow() {
 
   const activeCharacter = state.coach ?? 'bill';
 
+  // Card cálida bloqueo menor de 16 · reemplaza el step de Salud.
+  if (isMinorBlocked) {
+    return (
+      <div className="min-h-screen bg-bil-cream text-bil-ink font-nunito flex items-center px-margin-mobile">
+        <div className="max-w-lg mx-auto w-full space-y-6 py-12">
+          <div className="flex justify-center">
+            <div className="w-20 h-20 rounded-full bg-bil-gold/15 flex items-center justify-center">
+              <span
+                className="material-symbols-outlined text-bil-gold text-4xl"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                hourglass_top
+              </span>
+            </div>
+          </div>
+          <div className="text-center space-y-3">
+            <h1 className="text-headline-lg-mobile text-bil-ink font-bold">
+              Todavía no · pero pronto
+            </h1>
+            <p className="text-body-lg text-bil-ink/75 leading-relaxed">
+              BilClimb está pensado para escaladores de 16 años en adelante.
+              Cuando cumplas 16 podemos armar tu plan.
+            </p>
+          </div>
+          <div className="bg-white border-l-4 border-bil-green rounded-DEFAULT p-4">
+            <p className="text-body-md text-bil-ink/80 leading-snug">
+              Mientras tanto, escala con quien te acompaña — coach, mentor,
+              padres. La técnica se aprende en el muro, sin dosificación
+              externa.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => update({ edad: null })}
+            className="w-full h-[52px] rounded-full border-2 border-bil-green text-bil-green font-bold text-body-lg active:scale-95 transition-transform"
+          >
+            Volver
+          </button>
+          <p className="text-label-md text-bil-ink/50 text-center leading-snug">
+            ¿Tienes 16 o más? Volver y ajustar la edad.
+          </p>
+          <style jsx global>{`
+            .material-symbols-outlined {
+              font-family: 'Material Symbols Outlined';
+              font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            }
+            html,
+            body {
+              background: #f2ede3;
+            }
+          `}</style>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <OnboardingShell
       stepId={step}
       character={activeCharacter}
       coachQuote={COACH_QUOTES[step]}
-      ctaLabel={CTA_LABELS[step]}
-      ctaDisabled={!canProceed}
+      ctaLabel={submitting ? 'Guardando…' : CTA_LABELS[step]}
+      ctaDisabled={!canProceed || submitting}
       onCta={handleNext}
-      onBack={currentIndex > 0 ? handleBack : undefined}
+      onBack={currentIndex > 0 && !submitting ? handleBack : undefined}
     >
+      {submitError && (
+        <div className="bg-bil-red/10 border-l-4 border-bil-red rounded-DEFAULT p-3 text-sm text-bil-red">
+          {submitError}
+        </div>
+      )}
       {renderStep(step, state, update)}
     </OnboardingShell>
   );
